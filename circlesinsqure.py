@@ -50,8 +50,10 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
 
     # Draw circles
     for (x, y) in positions:
-        circle = plt.Circle((x, y), r, edgecolor='blue', facecolor='lightblue', alpha=0.6)
+        circle = plt.Circle((x, y), r,  facecolor='lightblue', alpha=0.6)
+        rotor = plt.Circle((x, y), r/1.05, edgecolor='red', facecolor='lightblue', alpha=0.6)
         ax.add_patch(circle)
+        ax.add_patch(rotor)
 
     #ax.set_title(f"{n} Circles of radius {r} in a staggered pattern in a square of area {area_of_square}")
     ax.set_xlabel("Width [m]")
@@ -61,8 +63,8 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     return area_of_square
 
 # Example usage:
-n = 10  # Number of circles
-r = 2*53.0732*1.05/2   # Radius of each circle
-x = int(np.ceil(math.sqrt(n)))   # Base number of circles in the first row
+n = 50  # Number of circles
+r = 23.13406979*1.05   # Radius of each circle
+x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
 area = draw_and_calculate_variable_hexagonal_square_area(n, r, x)
 print(f"The area of the square that contains {n} circles of radius {r} is: {area}")
