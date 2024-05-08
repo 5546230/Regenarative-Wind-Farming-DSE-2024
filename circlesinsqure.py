@@ -38,7 +38,7 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
 
     # Calculate the required dimensions
     width = max(pos[0] for pos in positions) + r  # Extra r for boundary
-    height = (row_count * dy) + r  # Extra r for top boundary
+    height = max(pos[1] for pos in positions) + r  # Extra r for top boundary
     side_length = max(width, height)
     area_of_square = width * height #side_length ** 2
     print(width, height)
@@ -63,7 +63,7 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     return area_of_square
 
 # Example usage:
-n = 53  # Number of circles
+n = 33  # Number of circles
 r1 = 170 #radius of single rotor
 pg = 0 #power gain due to multi-rotors
 r = r1/((n*(1+pg))**0.5)*1.05  # Radius of each circle
