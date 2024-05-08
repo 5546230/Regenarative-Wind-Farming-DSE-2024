@@ -40,8 +40,8 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     width = max(pos[0] for pos in positions) + r  # Extra r for boundary
     height = (row_count * dy) + r  # Extra r for top boundary
     side_length = max(width, height)
-    area_of_square = side_length ** 2
-
+    area_of_square = width * height #side_length ** 2
+    print(width, height)
     # Create plot
     fig, ax = plt.subplots()
     ax.set_xlim(0, side_length)
@@ -63,8 +63,10 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     return area_of_square
 
 # Example usage:
-n = 50  # Number of circles
-r = 23.13406979*1.05   # Radius of each circle
+n = 53  # Number of circles
+r1 = 170 #radius of single rotor
+pg = 0 #power gain due to multi-rotors
+r = r1/((n*(1+pg))**0.5)*1.05  # Radius of each circle
 x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
 area = draw_and_calculate_variable_hexagonal_square_area(n, r, x)
 print(f"The area of the square that contains {n} circles of radius {r} is: {area}")
