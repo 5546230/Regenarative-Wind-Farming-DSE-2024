@@ -19,8 +19,7 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
 
     # Calculate horizontal and vertical distance between centers
     dx = 2 * r
-    dy = r * math.sqrt(3)
-
+    dy = r *math.sqrt(3) #bc height of equilateral triangle is sqrt(3)/2*2r
     # Generate positions of circles row by row
     while num_circles_placed < n:
         row_length = x if row_count % 2 == 0 else x - 1
@@ -63,7 +62,7 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     return area_of_square
 
 # Example usage:
-n = 33  # Number of circles
+n = 15  # Number of circles
 r1 = 170 #radius of single rotor
 pg = 0 #power gain due to multi-rotors
 r = r1/((n*(1+pg))**0.5)*1.05  # Radius of each circle
