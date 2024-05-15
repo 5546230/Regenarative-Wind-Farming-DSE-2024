@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class OS_Steel():
     def __init__(self):
-        self.E = 205e9
+        self.E = 190e9
         self.rho = 7800
         self.sig_y = 340e6
 
