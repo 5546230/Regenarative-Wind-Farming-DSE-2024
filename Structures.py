@@ -8,7 +8,7 @@ class OS_Steel():
     def __init__(self):
         self.E = 205e9
         self.rho = 7800
-        self.sig_y = 470e6
+        self.sig_y = 340e6
 
 
 class Cyl_Geometry:
@@ -78,7 +78,7 @@ class Pylon:
         M = self.calc_area(t=t)*self.L*self.mat.rho
         return M
 
-    def buckling(self, axial_load, n=0.25):
+    def buckling(self, axial_load, n=0.22):
         t = self.L**2 * axial_load / (np.pi**3 * n * self.mat.E * self.r_out**3)
         return t
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     M_truss = 2235959.595*1.5
     M_RNA = 649418.5133
 
-
+    '''
     pyl = Pylon(radius_outer=5, length=60+25+350, material=OS_Steel())
 
     t_a = pyl.axial_thickness(axial_force=(M_truss+M_RNA+2200000)*9.81)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     M_tower = pyl.calc_mass(t_a+t_b)
     #print(M_tower / 1000)
     t_buckl = pyl.buckling(axial_load=(M_truss+M_RNA+M_tower)*9.81)
-
+    '''
 
     print('PLATFORM')
     d = 100 # [m]
@@ -120,13 +120,14 @@ if __name__ == "__main__":
     Fplz = (M_T + d*W)/(4*d)
     M_max = Fplx * h
 
-    tower = Pylon(radius_outer=5, length=60+25, material=OS_Steel())
+    tower = Pylon(radius_outer=1, length=60+25, material=OS_Steel())
     t_a = tower.axial_thickness(axial_force=Fplz)
     t_b = tower.bending_thickness(point_force=Fplx, position=h)
     M_tower = tower.calc_mass(t_a + t_b)
     print(M_tower / 1000)
-    print(t_a + t_b, t_buckl)
+
     t_buckl = tower.buckling(axial_load=Fplz)
+    print(t_a+t_b, t_buckl)
 
     '''
     
