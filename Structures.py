@@ -1,19 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-R = 29.6 # [m]
-D = 2*R
-N_rot  = 33
 
-
-V_infty = 7
-P_rated = 30e6
-T_rated = P_rated/V_infty
-T_perR = T_rated/N_rot
-
-
-L_beam = 3*D
-W_rna = 38790.46184*9.81
 
 
 class OS_Steel():
@@ -71,8 +59,8 @@ class Pylon:
         self.L = length
         self.mat = material
 
-    def calc_area(self):
-        return 2*np.pi*self.r_out
+    def calc_area(self, t):
+        return 2*np.pi*self.r_out*t
 
     def calc_I(self):
         return np.pi*self.r_out**3
@@ -86,19 +74,42 @@ class Pylon:
         t_b = M / (np.pi * self.r_out ** 2 * self.mat.sig_y)
         return t_b
 
-    def calc_mass(self):
-        M = self.calc_area()*self.L*self.mat.rho
+    def calc_mass(self, t):
+        M = self.calc_area(t=t)*self.L*self.mat.rho
         return M
 
     def buckling(self, axial_load, n=0.25):
         t = self.L**2 * axial_load / (np.pi**3 * n * self.mat.E * self.r_out**3)
         return t
 
+
+
 if __name__ == "__main__":
+    R_rot = 29.6  # [m]
+    D_rot = 2 * R_rot
+    N_rot = 33
+
+    V_infty = 7
+    P_rated = 30e6
+    T_rated = P_rated / V_infty
+    T_perR = T_rated / N_rot
+
+    L_beam = 3 * D_rot
+    W_rna = 38790.46184 * 9.81
+
+    M_truss = 2235959.595
+    M_RNA = 649418.5133
+
+
     pyl = Pylon(radius_outer=5, length=60+25+350, material=OS_Steel())
-    t_a = pyl.axial_thickness(axial_force=6000*1000*9.81)
+
+
+    t_a = pyl.axial_thickness(axial_force=(M_truss+M_RNA+2200)*9.81)
     t_b = pyl.bending_thickness(point_force=T_rated, position=60+25+.5*350)
-    t_buckl = pyl.buckling(axial_load=4000*1000*9.81)
+    M_tower = pyl.calc_mass(t_a+t_b)
+    print(M_tower / 1000)
+
+    t_buckl = pyl.buckling(axial_load=(M_truss+M_RNA+M_tower)*9.81)
 
 
     print(t_a+t_b, t_buckl)
