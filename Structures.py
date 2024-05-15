@@ -65,7 +65,6 @@ class Cyl_Geometry:
 
 
 
-
 class Pylon:
     def __init__(self, radius_outer, length, material):
         self.r_out = radius_outer
@@ -96,6 +95,15 @@ class Pylon:
         return t
 
 if __name__ == "__main__":
+    pyl = Pylon(radius_outer=5, length=60+25+350, material=OS_Steel())
+    t_a = pyl.axial_thickness(axial_force=6000*1000*9.81)
+    t_b = pyl.bending_thickness(point_force=T_rated, position=60+25+.5*350)
+    t_buckl = pyl.buckling(axial_load=4000*1000*9.81)
+
+
+    print(t_a+t_b, t_buckl)
+    '''
+    
     a_arr = np.array([D, 2 * D, 3 * D])
     Ts = np.array([T_perR, T_perR, T_perR])
     Ws = W_rna * np.ones(3)
@@ -126,3 +134,4 @@ if __name__ == "__main__":
     plt.plot(Pa, np.ones_like(a)*single_tower.mat.sig_y)
     plt.legend()
     plt.show()
+    '''
