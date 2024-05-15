@@ -97,22 +97,37 @@ if __name__ == "__main__":
     L_beam = 3 * D_rot
     W_rna = 38790.46184 * 9.81
 
-    M_truss = 2235959.595
+    M_truss = 2235959.595*1.5
     M_RNA = 649418.5133
 
 
     pyl = Pylon(radius_outer=5, length=60+25+350, material=OS_Steel())
 
-
-    t_a = pyl.axial_thickness(axial_force=(M_truss+M_RNA+2200)*9.81)
+    t_a = pyl.axial_thickness(axial_force=(M_truss+M_RNA+2200000)*9.81)
     t_b = pyl.bending_thickness(point_force=T_rated, position=60+25+.5*350)
     M_tower = pyl.calc_mass(t_a+t_b)
-    print(M_tower / 1000)
-
+    #print(M_tower / 1000)
     t_buckl = pyl.buckling(axial_load=(M_truss+M_RNA+M_tower)*9.81)
 
 
-    print(t_a+t_b, t_buckl)
+    print('PLATFORM')
+    d = 100 # [m]
+    h = 25+60
+    W = (M_truss+M_RNA + 2200000 + 2000e3)*9.81
+
+    Fplx = T_rated/4
+    M_T = T_rated*(350/2)
+    Fplz = (M_T + d*W)/(4*d)
+    M_max = Fplx * h
+
+    tower = Pylon(radius_outer=5, length=60+25, material=OS_Steel())
+    t_a = tower.axial_thickness(axial_force=Fplz)
+    t_b = tower.bending_thickness(point_force=Fplx, position=h)
+    M_tower = tower.calc_mass(t_a + t_b)
+    print(M_tower / 1000)
+    print(t_a + t_b, t_buckl)
+    t_buckl = tower.buckling(axial_load=Fplz)
+
     '''
     
     a_arr = np.array([D, 2 * D, 3 * D])
