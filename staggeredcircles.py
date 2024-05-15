@@ -75,3 +75,4 @@ r = 23.13406979*1.05   # Radius of each circle
 x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
 area = draw_and_calculate_hexagonal_area_no_vertical_overlap(n, r, x)
 print(f"The area of the square that contains {n} circles of radius {r} is: {area}")
+
