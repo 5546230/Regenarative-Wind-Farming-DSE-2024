@@ -59,14 +59,16 @@ def draw_and_calculate_variable_hexagonal_square_area(n, r, x):
     ax.set_ylabel("Height [m]")
     plt.show()
 
-    return area_of_square
+    return area_of_square, positions
 
 # Example usage:
-n = 10  # Number of circles
+n = 33  # Number of circles
 r1 = 170 #radius of single rotor
 pg = 0 #power gain due to multi-rotors
 r = r1/((n*(1+pg))**0.5)*1.05  # Radius of each circle
 x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
-area = draw_and_calculate_variable_hexagonal_square_area(n, r, x)
+area, positions = draw_and_calculate_variable_hexagonal_square_area(n, r, x)
 radius1 = r/1.05
 print(f"The area of the square that contains {n} circles of radius {radius1} is: {area}")
+positions = np.array(positions)
+
