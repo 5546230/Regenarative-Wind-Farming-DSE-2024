@@ -66,8 +66,34 @@ class Cyl_Geometry:
 
 
 
+class Pylon:
+    def __init__(self, radius_outer, length, material):
+        self.r_out = radius_outer
+        self.L = length
+        self.mat = material
 
+    def calc_area(self):
+        return 2*np.pi*self.r_out
 
+    def calc_I(self):
+        return np.pi*self.r_out**3
+
+    def axial_thickness(self, axial_force):
+        t_a = axial_force / (self.mat.sig_y * 2 * np.pi * self.r_out)
+        return t_a
+
+    def bending_thickness(self, point_force, position):
+        M = position * point_force
+        t_b = M / (np.pi * self.r_out ** 2 * self.mat.sig_y)
+        return t_b
+
+    def calc_mass(self):
+        M = self.calc_area()*self.L*self.mat.rho
+        return M
+
+    def buckling(self, axial_load, n=0.25):
+        t = self.L**2 * axial_load / (np.pi**3 * n * self.mat.E * self.r_out**3)
+        return t
 
 if __name__ == "__main__":
     a_arr = np.array([D, 2 * D, 3 * D])
