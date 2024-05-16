@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
 class sensitivity:
     def __init__(self, score_matrix, weights_arr, option_names, criteria_names):
         self.n_criteria = score_matrix.shape[0]
@@ -73,6 +72,25 @@ def sens_structures():
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
+    
+def sens_afc():
+    criterion_weights = np.array([0.3, 0.3, 0.15, 0.15, 0.1])
+
+    scores = np.array([[2, 2, 5, 5, 3 ,5, 5],
+                    [4, 1, 1, 5 ,2, 1, 4],
+                    [3, 4, 4, 3, 5, 2, 3 ],
+                    [4, 3, 2, 4, 3, 1, 4],
+                    [3, 4, 5, 5, 5, 2 ,1]])
+
+    criterion_changes = np.array([50, 50, 50, 50, 50])
+    design_option_names = ['single rotor', 'full sturcture', 'fixed HLD', 'retractable HLD', 'no HLD', 'fixed softwing', 'retractable softwing']
+    criteria_names = ['vertical flow displacement', 'meteorologica versatility', 'reliability/complexity', 'structural resilience', 'innovation maturity']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+
 
 if __name__ == '__main__':
-    sens_structures()
+    sens_afc()
