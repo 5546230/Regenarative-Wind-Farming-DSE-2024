@@ -41,17 +41,16 @@ class sensitivity:
 
             'matmul over criteria'
             weighted_scores = np.einsum('ij, jk->ik', self.scores.T, final_weights)
-            #print(weighted_scores[:,-1])
-            self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i)
+            print(weighted_scores[:,-1])
+            self.plot_sensitivity(x_axis=main_mult_range, weighted_scores=weighted_scores, idx=i)
         return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores):
-        plt.figure(figsize=(5.5,5))
         for k in range(weighted_scores.shape[0]):
-            plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
-        plt.title(f'Criterion: {self.crit_names[idx]}')
-        plt.xlabel('relative change', fontsize=12)
-        plt.ylabel('weighted score', fontsize=12)
+            plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}')
+        plt.title(f'{self.crit_names[idx]}')
+        plt.xlabel('relative change')
+        plt.ylabel('weighted score')
         plt.legend()
         plt.show()
 
@@ -63,9 +62,7 @@ def sens_structures():
                        [4, 3, 2, ],
                        [5, 1, 2, ]])
 
-
-
-    criterion_changes = np.array([100, 100, 100])
+    criterion_changes = np.array([0, 0, 70])
 
     design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
     criteria_names = ['cost', 'maintenance', 'complexity']
@@ -93,7 +90,45 @@ def sens_afc():
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
+def sens_rotor_types():
+    criterion_weights = np.array([0.3, 0.1, 0.15, 0.15, 0.15, 0.15])
+
+    scores = np.array([[2, 4, 3, 3],
+                    [4, 4, 3, 3],
+                    [3, 3, 2, 3],
+                    [2, 2, 3 ,2],
+                    [2, 2, 5, 3],
+                    [2, 3 ,4, 2]])
+
+    criterion_changes = np.array([50, 50, 50, 50, 50])
+    design_option_names = ['staggered', 'co-axial' , 'co-planar', 'wind wall']
+    criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+def sens_rotor_number():
+    criterion_weights = np.array([0.3, 0.1, 0.15, 0.15, 0.15, 0.15])
+
+    scores = np.array([[3, 4, 5, 5],
+                    [3, 4, 4, 5],
+                    [2, 3, 4, 4],
+                    [3, 4, 4, 3],
+                    [4, 3, 3, 2],
+                    [2, 3, 4, 4]])
+
+    criterion_changes = np.array([50, 50, 50, 50, 50])
+    design_option_names = ['11 rotors', '23 rotors' , '33 rotors', '53 rotors']
+    criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    sens_afc()
+    sens_rotor_types()
