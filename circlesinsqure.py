@@ -69,6 +69,7 @@ r = r1/((n*(1+pg))**0.5)*1.05  # Radius of each circle
 x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
 area, positions = draw_and_calculate_variable_hexagonal_square_area(n, r, x)
 radius1 = r/1.05
-print(f"The area of the square that contains {n} circles of radius {radius1} is: {area}")
+area_efficiency = np.pi*radius1**2*n/area
+print(f"The area of the square that contains {n} circles of radius {radius1} is: {area}, with an area efficiency of: {area_efficiency}")
 positions = np.array(positions)
 
