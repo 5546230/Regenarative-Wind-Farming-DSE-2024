@@ -4,6 +4,19 @@ import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
+# Variables to change
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+magic_radius_number_providedbyTiago = 170
+rho = 1.225 #SI units
+
+nrotors = 33
+radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
+Uinf = 4 #si units
+Power = 30 *10**6 #Watts
+TSR = 8
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
 def CTfunction(a, glauert = False):
     """
     This function calculates the thrust coefficient as a function of induction factor 'a'
@@ -12,8 +25,8 @@ def CTfunction(a, glauert = False):
     CT = np.zeros(np.shape(a))
     CT = 4*a*(1-a)  
     if glauert:
-        CT1=1.816;
-        a1=1-np.sqrt(CT1)/2;
+        CT1=1.816
+        a1=1-np.sqrt(CT1)/2
         CT[a>a1] = CT1-4*(np.sqrt(CT1)-1)*(1-a[a>a1])
     
     return CT
@@ -25,7 +38,7 @@ def ainduction(CT):
     including Glauert's correction
     """
     a = np.zeros(np.shape(CT))
-    CT1=1.816;
+    CT1=1.816
     CT2=2*np.sqrt(CT1)-CT1
     a[CT>=CT2] = 1 + (CT[CT>=CT2]-CT1)/(4*(np.sqrt(CT1)-1))
     a[CT<CT2] = 0.5-0.5*np.sqrt(1-CT[CT<CT2])
@@ -45,20 +58,36 @@ plt.grid()
 plt.legend()
 plt.show()
 
-print(np.max(CTglauert*(1-a)))
+# print(np.max(CTglauert*(1-a)))
 
 
+CP = Power/nrotors/(0.5*rho*Uinf**3*np.pi*radius**2)  #necessary CP.
 
-rho = 1.225 #SI units
-
-nrotors = 1
-radius = 170/((nrotors*(1+0))**0.5) #si units
-Uinf = 10 #si units
-Power = 30 *10**6 #Watts
-CP = Power/nrotors/(0.5*1.225*Uinf**3*np.pi*radius**2)
 print(CP)
+if CP> np.max(CTglauert*(1-a)):
+    CP = min(CP, np.max(CTglauert*(1-a)))
+    Power = CP*(0.5*rho*Uinf**3*np.pi*radius**2)*nrotors
 
+Uinf_graph = np.arange(0, 30, 0.01)
+Power_graph_lst = []
+for Uinfinity in Uinf_graph:
+    Power_graph = 30*10**6
+    CP_graph = Power_graph/nrotors/(0.5*rho*Uinfinity**3*np.pi*radius**2)  #necessary CP.
+    if CP_graph> np.max(CTglauert*(1-a)):
+        CP_graph = min(CP, np.max(CTglauert*(1-a)))
+        Power_graph = CP*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
+    if Uinfinity > 25 or Uinfinity <3:   #cut in and out speed
+        Power_graph = 0
+    
+    Power_graph_lst.append(Power_graph)
 
+Power_graph_lst = np.array(Power_graph_lst)
+fig2 = plt.figure(figsize=(12, 6))
+plt.plot(Uinf_graph, Power_graph_lst)
+plt.xlabel('Wind Speed')
+plt.ylabel('Power Generated')
+plt.grid()
+plt.show()
 
 def find_all_x_crossings(x_data, y_data, y_targets):
     crossings = {y: [] for y in y_targets}
@@ -91,19 +120,21 @@ for y, x_vals in crossings.items():
 
 necessary_a = a[np.argmin(np.abs(CTglauert*(1-a)-CP))]
 print("necessary a is", necessary_a)
-necessary_a = np.min(crossings[CP])
+necessary_a = np.min(crossings[CP])   #necessary a to get the necessary CP. 
 print(" updated necessary a is ", necessary_a)
 Area = np.pi*radius**2*nrotors
 
 thrustperrotor = Power/Uinf/(1-necessary_a)/nrotors
 print("Thrust per rotor is ", thrustperrotor, " at induced speed of ", Uinf*(1-necessary_a))
+CT = thrustperrotor/(0.5*rho*Uinf**2*np.pi*radius**2)
+print("CT is ", CT, " which should be the same as ", 4*necessary_a*(1-necessary_a))
 
-TSR = 8
 omega =  Uinf*TSR/radius
 Torqueperrotor = Power / omega/nrotors
 print("Torque per rotor is ", Torqueperrotor)
 print("Power per rotor is ", Power/nrotors)
+print("Total Power is: ", Power)
 
-print("Cp is ", CP)
+print("Cp is ", CP, "which should be the same as", 4*necessary_a*(1-necessary_a)**2)
 
 print("omega is ", omega)
