@@ -2,15 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-criterion_weights = np.array([.5, .2, .3])
 
-scores = np.array([[3, 2, 1, 5],
-                   [4, 3, 2, 1],
-                   [5, 1, 2, 4]])
-
-criterion_changes = np.array([50, 50, 50])
-design_option_names = ['a', 'b', 'c', 'd']
-criteria_names = ['i', 'j', 'k']
 class sensitivity:
     def __init__(self, score_matrix, weights_arr, option_names, criteria_names):
         self.n_criteria = score_matrix.shape[0]
@@ -26,29 +18,32 @@ class sensitivity:
         ws = np.sum(weights * option)
         return ws
 
-    def perform_sensitivity(self, criterion_pChanges, n_points: int = 10):
-        initial_weights = self.weights.copy()
-
+    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 10):
+        'initial weights'
+        initial_weights = self.weights
         for i in range(self.n_criteria):
-            indices = np.linspace(0, self.n_criteria-1, self.n_criteria, dtype=int)
+            'initialise the final weights'
             final_weights = np.zeros((self.n_criteria, n_points))
 
+            'get the ith % change and weight'
             percentage_change = criterion_pChanges[i]
             current_weight = initial_weights[i]
 
-
-            first_mult_range = np.linspace(1-percentage_change/100, 1+percentage_change/100, n_points)
+            'assign array of multiplied w_i to final weights'
+            main_mult_range = np.linspace(1-percentage_change/100, 1+percentage_change/100, n_points)
             remaining_weights = initial_weights[initial_weights!=current_weight]
-            changed_w = first_mult_range * current_weight
-            final_weights[i,:] = changed_w
+            changed_main_w = main_mult_range * current_weight
+            final_weights[i,:] = changed_main_w
 
-
-            remaining_mult_range = (1-changed_w)/(np.sum(remaining_weights))
+            'assign array of multiplied w_k k!=i to final weights'
+            remaining_mult_range = (1-changed_main_w)/(np.sum(remaining_weights))
             remaining_w = remaining_weights[:,np.newaxis] * remaining_mult_range
-            final_weights[indices[self.weights != current_weight],:] = remaining_w
+            final_weights[np.where(self.weights != current_weight),:] = remaining_w
 
+            'matmul over criteria'
             weighted_scores = np.einsum('ij, jk->ik', self.scores.T, final_weights)
-            self.plot_sensitivity(x_axis=first_mult_range, weighted_scores=weighted_scores, idx=i)
+            print(weighted_scores[:,-1])
+            self.plot_sensitivity(x_axis=main_mult_range, weighted_scores=weighted_scores, idx=i)
         return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores):
@@ -61,8 +56,23 @@ class sensitivity:
         plt.show()
 
 
+def sens_structures():
+    criterion_weights = np.array([.5, .2, .3])
+
+    scores = np.array([[3, 2, 1, ],
+                       [4, 3, 2, ],
+                       [5, 1, 2, ]])
+
+    criterion_changes = np.array([0, 0, 70])
+
+    design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
+    criteria_names = ['cost', 'maintenance', 'complexity']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names,
+                       criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
 
-TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
-TEST.perform_sensitivity(criterion_pChanges=criterion_changes)
+if __name__ == '__main__':
+    sens_structures()
