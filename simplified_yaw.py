@@ -45,9 +45,18 @@ class Array:
 
     def calculate_I_z_array(self):
         x_positions = self.grid[:, :, 0]
+
         m_per_turbine = self.rotor.m + (self.m_frame / (self.n_rows * 2* self.n_cols))
+        print("mass per turbine")
+        print(m_per_turbine)
         I_z = np.sum(m_per_turbine * (x_positions**2))
         return I_z
+    
+    def calc_mass(self):
+        
+        m_per_turbine = self.rotor.m + (self.m_frame / (self.n_rows * 2* self.n_cols))
+        m_z = np.sum(m_per_turbine)*self.n_rows * 2* self.n_cols
+        return m_z
 
     def create_grid(self):
         x0 = self.tower.R_o + self.offset + self.rotor.R
@@ -200,7 +209,7 @@ class Array:
 rotor_params = {
     'radius': 29.7,
     'n_blades': 3,
-    'm_nacelle': 615*1000
+    'm_nacelle': 1277455.803/32
 }
 array_params ={
     'n_rows': 4,
@@ -215,6 +224,8 @@ tower_params = {
 }
 array = Array(rotor_params,tower_params, array_params)
 #array.plot_array()
+print("mass")
+print(array.calc_mass())
 c_T = 0.8
 T = array.calc_thrust(c_T, phi=0.1)
 times, phis, dphis, Mzs, Mws = array.simulate_dynamics(c_T)
