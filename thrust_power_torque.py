@@ -4,6 +4,19 @@ import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
+# Variables to change
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+magic_radius_number_providedbyTiago = 170
+rho = 1.225 #SI units
+
+nrotors = 33
+radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
+Uinf = 4 #si units
+Power = 30 *10**6 #Watts
+TSR = 8
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
 def CTfunction(a, glauert = False):
     """
     This function calculates the thrust coefficient as a function of induction factor 'a'
@@ -45,19 +58,36 @@ plt.grid()
 plt.legend()
 plt.show()
 
-print(np.max(CTglauert*(1-a)))
+# print(np.max(CTglauert*(1-a)))
 
-magic_radius_number_providedbyTiago = 170
-rho = 1.225 #SI units
 
-nrotors = 33
-radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
-Uinf = 10 #si units
-Power = 30 *10**6 #Watts
 CP = Power/nrotors/(0.5*rho*Uinf**3*np.pi*radius**2)  #necessary CP.
+
 print(CP)
+if CP> np.max(CTglauert*(1-a)):
+    CP = min(CP, np.max(CTglauert*(1-a)))
+    Power = CP*(0.5*rho*Uinf**3*np.pi*radius**2)*nrotors
 
+Uinf_graph = np.arange(0, 30, 0.01)
+Power_graph_lst = []
+for Uinfinity in Uinf_graph:
+    Power_graph = 30*10**6
+    CP_graph = Power_graph/nrotors/(0.5*rho*Uinfinity**3*np.pi*radius**2)  #necessary CP.
+    if CP_graph> np.max(CTglauert*(1-a)):
+        CP_graph = min(CP, np.max(CTglauert*(1-a)))
+        Power_graph = CP*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
+    if Uinfinity > 25 or Uinfinity <3:   #cut in and out speed
+        Power_graph = 0
+    
+    Power_graph_lst.append(Power_graph)
 
+Power_graph_lst = np.array(Power_graph_lst)
+fig2 = plt.figure(figsize=(12, 6))
+plt.plot(Uinf_graph, Power_graph_lst)
+plt.xlabel('Wind Speed')
+plt.ylabel('Power Generated')
+plt.grid()
+plt.show()
 
 def find_all_x_crossings(x_data, y_data, y_targets):
     crossings = {y: [] for y in y_targets}
@@ -98,11 +128,12 @@ thrustperrotor = Power/Uinf/(1-necessary_a)/nrotors
 print("Thrust per rotor is ", thrustperrotor, " at induced speed of ", Uinf*(1-necessary_a))
 CT = thrustperrotor/(0.5*rho*Uinf**2*np.pi*radius**2)
 print("CT is ", CT, " which should be the same as ", 4*necessary_a*(1-necessary_a))
-TSR = 8
+
 omega =  Uinf*TSR/radius
 Torqueperrotor = Power / omega/nrotors
 print("Torque per rotor is ", Torqueperrotor)
 print("Power per rotor is ", Power/nrotors)
+print("Total Power is: ", Power)
 
 print("Cp is ", CP, "which should be the same as", 4*necessary_a*(1-necessary_a)**2)
 
