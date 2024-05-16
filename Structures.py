@@ -100,7 +100,7 @@ if __name__ == "__main__":
     M_truss = 2235959.595*1.5
     M_RNA = 649418.5133
 
-
+    print("PYLON")
     pyl = Pylon(radius_outer=5, length=60+25+350, material=OS_Steel())
 
     t_a = pyl.axial_thickness(axial_force=(M_truss+M_RNA+2200000)*9.81)
