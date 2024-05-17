@@ -69,7 +69,7 @@ def sens_structures():
                        [4, 3, 2, ],
                        [5, 1, 2, ]])
 
-    criterion_changes = np.array([70, 70, 70])
+    criterion_changes = np.array([50, 50, 50])
 
     design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
     criteria_names = ['cost', 'maintenance', 'complexity']
@@ -132,5 +132,21 @@ def sens_rotor_number():
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
+def sens_yaw_control():
+    criterion_weights = np.array([0.2, 0.3, 0.15, 0.2, 0.15])
+
+    scores = np.array([[1, 4, 3, 2, 4, 3],
+                       [2, 3, 4, 5, 3, 4],
+                       [3, 4, 3, 4, 4, 3],
+                       [5, 3, 4, 5, 3, 4],
+                       [2, 3, 1, 3, 4, 1]])
+    
+    criterion_changes = np.array([50, 50, 50, 50, 50])
+    design_option_names = ['bearing motor', 'bearing differential pitch', 'bearing reverse thrust', 'turntable motor', 'turntable differential pitch', 'turntable reverse thrust']
+    criteria_names = ['power required', 'response time', 'failure rate', 'versatility', 'complexity']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
 if __name__ == '__main__':
-    sens_structures()
+    sens_yaw_control()
