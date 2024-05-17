@@ -149,18 +149,58 @@ def sens_yaw_control():
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
-def sense_generator():
-    criterion_weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2])
 
-    scores = np.array([[5, 3, 4, 3, 4],
-                       [3, 4, 3, 4, 3],
-                       [4, 3, 4, 3, 3],
-                       [3, 4, 3, 4, 3],
-                       [4, 3, 3, 3, 4]])
+def sense_generator():
+    criterion_weights = np.array([0.1, 0.1, 0.15, 0.2, 0.15, 0.15, 0.1, 0.05])
+
+    scores = np.array([[2, 2, 5, 5, 1],
+                       [5, 5, 4, 4, 1],
+                       [3, 3, 4, 4, 2],
+                       [4, 3, 4, 4, 5],
+                       [5, 4, 3, 3, 2],
+                       [3, 4, 2, 1, 5],
+                       [4, 4, 4, 1, 4],
+                       [4, 4, 3, 1, 3]])
     
-    criterion_changes = np.array([50, 50, 50, 50, 50])
-    design_option_names = ['direct drive', 'gearbox', 'belt', 'chain', 'hydraulic']
-    criteria_names = ['power required', 'response time', 'failure rate', 'versatility', 'complexity']
+    criterion_changes = np.array([50, 50, 50, 50, 50, 50, 50, 50])
+    design_option_names = ['brushless DFIG', 'DFIG', 'squirrel cage induction generator', 'permanent magnet synchronous generator', 'constant speed SCIG']
+    criteria_names = ['speed variation', 'power factor and voltage conrol', 'energy extraction', 'maintainability and reliability', 'efficiency losses', 'cost', 'mass', 'sustainability']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+def sense_pitch():
+    criterion_weights = np.array([0.3, 0.35, 0.2, 0.15])
+
+    scores = np.array([[5, 4],
+                       [2, 4],
+                       [2, 4],
+                       [1, 3]])
+
+    criterion_changes = np.array([50, 50, 50, 50])
+    design_option_names = ['individual pitch control', 'group pitch control']
+    criteria_names = ['blade fatigue', 'cost', 'reliability', 'complexity']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+def sense_drive_train():
+    criterion_weights = np.array([0.1, 0.15, 0.1, 0.2, 0.15, 0.1, 0.1, 0.1])
+
+    scores = np.array([[4, 3, 5, 5],
+                       [1, 1, 4, 4],
+                       [2, 3, 4, 4],
+                       [5, 3, 4, 4],
+                       [4, 4, 3, 3],
+                       [4, 3, 2, 1],
+                       [2, 3, 4, 1],
+                       [4, 3, 3, 1]])
+
+    criterion_changes = np.array([50, 50, 50, 50, 50, 50, 50, 50])
+    design_option_names = ['modular', 'partially integrated', 'integrated', 'tbd']
+    criteria_names = ['torque isolation', 'complexity', 'alignment tolerances', 'maintainance', 'interdependencies', 'cost', 'mass', 'sustainability']
 
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
@@ -169,8 +209,5 @@ def sense_generator():
 
 
 
-
-
-
 if __name__ == '__main__':
-    sens_rotor_number()
+    sense_drive_train()
