@@ -52,8 +52,9 @@ class sensitivity:
         return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
+        #print(x_axis.shape, weighted_scores.shape, changes.shape)
         plt.figure(figsize=(5.5,5))
-        for k in range(weighted_scores.shape[0]):
+        for k in range(weighted_scores.shape[1]):
             plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
         plt.title(f'Criterion: {self.crit_names[idx]}, change: {changes[k]}%')
         plt.xlabel('relative change', fontsize=12)
@@ -69,7 +70,7 @@ def sens_structures():
                        [4, 3, 2, ],
                        [5, 1, 2, ]])
 
-    criterion_changes = np.array([50, 50, 50])
+    criterion_changes = np.array([70, 70, 70])
 
     design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
     criteria_names = ['cost', 'maintenance', 'complexity']
@@ -140,7 +141,7 @@ def sens_yaw_control():
                        [3, 4, 3, 4, 4, 3],
                        [5, 3, 4, 5, 3, 4],
                        [2, 3, 1, 3, 4, 1]])
-    
+
     criterion_changes = np.array([50, 50, 50, 50, 50])
     design_option_names = ['bearing motor', 'bearing differential pitch', 'bearing reverse thrust', 'turntable motor', 'turntable differential pitch', 'turntable reverse thrust']
     criteria_names = ['power required', 'response time', 'failure rate', 'versatility', 'complexity']
@@ -149,4 +150,4 @@ def sens_yaw_control():
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 if __name__ == '__main__':
-    sens_yaw_control()
+    sens_rotor_number()
