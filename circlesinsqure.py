@@ -28,7 +28,7 @@ def calculate_hexagonal_positions(n, r, x):
     dx = 2 * r
     dy = r * math.sqrt(3)
     while num_circles_placed < n:
-        row_length = x if row_count % 2 == 0 else x - 1
+        row_length = x if row_count % 2 == 0 else x -1
         if num_circles_placed + row_length > n:
             row_length = n - num_circles_placed
         offset = 0 if row_count % 2 == 0 else r
@@ -58,11 +58,11 @@ def plot_circles(positions, width, height, title):
     plt.show()
 
 # Example usage:
-n = 25  # Number of circles
+n = 33  # Number of circles
 r1 = 170  # Radius of single rotor
 pg = 0   # Power gain due to multi-rotors
 r = r1 / ((n * (1 + pg)) ** 0.5) * 1.05  # Effective radius of each circle
-x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
+x = int(np.round(np.sqrt(n)))   # Base number of circles in the first row
 
 # Calculate positions and areas
 grid_positions, grid_width, grid_height, grid_area = calculate_grid_positions(n, r, x)
@@ -75,6 +75,7 @@ hex_area_efficiency = np.pi * radius1 ** 2 * n / hex_area
 
 print(f"Grid layout: Area = {grid_area}, Efficiency = {grid_area_efficiency}")
 print(f"Hexagonal layout: Area = {hex_area}, Efficiency = {hex_area_efficiency}")
+print("Radius = ", radius1)
 
 # Plotting both layouts
 plot_circles(grid_positions, grid_width, grid_height, "Grid Layout")

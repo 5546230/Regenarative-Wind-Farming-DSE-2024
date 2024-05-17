@@ -11,7 +11,7 @@ rho = 1.225 #SI units
 
 nrotors = 33
 radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
-Uinf = 4 #si units
+Uinf = 9.6 #si units
 Power = 30 *10**6 #Watts
 TSR = 8
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -134,6 +134,7 @@ Torqueperrotor = Power / omega/nrotors
 print("Torque per rotor is ", Torqueperrotor)
 print("Power per rotor is ", Power/nrotors)
 print("Total Power is: ", Power)
+print("total thrust", thrustperrotor*nrotors)
 
 print("Cp is ", CP, "which should be the same as", 4*necessary_a*(1-necessary_a)**2)
 
