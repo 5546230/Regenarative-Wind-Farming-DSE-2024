@@ -17,10 +17,12 @@ class sensitivity:
         ws = np.sum(weights * option)
         return ws
 
-    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 10):
+    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 3):
         'initial weights'
         initial_weights = self.weights
         for i in range(self.n_criteria):
+            indices = np.linspace(0, self.n_criteria-1, num=self.n_criteria, dtype=int)
+
             'initialise the final weights'
             final_weights = np.zeros((self.n_criteria, n_points))
 
@@ -30,18 +32,22 @@ class sensitivity:
 
             'assign array of multiplied w_i to final weights'
             main_mult_range = np.linspace(1-percentage_change/100, 1+percentage_change/100, n_points)
-            remaining_weights = initial_weights[initial_weights!=current_weight]
+            #remaining_weights = initial_weights[initial_weights!=current_weight]
+            remaining_weights = initial_weights[indices != i]
+
             changed_main_w = main_mult_range * current_weight
             final_weights[i,:] = changed_main_w
 
             'assign array of multiplied w_k k!=i to final weights'
             remaining_mult_range = (1-changed_main_w)/(np.sum(remaining_weights))
             remaining_w = remaining_weights[:,np.newaxis] * remaining_mult_range
-            final_weights[np.where(self.weights != current_weight),:] = remaining_w
+            #final_weights[np.where(self.weights != current_weight),:] = remaining_w
+            final_weights[np.where(indices != i), :] = remaining_w
 
             'matmul over criteria'
+            #print(final_weights, '\n')
             weighted_scores = np.einsum('ij, jk->ik', self.scores.T, final_weights)
-            #print(weighted_scores[:,-1])
+            #print(weighted_scores[:,1])
             self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i, changes=criterion_pChanges)
         return
 
@@ -63,7 +69,7 @@ def sens_structures():
                        [4, 3, 2, ],
                        [5, 1, 2, ]])
 
-    criterion_changes = np.array([0, 0, 70])
+    criterion_changes = np.array([70, 70, 70])
 
     design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
     criteria_names = ['cost', 'maintenance', 'complexity']
@@ -101,7 +107,7 @@ def sens_rotor_types():
                     [2, 2, 5, 3],
                     [2, 3 ,4, 2]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50])
+    criterion_changes = np.array([50, 50, 50, 50, 50, 50])
     design_option_names = ['staggered', 'co-axial' , 'co-planar', 'wind wall']
     criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
 
@@ -118,7 +124,7 @@ def sens_rotor_number():
                     [4, 3, 3, 2],
                     [2, 3, 4, 4]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50])
+    criterion_changes = np.array([50, 50, 50, 50, 50, 50])
     design_option_names = ['11 rotors', '23 rotors' , '33 rotors', '53 rotors']
     criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
 
@@ -126,10 +132,5 @@ def sens_rotor_number():
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
-
-
-
-
-
 if __name__ == '__main__':
-    sens_rotor_types()
+    sens_structures()
