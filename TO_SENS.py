@@ -42,15 +42,16 @@ class sensitivity:
             'matmul over criteria'
             weighted_scores = np.einsum('ij, jk->ik', self.scores.T, final_weights)
             #print(weighted_scores[:,-1])
-            self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i)
+            self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i, changes=criterion_pChanges)
         return
 
-    def plot_sensitivity(self, idx, x_axis, weighted_scores):
+    def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
+        plt.figure(figsize=(5.5,5))
         for k in range(weighted_scores.shape[0]):
-            plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}')
-        plt.title(f'{self.crit_names[idx]}')
-        plt.xlabel('relative change')
-        plt.ylabel('weighted score')
+            plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
+        plt.title(f'Criterion: {self.crit_names[idx]}, change: {changes[k]}%')
+        plt.xlabel('relative change', fontsize=12)
+        plt.ylabel('weighted score', fontsize=12)
         plt.legend()
         plt.show()
 
@@ -132,4 +133,3 @@ def sens_rotor_number():
 
 if __name__ == '__main__':
     sens_rotor_types()
- 
