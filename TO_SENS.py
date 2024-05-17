@@ -149,5 +149,28 @@ def sens_yaw_control():
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
+def sense_generator():
+    criterion_weights = np.array([0.2, 0.2, 0.2, 0.2, 0.2])
+
+    scores = np.array([[5, 3, 4, 3, 4],
+                       [3, 4, 3, 4, 3],
+                       [4, 3, 4, 3, 3],
+                       [3, 4, 3, 4, 3],
+                       [4, 3, 3, 3, 4]])
+    
+    criterion_changes = np.array([50, 50, 50, 50, 50])
+    design_option_names = ['direct drive', 'gearbox', 'belt', 'chain', 'hydraulic']
+    criteria_names = ['power required', 'response time', 'failure rate', 'versatility', 'complexity']
+
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
-    sens_rotor_number()
+    sens_yaw_control()
