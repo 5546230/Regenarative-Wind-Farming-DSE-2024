@@ -15,6 +15,7 @@ Uinf = 10#si units
 Power = 30 *10**6 #Watts
 TSR = 8
 max_Cp = 0.5 # np.max(CTglauert*(1-a)
+rated = 10 # [m/s]
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
@@ -114,7 +115,8 @@ for Uinfinity in Uinf_graph:
     
     if CP_graph> max_Cp:
         CP_graph = min(CP, max_Cp)
-        Power_graph = CP*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
+    
+    Power_graph = CP_graph*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
         
     tsr = omega * radius / Uinfinity
     Torque_graph = CP_graph / tsr * 0.5 * rho * Uinfinity ** 2 * np.pi * radius ** 3
@@ -136,6 +138,12 @@ plt.xlabel('Wind Speed [m/s]')
 plt.ylabel('Power Generated [W]')
 plt.grid()
 plt.show()
+# fig2 = plt.figure(figsize=(12, 6))
+# plt.plot(Uinf_graph, Power_graph_lst)
+# plt.xlabel('Wind Speed')
+# plt.ylabel('Power Generated')
+# plt.grid()
+# plt.show()
 
 # fig3 = plt.figure(figsize=(12, 6))
 # plt.plot(Uinf_graph, Torque_graph_lst)
