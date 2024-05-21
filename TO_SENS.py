@@ -227,7 +227,7 @@ def system_trade_off(score_change = False):
                            [2, 2, 3]])
 
 
-    criterion_changes = np.array([100, 50, 10, 50])
+    criterion_changes = np.array([100, 50, 50, 50])
     design_option_names = ['in-plane', 'out-plane', 'platform/grid/turntable/motor']
     criteria_names = ['cost', 'complexity', 'sustainability', 'maintainability',]
 
@@ -237,11 +237,11 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
-    #system_trade_off(score_change=False)
+    system_trade_off(score_change=False)
 
     #sense_drive_train()
     #sense_generator()
 
     #sense_pitch()
 
-    sense_pitch()
+    #sense_pitch()
