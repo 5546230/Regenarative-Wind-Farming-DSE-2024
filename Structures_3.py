@@ -96,6 +96,7 @@ class Single_Tower(Sizing):
         '''
         mass_arr = []
         Dt_arr = []
+        self.F_T *= SF
 
         M_0 = self.M_0
         M_1 = M_0
@@ -106,9 +107,10 @@ class Single_Tower(Sizing):
 
             while err>tol:
                 weight_axial = (self.M_truss + self.sum_M_RNA + M_0) * 9.81
-                t_axial = self.axial_thickness(axial_force=weight_axial*SF, R_out=R)
-                t_bending = self.bending_thickness(point_force=self.F_T*SF, position=self.L, R_out=R)
-                t_col_buckling = self.column_buckling(axial_load=(self.M_truss + self.sum_M_RNA +M_0*0)*9.81*SF, R_out=R)
+                t_axial = self.axial_thickness(axial_force=weight_axial, R_out=R)
+                t_bending = self.bending_thickness(point_force=self.F_T, position=self.L, R_out=R)
+                'SAFETY FACTOR SF ONLY ON THRUST FORCE'
+                t_col_buckling = self.column_buckling(axial_load=(self.M_truss + self.sum_M_RNA +M_0*0)*9.81, R_out=R)
 
                 M_1 = self.calc_mass(t=max(t_axial + t_bending, t_col_buckling), R_out=R)
                 err = abs(M_1 - M_0)
@@ -151,6 +153,7 @@ class Platform(Sizing):
     def sizing_analysis(self, R_array: np.array, tol, SF, verbose=False):
         mass_arr = []
         Dt_arr = []
+        self.F_T *= SF
 
         M_0 = self.M_0
         M_1 = M_0
@@ -170,9 +173,9 @@ class Platform(Sizing):
                 'sizing axial force'
                 Fplz = (2 * M_T + self.r_platform * W) / (4 * self.r_platform)
 
-                t_axial = self.axial_thickness(axial_force=Fplz*SF, R_out=R)
-                t_bending = self.bending_thickness(point_force=Fplx*SF, position=self.L, R_out=R)
-                t_col_buckling = self.column_buckling(axial_load=(Fplz +M_0*9.81*0)*SF, R_out=R)
+                t_axial = self.axial_thickness(axial_force=Fplz, R_out=R)
+                t_bending = self.bending_thickness(point_force=Fplx, position=self.L, R_out=R)
+                t_col_buckling = self.column_buckling(axial_load=(Fplz +M_0*9.81*0), R_out=R)
 
                 M_1 = self.calc_mass(t=max(t_axial + t_bending, t_col_buckling), R_out=R)
                 err = abs(M_1 - M_0)
@@ -203,6 +206,7 @@ class Branches(Sizing):
         self.W_array = sum_M_RNA / N_rotor * np.ones(3)
 
     def _branch_sizing(self, R_branch: np.array, tol, SF,):
+        self.F_T *= SF
         M_0 = self.M_0
         M_1 = M_0
 
@@ -213,8 +217,8 @@ class Branches(Sizing):
         t_bending_T = t_bending_weight = np.infty
         err = np.infty
         while err>tol:
-            t_bending_weight = self.bending_thickness(point_force=P_max_weight*SF, position=d, R_out=R_branch)
-            t_bending_T = self.bending_thickness(point_force=P_max_T*SF, position=d, R_out=R_branch)
+            t_bending_weight = self.bending_thickness(point_force=P_max_weight, position=d, R_out=R_branch)
+            t_bending_T = self.bending_thickness(point_force=P_max_T, position=d, R_out=R_branch)
 
             M_1 = self.calc_mass(t=max(t_bending_T, t_bending_weight), R_out=R_branch)
             err = abs(M_1 - M_0)
@@ -243,6 +247,7 @@ class Branch_Tower(Sizing):
         self.h_truss = h_truss
 
     def sizing_analysis(self, R_tow_array: np.array, R_branch_array, tol, SF, verbose=False):
+        self.F_T *= SF
         mass_arr = []
         Dt_arr_tow = []
         Dt_arr_branch = []
@@ -259,9 +264,9 @@ class Branch_Tower(Sizing):
                     branches_mass, Dt_branch, tb, deflection = self.Branches._branch_sizing(R_branch = Rb, tol=100, SF=SF)
                     weight = ( self.sum_M_RNA + branches_mass) * 9.81
 
-                    t_axial = self.axial_thickness(axial_force=weight * SF, R_out=Rt)
-                    t_bending = self.bending_thickness(point_force=self.F_T * SF, position=self.L-self.h_truss/2, R_out=Rt)
-                    t_col_buckling = self.column_buckling(axial_load=( self.sum_M_RNA + branches_mass) * SF * 9.81, R_out=Rt)
+                    t_axial = self.axial_thickness(axial_force=weight, R_out=Rt)
+                    t_bending = self.bending_thickness(point_force=self.F_T , position=self.L-self.h_truss/2, R_out=Rt)
+                    t_col_buckling = self.column_buckling(axial_load=( self.sum_M_RNA + branches_mass) * 9.81, R_out=Rt)
 
                     M_1 = self.calc_mass(t=max(t_axial + t_bending, t_col_buckling), R_out=Rt)
                     err = abs(M_1 - M_0)
@@ -313,12 +318,13 @@ if __name__ == '__main__':
 
 
     h_single = max_depth + clearance_height + frame_height/2
+    print(h_single, M_truss/1000, 5029-2236)
     single_tower = Single_Tower(length=h_single, material=Steel(), M_truss = M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, mass_0=2000e3,)
-    Rs1, Ms1, ts1 = single_tower.sizing_analysis(R_array=np.linspace(3., 10, 10), tol=50, SF=1, verbose=False)
+    Rs1, Ms1, ts1 = single_tower.sizing_analysis(R_array=np.linspace(3., 10, 100), tol=50, SF=1.5, verbose=True)
 
     h_platform = max_depth + clearance_height
     platform = Platform(length=h_platform, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, mass_0=2000e3, r_platform=100, h_truss=frame_height)
-    Rs2, Ms2, ts2 = platform.sizing_analysis(R_array=np.linspace(1., 3., 100), tol=50, SF=1, verbose=True)
+    Rs2, Ms2, ts2 = platform.sizing_analysis(R_array=np.linspace(1., 3., 100), tol=50, SF=1.5, verbose=False)
 
     L_branch  = 5*R_rot
     h_branch_tow = max_depth + frame_height + clearance_height
@@ -326,7 +332,7 @@ if __name__ == '__main__':
     branch_tower = Branch_Tower(length=h_branch_tow, material=Steel(), sum_M_RNA=sum_RNA, F_T = T_rated, Branches=branches, h_truss=frame_height)
     R_tower, R_branch, Ms3, ts_tower, ts_branch = branch_tower.sizing_analysis(R_branch_array=np.linspace(.5, 2., 100),
                                                                                R_tow_array=np.linspace(3., 8, 100),
-                                                                               tol=50, SF=1, verbose=False)
+                                                                               tol=50, SF=1.5, verbose=False)
 
 
 
