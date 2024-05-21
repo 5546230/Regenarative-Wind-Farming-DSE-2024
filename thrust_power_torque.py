@@ -14,6 +14,7 @@ radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
 Uinf = 9.6 #si units
 Power = 30 *10**6 #Watts
 TSR = 8
+max_Cp = 0.5 # np.max(CTglauert*(1-a)
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
@@ -64,8 +65,8 @@ plt.show()
 CP = Power/nrotors/(0.5*rho*Uinf**3*np.pi*radius**2)  #necessary CP.
 
 print(CP)
-if CP> np.max(CTglauert*(1-a)):
-    CP = min(CP, np.max(CTglauert*(1-a)))
+if CP> max_Cp:
+    CP = min(CP, max_Cp)
     Power = CP*(0.5*rho*Uinf**3*np.pi*radius**2)*nrotors
 
 Uinf_graph = np.arange(0, 30, 0.01)
@@ -75,8 +76,8 @@ for Uinfinity in Uinf_graph:
     Power_graph = 30*10**6
     CP_graph = Power_graph/nrotors/(0.5*rho*Uinfinity**3*np.pi*radius**2)  #necessary CP.
     
-    if CP_graph> np.max(CTglauert*(1-a)):
-        CP_graph = min(CP, np.max(CTglauert*(1-a)))
+    if CP_graph> max_Cp:
+        CP_graph = min(CP, max_Cp)
         Power_graph = CP*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
         
     if Uinfinity > 25 or Uinfinity <3:   #cut in and out speed
@@ -92,8 +93,8 @@ Power_graph_lst = np.array(Power_graph_lst)
 
 fig2 = plt.figure(figsize=(12, 6))
 plt.plot(Uinf_graph, Power_graph_lst)
-plt.xlabel('Wind Speed')
-plt.ylabel('Power Generated')
+plt.xlabel('Wind Speed [m/s]')
+plt.ylabel('Power Generated [W]')
 plt.grid()
 plt.show()
 
@@ -124,7 +125,8 @@ def find_all_x_crossings(x_data, y_data, y_targets):
 
 # Example usage
 x_data = a
-y_data = CTglauert*(1-a)
+# y_data = CTglauert*(1-a)
+y_data = 4*a*(1-a)**2
 y_targets = [CP]
 
 crossings = find_all_x_crossings(x_data, y_data, y_targets)
