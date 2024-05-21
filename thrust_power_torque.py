@@ -70,18 +70,26 @@ if CP> np.max(CTglauert*(1-a)):
 
 Uinf_graph = np.arange(0, 30, 0.01)
 Power_graph_lst = []
+# Torque_graph_lst = []
 for Uinfinity in Uinf_graph:
     Power_graph = 30*10**6
     CP_graph = Power_graph/nrotors/(0.5*rho*Uinfinity**3*np.pi*radius**2)  #necessary CP.
+    
     if CP_graph> np.max(CTglauert*(1-a)):
         CP_graph = min(CP, np.max(CTglauert*(1-a)))
         Power_graph = CP*(0.5*rho*Uinfinity**3*np.pi*radius**2)*nrotors
+        
     if Uinfinity > 25 or Uinfinity <3:   #cut in and out speed
         Power_graph = 0
-    
+        Torque_graph = 0
+    # omega_graph =  Uinfinity*TSR/radius
+    # Torque_graph = Power_graph / omega_graph
     Power_graph_lst.append(Power_graph)
+    # Torque_graph_lst.append(Torque_graph)
 
 Power_graph_lst = np.array(Power_graph_lst)
+# Torque_graph_lst = np.array(Torque_graph_lst)
+
 fig2 = plt.figure(figsize=(12, 6))
 plt.plot(Uinf_graph, Power_graph_lst)
 plt.xlabel('Wind Speed')
@@ -89,6 +97,12 @@ plt.ylabel('Power Generated')
 plt.grid()
 plt.show()
 
+# fig3 = plt.figure(figsize=(12, 6))
+# plt.plot(Uinf_graph, Torque_graph_lst)
+# plt.xlabel('Wind Speed')
+# plt.ylabel('Torque Generated')
+# plt.grid()
+# plt.show()
 def find_all_x_crossings(x_data, y_data, y_targets):
     crossings = {y: [] for y in y_targets}
 
