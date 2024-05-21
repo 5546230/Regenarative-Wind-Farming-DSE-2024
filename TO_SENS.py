@@ -47,30 +47,31 @@ class sensitivity:
             'matmul over criteria'
             #print(final_weights, '\n')
             weighted_scores = np.einsum('ij, jk->ik', self.scores.T, final_weights)
-            #print(weighted_scores[:,1])
+            #print(weighted_scores[:,-1])
             self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i, changes=criterion_pChanges)
         return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
         #print(x_axis.shape, weighted_scores.shape, changes.shape)
+
         plt.figure(figsize=(5.5,5))
         for k in range(weighted_scores.shape[0]):
             plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
         plt.title(f'Criterion: {self.crit_names[idx]}, change: {changes[idx]}%')
         plt.xlabel('relative change', fontsize=12)
         plt.ylabel('weighted score', fontsize=12)
-        plt.legend()
+        plt.legend(loc='lower left')
         plt.show()
 
 
 def sens_structures():
     criterion_weights = np.array([.5, .2, .3])
 
-    scores = np.array([[3, 2, 1, ],
-                       [4, 3, 2, ],
-                       [5, 1, 2, ]])
+    scores = np.array([[2, 3, 1,],
+                       [4, 3, 2,],
+                       [5, 1, 2,]])
 
-    criterion_changes = np.array([20, 70, 100])
+    criterion_changes = np.array([100, 100, 100])
 
     design_option_names = ['truss+tower', 'truss+platform', 'branching', ]
     criteria_names = ['cost', 'maintenance', 'complexity']
@@ -78,8 +79,6 @@ def sens_structures():
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names,
                        criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
-
-
     
 def sens_afc():
     criterion_weights = np.array([0.3, 0.3, 0.15, 0.15, 0.1])
@@ -142,7 +141,10 @@ def sens_yaw_control():
                        [5, 3, 4, 5, 3, 4],
                        [2, 3, 1, 3, 4, 1]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50])
+    # good:
+    # bad: failure rate, power req, versatility
+
+    criterion_changes = np.array([100, 50, 100, 100, 50])
     design_option_names = ['bearing motor', 'bearing differential pitch', 'bearing reverse thrust', 'turntable motor', 'turntable differential pitch', 'turntable reverse thrust']
     criteria_names = ['power required', 'response time', 'failure rate', 'versatility', 'complexity']
 
@@ -162,9 +164,11 @@ def sense_generator():
                        [4, 4, 4, 1, 4],
                        [4, 4, 3, 1, 3]])
     
-    criterion_changes = np.array([50, 50, 50, 50, 50, 50, 50, 50])
+    criterion_changes = np.array([50, 50, 100, 100, 50, 50, 50, 50])
     design_option_names = ['brushless DFIG', 'DFIG', 'squirrel cage induction generator', 'permanent magnet synchronous generator', 'constant speed SCIG']
     criteria_names = ['speed variation', 'power factor and voltage conrol', 'energy extraction', 'maintainability and reliability', 'efficiency losses', 'cost', 'mass', 'sustainability']
+    # good: speed var, PF,  , eff, costs, mass, sust
+    # BAD: energy extraction, maint,
 
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
@@ -198,16 +202,46 @@ def sense_drive_train():
                        [2, 3, 4, 1],
                        [4, 3, 3, 1]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50, 50, 50, 50])
+    criterion_changes = np.array([50, 100, 50, 50, 50, 50, 100, 100])
     design_option_names = ['modular', 'partially integrated', 'integrated', 'tbd']
     criteria_names = ['torque isolation', 'complexity', 'alignment tolerances', 'maintainance', 'interdependencies', 'cost', 'mass', 'sustainability']
+    # BAD: complex, mass, sustainability,
+
+    # GOOD: ti, alingment, inter, maint, cost
+    TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
+    TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
+
+
+def system_trade_off(score_change = False):
+    criterion_weights = np.array([0.3, 0.25, 0.2, 0.25])
+
+    if not score_change:
+        scores = np.array([[4,5,2],
+                           [3,4,1],
+                           [3,4,2],
+                           [2,2,4]])
+    else:
+        scores = np.array([[3, 4, 2],
+                           [3, 4, 1],
+                           [3, 3, 2],
+                           [2, 2, 3]])
+
+
+    criterion_changes = np.array([100, 50, 10, 50])
+    design_option_names = ['in-plane', 'out-plane', 'platform/grid/turntable/motor']
+    criteria_names = ['cost', 'complexity', 'sustainability', 'maintainability',]
 
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
 
 
 
-
-
 if __name__ == '__main__':
-    sense_drive_train()
+    #system_trade_off(score_change=False)
+
+    #sense_drive_train()
+    #sense_generator()
+
+    #sense_pitch()
+
+    sense_pitch()
