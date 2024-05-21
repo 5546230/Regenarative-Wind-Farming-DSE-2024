@@ -11,7 +11,7 @@ rho = 1.225 #SI units
 
 nrotors = 33
 radius = magic_radius_number_providedbyTiago/((nrotors*(1+0))**0.5) #si units
-Uinf = 9.6 #si units
+Uinf = 10#si units
 Power = 30 *10**6 #Watts
 TSR = 8
 max_Cp = 0.5 # np.max(CTglauert*(1-a)
