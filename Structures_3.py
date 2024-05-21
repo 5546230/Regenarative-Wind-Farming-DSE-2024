@@ -107,6 +107,7 @@ class Single_Tower(Sizing):
 
             while err>tol:
                 weight_axial = (self.M_truss + self.sum_M_RNA + M_0) * 9.81
+                weight_axial *= 1.35
                 t_axial = self.axial_thickness(axial_force=weight_axial, R_out=R)
                 t_bending = self.bending_thickness(point_force=self.F_T, position=self.L, R_out=R)
                 'SAFETY FACTOR SF ONLY ON THRUST FORCE'
@@ -120,7 +121,7 @@ class Single_Tower(Sizing):
             Dt_arr.append(Dt)
             mass_arr.append(M_1 + self.M_truss)
 
-            if verbose:
+            if verbose and 305>Dt>295:
                 print(f'R = {R:.4f}, M = {(M_1 + self.M_truss) / 1000:.4f} t, t = {max(t_axial + t_bending, t_col_buckling):.4f}, D/t = {Dt:.4f}')
         return np.array(R_array), np.array(mass_arr), np.array(Dt_arr)
 
@@ -186,7 +187,7 @@ class Platform(Sizing):
             #print(M_1*4/1000,  self.M_truss/1000,  self.M_platform/1000, (M_1*4 + self.M_truss + self.M_platform) / 1000)
             mass_arr.append(M_1*4 + self.M_truss + self.M_platform)
 
-            if verbose:
+            if verbose and 305>Dt>295:
                 print(f'R = {R:.4f}, M = {(M_1*4 + self.M_truss + self.M_platform) / 1000:.4f} t, t = {max(t_axial + t_bending, t_col_buckling):.4f}, D/t = {Dt:.4f}')
         return np.array(R_array), np.array(mass_arr), np.array(Dt_arr)
 
@@ -298,8 +299,24 @@ def plot_analysis(Rs, ts, Ms, label: str, limit=300):
     plt.show()
 
 
+def NVM_diagram_tower(end_points, F_T, W, h):
+    fig, axs = plt.subplots(3, 1, figsize=(5, 5), sharex=True, layout='constrained')
+    ylabels = ['N [N]', 'V [N]', 'M [Nm]']
+
+    axs[0].plot(end_points, -W * np.ones(2))
+    axs[1].plot(end_points, F_T*np.ones(2))
+    axs[2].plot(end_points, [-F_T*h, 0])
+
+    for idx, ax in enumerate(axs):
+        ax.set_ylabel(ylabels[idx])
+    axs[2].set_xlabel('position [m]')
+    plt.show()
+
 
 if __name__ == '__main__':
+
+
+
     R_rot = 29.6  # [m]
     D_rot = 2 * R_rot
     N_rot = 33
@@ -307,6 +324,7 @@ if __name__ == '__main__':
     V_infty = 10
     P_rated = 30e6
     T_rated = P_rated / V_infty
+    print(T_rated/1e6)
     T_perR = T_rated / N_rot
 
     M_truss = 2235959.595 #[kg]
@@ -317,14 +335,17 @@ if __name__ == '__main__':
 
 
 
+
     h_single = max_depth + clearance_height + frame_height/2
-    print(h_single, M_truss/1000, 5029-2236)
+    NVM_diagram_tower(end_points=[0, h_single], F_T=T_rated, W=sum_RNA + M_truss, h=h_single)
+    #print(h_single, M_truss/1000, 5029-2236, T_rated/(9.81*5000e3), 1/0.06)
+
     single_tower = Single_Tower(length=h_single, material=Steel(), M_truss = M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, mass_0=2000e3,)
-    Rs1, Ms1, ts1 = single_tower.sizing_analysis(R_array=np.linspace(3., 10, 100), tol=50, SF=1.5, verbose=True)
+    Rs1, Ms1, ts1 = single_tower.sizing_analysis(R_array=np.linspace(3., 10, 300), tol=50, SF=1.5, verbose=True)
 
     h_platform = max_depth + clearance_height
     platform = Platform(length=h_platform, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, mass_0=2000e3, r_platform=100, h_truss=frame_height)
-    Rs2, Ms2, ts2 = platform.sizing_analysis(R_array=np.linspace(1., 3., 100), tol=50, SF=1.5, verbose=False)
+    Rs2, Ms2, ts2 = platform.sizing_analysis(R_array=np.linspace(1., 3., 300), tol=50, SF=1.5, verbose=False)
 
     L_branch  = 5*R_rot
     h_branch_tow = max_depth + frame_height + clearance_height
@@ -349,6 +370,13 @@ if __name__ == '__main__':
     plot_analysis(Rs = Rs1, ts=ts1, Ms=Ms1, label='tower+truss')
     plot_analysis(Rs=Rs2, ts=ts2, Ms=Ms2, label='platform+truss')
 
+
+
+
+    t_single = 0.0383
+    R_single = 5.74
+    E = Steel().E
+    print(f'\ndeflection, single = {T_rated * h_single ** 3 / (3 * E * np.pi * R_single ** 3 * t_single)}')
 
 
     '''
