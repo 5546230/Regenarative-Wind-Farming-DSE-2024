@@ -85,12 +85,12 @@ def sens_afc():
     criterion_weights = np.array([0.3, 0.3, 0.15, 0.15, 0.1])
 
     scores = np.array([[2, 2, 5, 5, 3 ,5, 5],
-                    [4, 1, 1, 5 ,2, 1, 4],
+                    [4, 1, 1, 5 ,2, 1, 5],
                     [3, 4, 4, 3, 5, 2, 3 ],
                     [4, 3, 2, 4, 3, 1, 4],
-                    [3, 4, 5, 5, 5, 2 ,1]])
+                    [3, 4, 5, 5, 5, 2 ,2]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50])
+    criterion_changes = np.array([100, 100, 100, 100, 100])
     design_option_names = ['single rotor', 'full sturcture', 'fixed HLD', 'retractable HLD', 'no HLD', 'fixed softwing', 'retractable softwing']
     criteria_names = ['vertical flow displacement', 'meteorologica versatility', 'reliability/complexity', 'structural resilience', 'innovation maturity']
 
@@ -103,12 +103,12 @@ def sens_rotor_types():
 
     scores = np.array([[2, 4, 3, 3],
                     [4, 4, 3, 3],
-                    [3, 3, 2, 3],
+                    [3, 3, 4, 3],
                     [2, 2, 3 ,2],
                     [2, 2, 5, 3],
                     [2, 3 ,4, 2]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50, 50])
+    criterion_changes = np.array([50, 30, 70, 70, 60, 60])
     design_option_names = ['staggered', 'co-axial' , 'co-planar', 'wind wall']
     criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
 
@@ -117,15 +117,22 @@ def sens_rotor_types():
 
 def sens_rotor_number():
     criterion_weights = np.array([0.3, 0.1, 0.15, 0.15, 0.15, 0.15])
-
+    #Original scores
+    # scores = np.array([[3, 4, 5, 5],
+    #                 [3, 4, 4, 5],
+    #                 [2, 3, 4, 4],
+    #                 [3, 4, 4, 3],
+    #                 [4, 3, 3, 2],
+    #                 [2, 3, 4, 4]])
+   # updated scores 
     scores = np.array([[3, 4, 5, 5],
                     [3, 4, 4, 5],
-                    [2, 3, 4, 4],
+                    [3, 4, 4, 5],
                     [3, 4, 4, 3],
-                    [4, 3, 3, 2],
-                    [2, 3, 4, 4]])
+                    [4, 4, 3, 3],
+                    [2, 3, 4, 5]])
 
-    criterion_changes = np.array([50, 50, 50, 50, 50, 50])
+    criterion_changes = np.array([30, 30, 50, 60, 50, 40])
     design_option_names = ['11 rotors', '23 rotors' , '33 rotors', '53 rotors']
     criteria_names = ['power generation', 'area efficiency', 'durability', 'mass', 'complexity', 'manufacturability']
 
@@ -210,4 +217,4 @@ def sense_drive_train():
 
 
 if __name__ == '__main__':
-    sense_drive_train()
+    sens_rotor_types()
