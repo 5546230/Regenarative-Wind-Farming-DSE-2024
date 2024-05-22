@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class Steel():
     def __init__(self):
         self.E = 190e9
         self.rho = 7800
         self.sig_y = 340e6
+
 
 class Sizing:
     def __init__(self, length,  material):
@@ -68,7 +70,7 @@ class Sizing:
         :return: thickness
         '''
         t = self.L**2 * axial_load / (np.pi**3 * n * self.mat.E * R_out**3)
-        return t
+        return t*0
 
 
 class Single_Tower(Sizing):
@@ -337,7 +339,7 @@ if __name__ == '__main__':
 
 
     h_single = max_depth + clearance_height + frame_height/2
-    NVM_diagram_tower(end_points=[0, h_single], F_T=T_rated, W=sum_RNA + M_truss, h=h_single)
+    #NVM_diagram_tower(end_points=[0, h_single], F_T=T_rated, W=sum_RNA + M_truss, h=h_single)
     #print(h_single, M_truss/1000, 5029-2236, T_rated/(9.81*5000e3), 1/0.06)
 
     single_tower = Single_Tower(length=h_single, material=Steel(), M_truss = M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, mass_0=2000e3,)
