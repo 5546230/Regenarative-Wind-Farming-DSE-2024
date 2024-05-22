@@ -360,8 +360,8 @@ if __name__ == '__main__':
 
     fig, ax1 = plt.subplots()
     CS = ax1.contourf(R_tower, R_branch, Ms3.reshape(R_tower.size, R_branch.size)/1000, levels=20)
-    ax1.set_xlabel(r'$R_{tower}$')
-    ax1.set_ylabel(r'$R_{branch}$')
+    ax1.set_xlabel(r'$R_{tower}$ [m]')
+    ax1.set_ylabel(r'$R_{branch}$ [m]')
     fig.colorbar(CS, label='Mass [tonnes]')
     ax1.contour(R_tower, R_branch, ts_tower.reshape(R_tower.size, R_branch.size), levels=np.linspace(295, 305, 1), colors='white')
     ax1.contour(R_tower, R_branch, ts_branch.reshape(R_tower.size, R_branch.size),  levels=np.linspace(295, 305, 1), colors='white')
