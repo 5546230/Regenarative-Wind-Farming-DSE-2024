@@ -80,3 +80,21 @@ print("Radius = ", radius1)
 # Plotting both layouts
 plot_circles(grid_positions, grid_width, grid_height, "Grid Layout")
 plot_circles(hex_positions, hex_width, hex_height, "Hexagonal Layout")
+print(hex_width, hex_height)
+
+import csv
+
+# The provided array
+data = hex_positions
+
+# The name of the CSV file
+csv_file = 'hexpositions_data.csv'
+
+# Writing the data to a CSV file
+with open(csv_file, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['x', 'y'])  # Writing the header
+    writer.writerows(data)  # Writing the data
+
+#csv_file
+
