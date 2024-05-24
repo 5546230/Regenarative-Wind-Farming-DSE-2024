@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
+import scipy
 
 
 class Tower:
@@ -100,7 +101,7 @@ class Array:
     
     def simulate_dynamics(self, c_T, total_time=300, dt=0.1):
         mu = 0.006
-        phi = -0.17 # initial rad
+        phi = -5*np.pi/180 # initial rad
         dphi = 0.000# initial rad/s
         times = np.arange(0, total_time, dt)
         phis = np.zeros_like(times)
@@ -114,10 +115,10 @@ class Array:
             T = self.calc_thrust(c_T, phi)
             Mx, Mz, W = self.calc_moments(T)
             ###motor test
-            if i< 300:
+            if i< 0:
                 Mz = 2.9*15 * 1e6
-            else:
-                Mz=0
+            '''else:
+                Mz=0'''
             ######
             G = 0  # Simplified assumption of no gyroscopic effects
 
@@ -201,6 +202,24 @@ class Array:
         plt.grid(True)
         plt.legend()
         plt.show()
+
+    def compute_response_properties_phugoid ( self , time , pitch , n=7):
+        peaks , _ = scipy.signal.find_peaks (pitch)
+        peak_times = time [peaks]
+        X0 = pitch [peaks[0]]
+        Xn = pitch [peaks [n]]
+        delta = np . log ( Xn / X0 ) / (n)
+        zeta = - delta / np . sqrt (4*( np .pi ** 2) + delta ** 2)
+        periods = np.diff ( peak_times )
+        T_avg = np.mean( periods )
+        omega = 2*np .pi / T_avg
+        time_to_half = T_avg *np . log (0.5)/ delta
+
+
+        coeffs = np.polyfit(time[peaks], pitch[peaks], deg=1)
+        y_fit = coeffs[1]*time+coeffs[0]
+        
+        return delta , zeta , omega , time_to_half , T_avg, y_fit
        
 
 
@@ -227,9 +246,14 @@ array = Array(rotor_params,tower_params, array_params)
 print("mass")
 print(array.calc_mass())
 c_T = 0.8
-T = array.calc_thrust(c_T, phi=0.1)
+#T = array.calc_thrust(c_T, phi=5/180*np.pi)
 times, phis, dphis, Mzs, Mws = array.simulate_dynamics(c_T)
 array.plot_results(times, phis, dphis)
 array.plot_Ms(times, Mzs, Mws)
-print(array.J)
+
 array.plot_array()
+
+
+delta, _, _, time_to_half, _, y_fit = array.compute_response_properties_phugoid(times, phis)
+print(f'Time to half amplitude: {time_to_half}s')
+print(f'Logarithmic decrement: {delta}s')
