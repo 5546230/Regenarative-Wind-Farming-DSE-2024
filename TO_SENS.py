@@ -25,6 +25,7 @@ class sensitivity:
             n_points +=1
 
         winner_difference_matrix = np.zeros((self.n_criteria, n_points))
+        main_mult_range = np.zeros(n_points)
 
         for i in range(self.n_criteria):
             indices = np.linspace(0, self.n_criteria-1, num=self.n_criteria, dtype=int)
@@ -54,7 +55,7 @@ class sensitivity:
                 self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i, changes=criterion_pChanges)
 
             nominal_scores = weighted_scores[:, main_mult_range==1.].reshape(-1)
-            nominal_difference = np.sort(nominal_scores)[-1] - np.sort(nominal_scores)[-2]
+            #nominal_difference = np.sort(nominal_scores)[-1] - np.sort(nominal_scores)[-2]
 
             nominal_winner_row = np.argwhere(nominal_scores == max(nominal_scores))[0,0]
             next_highest = np.max(weighted_scores[np.arange(self.n_options)!=nominal_winner_row, :], axis=0)
@@ -79,27 +80,41 @@ class sensitivity:
         divnorm = colors.TwoSlopeNorm(vcenter=0.0, vmin=rel_min, vmax=rel_max)
 
         ims = ax.imshow(matrix, interpolation=None, cmap='PRGn', norm=divnorm, aspect='auto')
+        #ims = ax.pcolormesh(matrix, cmap='PRGn', norm=divnorm,)
 
         cbar_ticks = np.array([rel_min, np.min(matrix),0, np.max(matrix)])
         cbar = fig.colorbar(ims, ax=ax, orientation='horizontal', ticks = cbar_ticks)
         cbar.set_label('% change nominal difference best two options')
         ax.set_xlabel('Relative change')
 
-
         if x_labels is not None:
+            #ax.set_xticks(np.arange(len(x_labels)))
+            #ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
+            #ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
+
+            #ax.set_xticks(np.arange(2))
+            #ax.set_xticklabels(['min', 'max'])
             ax.set_xticks(np.arange(len(x_labels)))
-            ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
+            ax.xaxis.set_ticks_position('bottom')
+            zero_index = np.abs(x_labels).argmin()
+            # Set empty strings for all x-tick labels
+            x_tick_labels = [''] * len(x_labels)
+            x_tick_labels[zero_index] = '0'
+            x_tick_labels[0] = 'Min'
+            x_tick_labels[-1] = 'Max'
+
+            ax.set_xticklabels(x_tick_labels)
+
+
 
         if y_labels is not None:
             ax.set_yticks(np.arange(len(y_labels)))
             ax.set_yticklabels(y_labels)
+
         ax.set_aspect(1/ (AR0*matrix.shape[0]/matrix.shape[1]))
         plt.show()
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
-        #print(x_axis.shape, weighted_scores.shape, changes.shape)
-
         plt.figure(figsize=(5.5,5))
         for k in range(weighted_scores.shape[0]):
             plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
@@ -293,10 +308,13 @@ def system_trade_off(score_change = False):
 
 if __name__ == '__main__':
     sens_structures()
-    #system_trade_off(score_change=False)
     sens_rotor_types()
     sens_rotor_number()
     sense_drive_train()
     sense_generator()
     sense_pitch()
-    sens_rotor_types()
+    sens_yaw_control()
+    sens_afc()
+
+
+    # system_trade_off(score_change=False)
