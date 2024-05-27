@@ -18,7 +18,7 @@ class sensitivity:
         ws = np.sum(weights * option)
         return ws
 
-    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=True, plot_summary=True):
+    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=False, plot_summary=True):
         'initial weights'
         initial_weights = self.weights
         if n_points % 2 ==0:
@@ -305,14 +305,13 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
-    #sens_structures()
+    sens_structures()
     #system_trade_off(score_change=False)
     sens_rotor_types()
-    #sense_drive_train()
-    #sense_generator()
+    sens_rotor_number()
+    sense_drive_train()
+    sense_generator()
 
-    #sense_pitch()
-
-    #sense_pitch()
+    sense_pitch()
 
     sens_rotor_types()
