@@ -58,11 +58,11 @@ def plot_circles(positions, width, height, title):
     plt.show()
 
 # Example usage:
-n = 33  # Number of circles
+n = 53  # Number of circles
 r1 = 170  # Radius of single rotor
 pg = 0   # Power gain due to multi-rotors
 r = r1 / ((n * (1 + pg)) ** 0.5) * 1.05  # Effective radius of each circle
-x = int(np.round(np.sqrt(n)))   # Base number of circles in the first row
+x = int(np.ceil(np.sqrt(n)))   # Base number of circles in the first row
 
 # Calculate positions and areas
 grid_positions, grid_width, grid_height, grid_area = calculate_grid_positions(n, r, x)
