@@ -393,8 +393,11 @@ def statistics():
 
 
 if __name__ == '__main__':
+
+    'UNCERTAINTY RANGES'
     uncertainty_range_D, uncertainty_range_t = statistics()
 
+    'PARAMS:'
     R_rot = 29.6  # [m]
     D_rot = 2 * R_rot
     N_rot = 33
@@ -411,18 +414,20 @@ if __name__ == '__main__':
     frame_height = 350  # [m]
     clearance_height = 25  # [m]
 
-
+    '(i) SINGLE TOWER'
     h_single = max_depth + clearance_height + frame_height / 2
     single_tower = SingleTower(length=h_single, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated,)
     R_single, t_single, M_single = single_tower.sizing_analysis(verbose=True)
     print(M_single*(1+uncertainty_range_D[0])*(1+uncertainty_range_t[0])/1000, M_single*(1-uncertainty_range_D[1])*(1-uncertainty_range_t[1])/1000)
 
+    '(ii) PLATFORM'
     h_platform = max_depth + clearance_height
     platform = Platform(length=h_platform, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, r_platform=50, h_truss=frame_height)
     _,_,M_plat_tot = platform.sizing_analysis(verbose=True)
     print(M_plat_tot * (1 + uncertainty_range_D[0]) * (1 + uncertainty_range_t[0]) / 1000,
           M_plat_tot * (1 - uncertainty_range_D[1]) * (1 - uncertainty_range_t[1]) / 1000)
 
+    '(iii) BRANCHING'
     L_branch = 5 * R_rot
     h_branch_tow = max_depth + frame_height + clearance_height
     branches = Branches(length=L_branch, material=Steel(), sum_M_RNA=sum_RNA, F_T=T_rated, N_branches=12, N_rotors=N_rot)
@@ -441,5 +446,6 @@ if __name__ == '__main__':
     single_tower.sizing_analysis(verbose=True)
     '''
 
+    'DEFLECTION?'
     E = Steel().E
     print(f'\n(i) deflection, single = {T_rated * h_single ** 3 / (3 * E * np.pi * R_single ** 3 * t_single):.3f} [m]')
