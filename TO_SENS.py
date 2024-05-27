@@ -63,8 +63,6 @@ class sensitivity:
             p_differences = differences/weighted_scores[nominal_winner_row, :]*100
             winner_difference_matrix[i,:] = p_differences
 
-
-
         if plot_summary:
             y_labels = []
             for i, crit_name in enumerate(self.crit_names):
@@ -79,32 +77,28 @@ class sensitivity:
         #range = max(abs(np.min(matrix)), abs(np.max(matrix)))
         #divnorm=colors.TwoSlopeNorm(vcenter=0.,vmin=-range, vmax=range)
         abs_max = np.max(np.abs(matrix))
-        rel_max = np.max([abs_max, 0])  # Positive relative max
-        rel_min = -rel_max  # Negative relative min
-
-        # Normalize the color map using the relative max and min values
+        rel_max = np.max([abs_max, 0])
+        rel_min = -rel_max
         divnorm = colors.TwoSlopeNorm(vcenter=0.0, vmin=rel_min, vmax=rel_max)
 
         ims = ax.imshow(matrix, interpolation=None, cmap='PRGn', norm=divnorm, aspect='auto')
 
-        cbar_ticks = np.array([np.min(matrix),0, np.max(matrix)])
+        cbar_ticks = np.array([rel_min, np.min(matrix),0, np.max(matrix)])
         cbar = fig.colorbar(ims, ax=ax, orientation='horizontal', ticks = cbar_ticks)
         cbar.set_label('% change nominal difference best two options')
-
-
         ax.set_xlabel('Relative change')
+
         AR0 = 3
         if x_labels is not None:
             ax.set_xticks(np.arange(len(x_labels)))
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
             ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
 
         if y_labels is not None:
             ax.set_yticks(np.arange(len(y_labels)))
             ax.set_yticklabels(y_labels)
         ax.set_aspect(1/ (AR0*matrix.shape[0]/matrix.shape[1]))
         plt.show()
-        return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
         #print(x_axis.shape, weighted_scores.shape, changes.shape)
@@ -117,10 +111,6 @@ class sensitivity:
         plt.ylabel('weighted score', fontsize=12)
         plt.legend(loc='lower left')
         plt.show()
-
-
-
-
 
 
 def sens_structures():
@@ -311,7 +301,5 @@ if __name__ == '__main__':
     sens_rotor_number()
     sense_drive_train()
     sense_generator()
-
     sense_pitch()
-
     sens_rotor_types()
