@@ -159,7 +159,7 @@ fig.set_figwidth(10)
 axs[0].plot(Uinf_graph, Power_graph_lst)
 axs[0].set_xlabel('Wind Speed [m/s]')
 axs[0].set_xlim(0,30)
-axs[0].set_ylabel('Power Generated [GW]')
+axs[0].set_ylabel('Power Generated [MW]')
 axs[0].grid(True)
 
 axs[1].plot(Uinf_graph, Torque_graph_lst)
