@@ -70,12 +70,9 @@ class sensitivity:
             self.plot_summary_table(matrix=winner_difference_matrix, x_labels=main_mult_range-1, y_labels=y_labels)
         return initial_weights
 
-    def plot_summary_table(self, matrix, x_labels = None, y_labels=None):
-        print(matrix.shape, x_labels.shape)
+    def plot_summary_table(self, matrix, x_labels = None, y_labels=None, AR0=3):
         fig, ax = plt.subplots(1, 1, figsize=(10, 4), sharex=True, layout='constrained')
 
-        #range = max(abs(np.min(matrix)), abs(np.max(matrix)))
-        #divnorm=colors.TwoSlopeNorm(vcenter=0.,vmin=-range, vmax=range)
         abs_max = np.max(np.abs(matrix))
         rel_max = np.max([abs_max, 0])
         rel_min = -rel_max
@@ -88,7 +85,7 @@ class sensitivity:
         cbar.set_label('% change nominal difference best two options')
         ax.set_xlabel('Relative change')
 
-        AR0 = 3
+
         if x_labels is not None:
             ax.set_xticks(np.arange(len(x_labels)))
             ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
