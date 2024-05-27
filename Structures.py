@@ -106,7 +106,7 @@ if __name__ == "__main__":
     D_rot = 2 * R_rot
     N_rot = 33
 
-    V_infty = 7
+    V_infty = 10
     P_rated = 30e6
     T_rated = P_rated / V_infty
     T_perR = T_rated / N_rot
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     #plt.show()
     #---------------------------------------------------------------------------------
     print('\nPLATFORM')
-    d = 200 # [m]
+    d = 100 # [m]
     r = d/2
     h = 25+60
 
