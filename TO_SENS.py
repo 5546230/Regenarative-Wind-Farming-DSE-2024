@@ -55,13 +55,13 @@ class sensitivity:
                 self.plot_sensitivity(x_axis=main_mult_range-1, weighted_scores=weighted_scores, idx=i, changes=criterion_pChanges)
 
             nominal_scores = weighted_scores[:, main_mult_range==1.].reshape(-1)
-            #nominal_difference = np.sort(nominal_scores)[-1] - np.sort(nominal_scores)[-2]
+            nominal_difference = np.sort(nominal_scores)[-1] - np.sort(nominal_scores)[-2]
 
             nominal_winner_row = np.argwhere(nominal_scores == max(nominal_scores))[0,0]
             next_highest = np.max(weighted_scores[np.arange(self.n_options)!=nominal_winner_row, :], axis=0)
             differences = weighted_scores[nominal_winner_row, :] - next_highest
 
-            p_differences = differences/weighted_scores[nominal_winner_row, :]*100
+            p_differences = differences/nominal_difference*100#/weighted_scores[nominal_winner_row, :]*100
             winner_difference_matrix[i,:] = p_differences
 
         if plot_summary:
@@ -88,24 +88,15 @@ class sensitivity:
         ax.set_xlabel('Relative change')
 
         if x_labels is not None:
-            #ax.set_xticks(np.arange(len(x_labels)))
-            #ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
-            #ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
-
-            #ax.set_xticks(np.arange(2))
-            #ax.set_xticklabels(['min', 'max'])
             ax.set_xticks(np.arange(len(x_labels)))
             ax.xaxis.set_ticks_position('bottom')
             zero_index = np.abs(x_labels).argmin()
-            # Set empty strings for all x-tick labels
             x_tick_labels = [''] * len(x_labels)
             x_tick_labels[zero_index] = '0'
             x_tick_labels[0] = 'Min'
             x_tick_labels[-1] = 'Max'
 
             ax.set_xticklabels(x_tick_labels)
-
-
 
         if y_labels is not None:
             ax.set_yticks(np.arange(len(y_labels)))
@@ -307,6 +298,7 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
+
     sens_structures()
     sens_rotor_types()
     sens_rotor_number()
@@ -317,4 +309,4 @@ if __name__ == '__main__':
     sens_afc()
 
 
-    # system_trade_off(score_change=False)
+    #system_trade_off(score_change=True)
