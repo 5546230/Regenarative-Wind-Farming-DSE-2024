@@ -18,7 +18,7 @@ class sensitivity:
         ws = np.sum(weights * option)
         return ws
 
-    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=False, plot_summary=True):
+    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=True, plot_summary=True):
         'initial weights'
         initial_weights = self.weights
         if n_points % 2 ==0:
@@ -277,10 +277,10 @@ def system_trade_off(score_change = False):
     criterion_weights = np.array([0.3, 0.25, 0.2, 0.25])
 
     if not score_change:
-        scores = np.array([[4,5,2],
-                           [3,4,1],
-                           [3,4,2],
-                           [2,2,4]])
+        scores = np.array([[2,3,4],
+                           [2,3,1],
+                           [3,4,3],
+                           [5,4,2]])
     else:
         scores = np.array([[3, 4, 2],
                            [1, 3, 1],
@@ -288,9 +288,9 @@ def system_trade_off(score_change = False):
                            [5, 1, 1]])
 
 
-    criterion_changes = np.array([100, 50, 50, 50])
-    design_option_names = ['in-plane', 'out-plane', 'platform/grid/turntable/motor']
-    criteria_names = ['cost', 'complexity', 'sustainability', 'maintainability',]
+    criterion_changes = np.array([50, 50, 50, 50])
+    design_option_names = ['no tower', 'half-full tower', 'platform/grid/turntable/motor']
+    criteria_names = ['cost', 'complexity', 'maintainability', 'Deployability',]
 
     TEST = sensitivity(score_matrix=scores, weights_arr=criterion_weights, option_names=design_option_names, criteria_names=criteria_names)
     TEST.perform_sensitivity_per_crit(criterion_pChanges=criterion_changes)
@@ -298,7 +298,7 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
+
     #sens_structures()
     #system_trade_off(score_change=False)
     #sens_rotor_types()
@@ -310,8 +310,7 @@ if __name__ == '__main__':
     #sense_pitch()
 
     #sens_rotor_types()
-    sens_afc()
-=======
+    #sens_afc()
     '''
     sens_structures()
     sens_rotor_types()
@@ -323,5 +322,4 @@ if __name__ == '__main__':
     sens_afc()
     '''
 
-    system_trade_off(score_change=True)
->>>>>>> 9c45407d96fb6ebb5d4d37fdfc8c1b58f18f1e18
+    system_trade_off(score_change=False)
