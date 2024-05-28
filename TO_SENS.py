@@ -18,13 +18,14 @@ class sensitivity:
         ws = np.sum(weights * option)
         return ws
 
-    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=True, plot_summary=True):
+    def perform_sensitivity_per_crit(self, criterion_pChanges, n_points: int = 50, plot_single=False, plot_summary=True):
         'initial weights'
         initial_weights = self.weights
         if n_points % 2 ==0:
             n_points +=1
 
         winner_difference_matrix = np.zeros((self.n_criteria, n_points))
+        main_mult_range = np.zeros(n_points)
 
         for i in range(self.n_criteria):
             indices = np.linspace(0, self.n_criteria-1, num=self.n_criteria, dtype=int)
@@ -60,10 +61,8 @@ class sensitivity:
             next_highest = np.max(weighted_scores[np.arange(self.n_options)!=nominal_winner_row, :], axis=0)
             differences = weighted_scores[nominal_winner_row, :] - next_highest
 
-            p_differences = differences/weighted_scores[nominal_winner_row, :]*100
+            p_differences = differences/nominal_difference*100#/weighted_scores[nominal_winner_row, :]*100
             winner_difference_matrix[i,:] = p_differences
-
-
 
         if plot_summary:
             y_labels = []
@@ -72,43 +71,41 @@ class sensitivity:
             self.plot_summary_table(matrix=winner_difference_matrix, x_labels=main_mult_range-1, y_labels=y_labels)
         return initial_weights
 
-    def plot_summary_table(self, matrix, x_labels = None, y_labels=None):
-        print(matrix.shape, x_labels.shape)
+    def plot_summary_table(self, matrix, x_labels = None, y_labels=None, AR0=3):
         fig, ax = plt.subplots(1, 1, figsize=(10, 4), sharex=True, layout='constrained')
 
-        #range = max(abs(np.min(matrix)), abs(np.max(matrix)))
-        #divnorm=colors.TwoSlopeNorm(vcenter=0.,vmin=-range, vmax=range)
         abs_max = np.max(np.abs(matrix))
-        rel_max = np.max([abs_max, 0])  # Positive relative max
-        rel_min = -rel_max  # Negative relative min
-
-        # Normalize the color map using the relative max and min values
+        rel_max = np.max([abs_max, 0])
+        rel_min = -rel_max
         divnorm = colors.TwoSlopeNorm(vcenter=0.0, vmin=rel_min, vmax=rel_max)
 
         ims = ax.imshow(matrix, interpolation=None, cmap='PRGn', norm=divnorm, aspect='auto')
+        #ims = ax.pcolormesh(matrix, cmap='PRGn', norm=divnorm,)
 
-        cbar_ticks = np.array([np.min(matrix),0, np.max(matrix)])
+        cbar_ticks = np.array([rel_min, np.min(matrix),0, np.max(matrix)])
         cbar = fig.colorbar(ims, ax=ax, orientation='horizontal', ticks = cbar_ticks)
-        cbar.set_label('% change nominal difference best two options')
-
-
+        cbar.set_label('Relative difference to next best option')
         ax.set_xlabel('Relative change')
-        AR0 = 3
+
         if x_labels is not None:
             ax.set_xticks(np.arange(len(x_labels)))
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both'))
-            ax.set_xticklabels([f'{label:.1f}' for label in x_labels])
+            ax.xaxis.set_ticks_position('bottom')
+            zero_index = np.abs(x_labels).argmin()
+            x_tick_labels = [''] * len(x_labels)
+            x_tick_labels[zero_index] = '0'
+            x_tick_labels[0] = 'Min'
+            x_tick_labels[-1] = 'Max'
+
+            ax.set_xticklabels(x_tick_labels)
 
         if y_labels is not None:
             ax.set_yticks(np.arange(len(y_labels)))
             ax.set_yticklabels(y_labels)
+
         ax.set_aspect(1/ (AR0*matrix.shape[0]/matrix.shape[1]))
         plt.show()
-        return
 
     def plot_sensitivity(self, idx, x_axis, weighted_scores, changes):
-        #print(x_axis.shape, weighted_scores.shape, changes.shape)
-
         plt.figure(figsize=(5.5,5))
         for k in range(weighted_scores.shape[0]):
             plt.plot(x_axis, weighted_scores[k,:], label = f'{self.opt_names[k]}', linewidth=1)
@@ -117,10 +114,6 @@ class sensitivity:
         plt.ylabel('weighted score', fontsize=12)
         plt.legend(loc='lower left')
         plt.show()
-
-
-
-
 
 
 def sens_structures():
@@ -290,9 +283,9 @@ def system_trade_off(score_change = False):
                            [2,2,4]])
     else:
         scores = np.array([[3, 4, 2],
-                           [3, 4, 1],
-                           [3, 3, 2],
-                           [2, 2, 3]])
+                           [1, 3, 1],
+                           [5, 5, 5],
+                           [5, 1, 1]])
 
 
     criterion_changes = np.array([100, 50, 50, 50])
@@ -305,6 +298,7 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     #sens_structures()
     #system_trade_off(score_change=False)
     #sens_rotor_types()
@@ -317,3 +311,17 @@ if __name__ == '__main__':
 
     #sens_rotor_types()
     sens_afc()
+=======
+    '''
+    sens_structures()
+    sens_rotor_types()
+    sens_rotor_number()
+    sense_drive_train()
+    sense_generator()
+    sense_pitch()
+    sens_yaw_control()
+    sens_afc()
+    '''
+
+    system_trade_off(score_change=True)
+>>>>>>> 9c45407d96fb6ebb5d4d37fdfc8c1b58f18f1e18
