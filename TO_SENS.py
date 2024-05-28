@@ -143,7 +143,7 @@ def sens_structures():
 def sens_afc():
     criterion_weights = np.array([0.3, 0.3, 0.15, 0.15, 0.1])
 
-    scores = np.array([[2, 2, 5, 5, 3 ,5, 5],
+    scores = np.array([[2, 2, 5, 5, 3 ,2, 2],
                     [4, 1, 1, 5 ,2, 1, 5],
                     [3, 4, 4, 3, 5, 2, 3 ],
                     [4, 3, 2, 4, 3, 1, 4],
@@ -307,7 +307,7 @@ def system_trade_off(score_change = False):
 if __name__ == '__main__':
     #sens_structures()
     #system_trade_off(score_change=False)
-    sens_rotor_types()
+    #sens_rotor_types()
     #sense_drive_train()
     #sense_generator()
 
@@ -315,4 +315,5 @@ if __name__ == '__main__':
 
     #sense_pitch()
 
-    sens_rotor_types()
+    #sens_rotor_types()
+    sens_afc()
