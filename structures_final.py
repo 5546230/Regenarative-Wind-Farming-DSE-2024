@@ -199,6 +199,7 @@ class Platform(Sizing):
         return M
 
     def calc_total_mass(self, M_tower):
+        #print(4*M_tower + self.M_truss + self.M_platform)
         return 4*M_tower + self.M_truss + self.M_platform
 
 
