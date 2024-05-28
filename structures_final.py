@@ -432,7 +432,8 @@ if __name__ == '__main__':
     L_branch = 5 * R_rot
     h_branch_tow = max_depth + frame_height + clearance_height
     branches = Branches(length=L_branch, material=Steel(), sum_M_RNA=sum_RNA, F_T=T_rated, N_branches=12, N_rotors=N_rot)
-    _, _, M_branches = branches.sizing_analysis()
+    R_branch, _, M_branches = branches.sizing_analysis()
+    print(R_branch,'---')
     BrTower = BranchTower(length=h_branch_tow, material=Steel(), sum_M_RNA=sum_RNA, F_T=T_rated, M_branches=M_branches)
     _,_, M3 = BrTower.sizing_analysis(verbose=True)
     print(M3 * (1 + uncertainty_range_D[0]) * (1 + uncertainty_range_t[0]) / 1000,
