@@ -84,7 +84,7 @@ class sensitivity:
 
         cbar_ticks = np.array([rel_min, np.min(matrix),0, np.max(matrix)])
         cbar = fig.colorbar(ims, ax=ax, orientation='horizontal', ticks = cbar_ticks)
-        cbar.set_label('% change nominal difference best two options')
+        cbar.set_label('Relative difference to next best option')
         ax.set_xlabel('Relative change')
 
         if x_labels is not None:
@@ -283,9 +283,9 @@ def system_trade_off(score_change = False):
                            [2,2,4]])
     else:
         scores = np.array([[3, 4, 2],
-                           [3, 4, 1],
-                           [3, 3, 2],
-                           [2, 2, 3]])
+                           [1, 3, 1],
+                           [5, 5, 5],
+                           [5, 1, 1]])
 
 
     criterion_changes = np.array([100, 50, 50, 50])
@@ -298,7 +298,7 @@ def system_trade_off(score_change = False):
 
 
 if __name__ == '__main__':
-
+    '''
     sens_structures()
     sens_rotor_types()
     sens_rotor_number()
@@ -307,6 +307,6 @@ if __name__ == '__main__':
     sense_pitch()
     sens_yaw_control()
     sens_afc()
+    '''
 
-
-    #system_trade_off(score_change=True)
+    system_trade_off(score_change=True)
