@@ -8,19 +8,21 @@ from matplotlib import pyplot as plt
 # +----------------------------+
 # |          Inputs            |
 # +----------------------------+
-equivalent_radius = 170 # [m]
+#equivalent_radius = 170 # [m]
 rho = 1.225 # [kg/m^3]
 n_rotors = 33
 P_RATED = 30e6 # [W]
-V_RATED = 10 # [m/s]
-TSR = 8 # [-]
-CP = 0.46
+V_RATED = 10 # [m/s]     #select this
+TSR = 8 # [-]     #select this too
+CP = 0.46     #   select assumed Cp
 cut_in = 3 # [m/s]
 cut_off = 25 # [m/s]
 #////////////////////////////////
 
 # Calculate radius of multi rotor
-radius = equivalent_radius / (n_rotors ** 0.5)
+#radius = equivalent_radius / (n_rotors ** 0.5)
+AREA = P_RATED/(CP*0.5*rho*V_RATED**3)
+radius = np.sqrt(AREA/(np.pi*n_rotors))
 
 # Initialize Array
 U_array = np.linspace(0, 27, 350)
@@ -59,3 +61,40 @@ axs[1].grid(True)
 plt.tight_layout()
 plt.savefig('power_torque_curves.svg', format='svg')
 plt.show()
+
+def find_all_x_crossings(x_data, y_data, y_targets):
+    crossings = {y: [] for y in y_targets}
+
+    # Iterate over each segment in the data
+    for i in range(len(x_data) - 1):
+        x0, x1 = x_data[i], x_data[i + 1]
+        y0, y1 = y_data[i], y_data[i + 1]
+        
+        # Check each target y-value
+        for y in y_targets:
+            # Check if the y-value crosses between y0 and y1
+            if (y0 <= y <= y1) or (y1 <= y <= y0):
+                # Linear interpolation to find the x value of the crossing
+                if y0 != y1:  # Avoid division by zero
+                    x_cross = x0 + (y - y0) * (x1 - x0) / (y1 - y0)
+                    crossings[y].append(x_cross)
+    
+    return crossings
+
+# Example usage
+a = np.arange(-.5,1,.01)
+x_data = a
+# y_data = CTglauert*(1-a)
+y_data = 4*a*(1-a)**2
+y_targets = [CP]
+
+crossings = find_all_x_crossings(x_data, y_data, y_targets)
+estimated_a = np.min(crossings[CP])
+
+CT = 4*estimated_a*(1-estimated_a)
+T_RATED = CT*0.5*rho*V_RATED**2*AREA
+Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2
+T_RATED_perrotor = T_RATED/n_rotors
+P_RATED_perrotor = P_RATED/n_rotors
+print(f'{P_RATED=}, {T_RATED=}, {Q_RATED_perrotor=}, {T_RATED_perrotor=}, {P_RATED_perrotor=}, {radius=}, {CT=}, {CP=}')
+
