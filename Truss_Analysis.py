@@ -162,14 +162,16 @@ class FEM_Solve:
 
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
-        #print(self.active_dofs)
-
 
     def get_start_end_indices(self):
+        '''
+        :return: (3 x n_elems) start and end dof indices of each element (3 at start, 3 at end)
+        '''
         mesh=self.mesh
         start_points = mesh.element_indices[0, :]
         end_points = mesh.element_indices[1, :]
         dof_range = np.linspace(0, self.n_dof - 1, self.n_dof, dtype=int)
+
 
         'each column is a node, each row is a x,y,z dof'
         start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
@@ -178,6 +180,9 @@ class FEM_Solve:
         return start_dof_idxs, end_dof_idxs
 
     def assemble_global_stiffness(self):
+        '''
+        :return: (n_active_dof, n_active_dof) global stiffness matrix
+        '''
         mesh = self.mesh
         Ks = mesh.element_Ks
 
@@ -192,10 +197,14 @@ class FEM_Solve:
 
             mask = np.isin(elem_dofs, self.active_dofs)
             S_mask = np.isin(self.active_dofs, elem_dofs)
+
             S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
         return S
 
     def assemble_loading_vector(self):
+        '''
+        :return: (n_active_nof) Global loading vector sampled over the active indices
+        '''
         mesh = self.mesh
         global_loading_vector = np.zeros(mesh.N_nodes * self.n_dof)
         for i, idx in enumerate(self.load_indices):
@@ -203,6 +212,11 @@ class FEM_Solve:
         return global_loading_vector[self.active_dofs]
 
     def solve_system(self, factor = 1, plot: bool = True,):
+        '''
+        :param factor: scaling factor to visualise displacements
+        :param plot: bool, plot results
+        :return: [-]
+        '''
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector()
         d = np.linalg.solve(S, P)
@@ -226,7 +240,10 @@ class FEM_Solve:
         return d, element_Qs, element_sigmas
 
     def get_internal_loading(self, global_ds):
-        'compute local end displacements'
+        '''
+        :param global_ds: global displacement vector
+        :return: internal forces, internal axial stresses
+        '''
         mesh=self.mesh
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
 
@@ -247,6 +264,11 @@ class FEM_Solve:
         return Qs, sigmas
 
     def plot_displacements(self, Xp, Yp, Zp):
+        '''
+        :param Xp: displaced X coordinates
+        :param Yp: displaced Y coordinates
+        :param Zp: displaced Z coordinates
+        '''
         m = self.mesh
         '#d plot of nodes and members'
         fig = plt.figure()
@@ -285,7 +307,7 @@ class FEM_Solve:
         max_stress = 1.25 * np.max(part_stresses)
 
         norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
-        mapper = cm.ScalarMappable(norm=norm, cmap=cm.YlOrRd)
+        mapper = cm.ScalarMappable(norm=norm, cmap='YlOrRd')
 
         cbar = fig.colorbar(mapper, ax=ax)
         cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
@@ -329,7 +351,6 @@ if __name__ == '__main__':
 
     TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
     TEST.plot_structure()
-    #print(TEST.element_lengths)
 
     SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
     S = SOLVER.assemble_global_stiffness()
