@@ -48,9 +48,6 @@ class Mesh:
 
         self.dof_indices = np.linspace(0, N_dof*self.N_nodes-1, N_dof*self.N_nodes, dtype=int)
 
-        #print(self.element_Ts.shape, self.element_ks.shape, self.element_Ks.shape)
-        #print(self.element_lengths[0])
-        #print(self.element_Ks[1])
 
     def calc_element_lengths(self):
         start_points = self.XYZ_coords[:, member_indices[0, :]]
@@ -104,10 +101,12 @@ class Mesh:
 
 
 class FEM_Solve:
-    def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array):
+    def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array):
         self.n_dof = 3
         self.mesh = mesh
         self.bc_indices = bc_indices
+        self.load_indices = load_indices
+        self.applied_loads = applied_loads
 
         constraints = bc_constraints
         global_constraints = np.zeros(mesh.N_nodes*self.n_dof)
@@ -117,9 +116,7 @@ class FEM_Solve:
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
 
-        #print(mesh.element_indices)
-
-    def assemble_global(self):
+    def assemble_global_stiffness(self):
         mesh = self.mesh
         Ks = mesh.element_Ks
 
@@ -144,6 +141,13 @@ class FEM_Solve:
             S += Ks[i][mask].reshape(S.shape)
         return S
 
+    def assemble_loading_vector(self):
+        mesh = self.mesh
+        global_loading_vector = np.zeros(mesh.N_nodes * self.n_dof)
+        for i, idx in enumerate(self.load_indices):
+            global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
+        return global_loading_vector[self.active_dofs]
+
 
 if __name__ == '__main__':
     XYZ_coords = 12*np.array([[-6, 12, 6, -12, 0],
@@ -161,6 +165,11 @@ if __name__ == '__main__':
                                [1,1,1,1],
                                [1,1,1,1]])
 
+    load_indices = [4]
+    applied_loads = np.array([[0],
+                              [-100],
+                              [-50]])
+
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
@@ -174,5 +183,7 @@ if __name__ == '__main__':
     TEST.plot_structure()
     #print(TEST.element_lengths)
 
-    SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints)
-    SOLVER.assemble_global()
+    SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
+    S = SOLVER.assemble_global_stiffness()
+    P = SOLVER.assemble_loading_vector()
+    d = np.linalg.solve(S, P)
