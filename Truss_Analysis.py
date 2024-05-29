@@ -118,6 +118,7 @@ class Mesh:
         return Ks
 
     def plot_structure(self):
+        '#d plot of nodes and members'
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
         ax.set_xlabel('X')
@@ -135,6 +136,13 @@ class Mesh:
 
 class FEM_Solve:
     def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array):
+        '''
+        :param mesh: Instance of Mesh class defining geometry
+        :param bc_indices: node indices on which bcs are applied
+        :param bc_constraints: matrix (3, bc_indices.size) specifying the type of constraint on bc nodes
+        :param load_indices: node indices on which point loads are applied
+        :param applied_loads:
+        '''
         self.n_dof = 3
         self.mesh = mesh
         self.bc_indices = bc_indices
