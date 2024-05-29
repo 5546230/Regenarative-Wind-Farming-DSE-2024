@@ -156,15 +156,10 @@ class FEM_Solve:
 
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
-<<<<<<< Updated upstream
-
-    def assemble_global_stiffness(self):
-=======
         print(self.active_dofs)
         #print(mesh.element_indices)
 
     def assemble_global(self):
->>>>>>> Stashed changes
         mesh = self.mesh
         Ks = mesh.element_Ks
 
