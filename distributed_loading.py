@@ -41,11 +41,30 @@ class Wind_Model:
             plt.show()
 
 
+class Wave_Model:
+    def __init__(self, Vwr, zr, z0, alpha_shear,):
+        self.Vwr = Vwr
+        self.zr = zr
+        self.z0 = z0
+        self.alpha_shear = alpha_shear
+
+    def log_shear_profile(self, zs, derivative: bool = False):
+        '''
+        :param z: height MSL [m]
+        :param t: time [s]
+        :return: velocity profile u(z, t), logarithmic power law
+        '''
+        Vw_z = self.Vwr * np.log(zs/self.z0) / np.log(self.zr/self.z0)
+        if derivative:
+            return self.Vwr  / np.log(self.zr/self.z0) / zs
+        else:
+            return Vw_z
+
+
 class Distr_Loading:
-    def __init__(self, wind_model, wave_model):
+    def __init__(self, wind_model: Wind_Model, wave_model: Wave_Model):
         self.wave_model = wave_model
         self.wind_model = wind_model
-
 
     def morison_equation(self, z, f_CM: callable, f_CD: callable, rho, f_Dz:callable):
 
@@ -56,6 +75,10 @@ class Distr_Loading:
 
         f_Ft = F_distr_inertial + F_distr_drag
         return f_Ft
+
+    def drag_equation(self, z, ):
+        f_Faero = 0
+        return f_Faero
 
 
 
