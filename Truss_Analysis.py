@@ -22,6 +22,7 @@ class Section:
 
 class Mesh:
     def __init__(self, XYZ_coords: np.array, member_indices: np.array, section_ids: np.array, material_ids: np.array, materials, sections):
+        N_dof = 3
         self.XYZ_coords = XYZ_coords
         self.X_coords = XYZ_coords[0,:]
         self.Y_coords = XYZ_coords[1, :]
@@ -32,6 +33,8 @@ class Mesh:
 
         self.element_indices = member_indices
         self.N_elems = section_ids.size
+        self.N_nodes = self.X_coords.size
+
         self.section_indices = section_ids
         self.material_indices = material_ids
         self.element_lengths = self.calc_element_lengths()
@@ -43,9 +46,11 @@ class Mesh:
         self.element_ks = self.element_stiffness()
         self.element_Ks = self.transform_stiffness_to_global()
 
+        self.dof_indices = np.linspace(0, N_dof*self.N_nodes-1, N_dof*self.N_nodes, dtype=int)
+
         #print(self.element_Ts.shape, self.element_ks.shape, self.element_Ks.shape)
         #print(self.element_lengths[0])
-        #print(self.element_Ks[0])
+        #print(self.element_Ks[1])
 
     def calc_element_lengths(self):
         start_points = self.XYZ_coords[:, member_indices[0, :]]
@@ -98,16 +103,44 @@ class Mesh:
         plt.show()
 
 
+class FEM_Solve:
+    def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array):
+        N_dof = 3
+
+        self.mesh = mesh
+        self.bc_indices = bc_indices
+
+        constraints = bc_constraints
+        global_constraints = np.zeros(mesh.N_nodes*N_dof)
+        for i, idx in enumerate(self.bc_indices):
+            global_constraints[idx*N_dof:(idx+1)*N_dof] =  constraints[:,i]
+        self.active_dofs = mesh.dof_indices[global_constraints==0]
+        self.constr_dofs = mesh.dof_indices[global_constraints==1]
+        print(self.constr_dofs)
+
+    def assemble_global(self):
+        mesh = self.mesh
+
+
+        return
+
 
 if __name__ == '__main__':
     XYZ_coords = 12*np.array([[-6, 12, 6, -12, 0],
                            [0, 0, 0, 0, 24],
                            [8, 8, -8, -8, 0]])
 
+
     member_indices = np.array([[0, 1, 2, 3],
                                [4, 4, 4, 4]])
     section_indices = np.array([0, 0, 0, 0])
     material_indices = np.array([0, 0, 0, 0])
+
+    bc_indices = [0,1,2,3]
+    bc_constraints = np.array([[1,1,1,1],
+                               [1,1,1,1],
+                               [1,1,1,1]])
+
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
@@ -119,4 +152,6 @@ if __name__ == '__main__':
 
     TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
     TEST.plot_structure()
-    print(TEST.element_lengths)
+    #print(TEST.element_lengths)
+
+    SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints)
