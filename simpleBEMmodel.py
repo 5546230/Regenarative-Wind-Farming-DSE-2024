@@ -4,9 +4,10 @@ import numpy as np
 import inputs_BEM_powerCurve as inps
 #inputs : change chord, twist, airfoils, Uinf, TSR, 
 
-root_boundary_R = 0.3
-mid_boundary_R = 0.7
+root_boundary_R = 0.4
+mid_boundary_R = 0.75
 
+iteration = inps.iteration
 
 
 def CTfunction(a, glauert = False):
@@ -17,8 +18,8 @@ def CTfunction(a, glauert = False):
     CT = np.zeros(np.shape(a))
     CT = 4*a*(1-a)  
     if glauert:
-        CT1=1.816;
-        a1=1-np.sqrt(CT1)/2;
+        CT1=1.816
+        a1=1-np.sqrt(CT1)/2
         CT[a>a1] = CT1-4*(np.sqrt(CT1)-1)*(1-a[a>a1])
     
     return CT
@@ -30,7 +31,7 @@ def ainduction(CT):
     including Glauert's correction
     """
     a = np.zeros(np.shape(CT))
-    CT1=1.816;
+    CT1=1.816
     CT2=2*np.sqrt(CT1)-CT1
     a[CT>=CT2] = 1 + (CT[CT>=CT2]-CT1)/(4*(np.sqrt(CT1)-1))
     a[CT<CT2] = 0.5-0.5*np.sqrt(1-CT[CT<CT2])
@@ -95,13 +96,13 @@ import pandas as pd
 # polar_cd = data1['cd'][:]
 
 def import_polar_data(airfoil_file):
-    data = pd.read_csv(airfoil_file, header=0, names=["alfa", "cl", "cd", "cm"], sep='\s+')
+    data = pd.read_csv(airfoil_file, header=0, names=["alfa", "cl", "cd", "cm"], sep=',')
     return data['alfa'], data['cl'], data['cd']
 
 # Define polar data for root, mid, and tip
-polar_alpha_root, polar_cl_root, polar_cd_root = import_polar_data('DU95W180.cvs')
-polar_alpha_mid, polar_cl_mid, polar_cd_mid = import_polar_data('DU95W180.cvs')
-polar_alpha_tip, polar_cl_tip, polar_cd_tip = import_polar_data('DU95W180.cvs')
+polar_alpha_root, polar_cl_root, polar_cd_root = import_polar_data('s818.csv')
+polar_alpha_mid, polar_cl_mid, polar_cd_mid = import_polar_data('s816.csv')
+polar_alpha_tip, polar_cl_tip, polar_cd_tip = import_polar_data('s817.csv')
 
 # plot polars of the airfoil C-alfa and Cl-Cd
 
@@ -217,13 +218,13 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
 # define the blade geometry
 delta_r_R = .01
 r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
-pitch = 2 # degrees
+pitch = inps.pitch # degrees
 chord_distribution = 3*(1-r_R)+1 # meters
 twist_distribution = -14*(1-r_R)+pitch # degrees
 
 Uinf = inps.V_RATED # unperturbed wind speed in m/s
 TSR = inps.TSR # tip speed ratio
-Radius = 50
+Radius = inps.init_Radius
 Omega = Uinf*TSR/Radius
 NBlades = 3
 
@@ -271,19 +272,20 @@ def BEMsolver(radius):
         # Call the solveStreamtube function with the selected airfoil data
         results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, Omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
     return results
-
-iterations = 1000
 Radiuss = Radius
-for ix in range(iterations):
-    Radiuss_init = Radiuss
-    resultss = BEMsolver(Radiuss)
-    areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
-    dr = (r_R[1:]-r_R[:-1])*Radiuss
-    CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
-    AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
-    Radiuss = np.sqrt(AREA/(np.pi*inps.n_rotors))
-    if np.abs(Radiuss-Radiuss_init) < 0.1:
-        break
+if iteration:
+    iterations = 1000
+    
+    for ix in range(iterations):
+        Radiuss_init = Radiuss
+        resultss = BEMsolver(Radiuss)
+        areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
+        dr = (r_R[1:]-r_R[:-1])*Radiuss
+        CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
+        AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
+        Radiuss = np.sqrt(AREA/(np.pi*inps.n_rotors))
+        if np.abs(Radiuss-Radiuss_init) < 0.01:
+            break
 
 results = BEMsolver(Radiuss)
 Radius = Radiuss
