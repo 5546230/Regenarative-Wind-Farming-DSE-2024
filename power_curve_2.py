@@ -92,10 +92,12 @@ y_targets = [CP*1.2]
 crossings = find_all_x_crossings(x_data, y_data, y_targets)
 estimated_a = np.min(crossings[y_targets[0]])
 
-CT = 4*estimated_a*(1-estimated_a)
+CT = BEM.CT
 T_RATED = CT*0.5*rho*V_RATED**2*AREA
 Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2
 T_RATED_perrotor = T_RATED/n_rotors
 P_RATED_perrotor = P_RATED/n_rotors
 print(f'{P_RATED=}, {T_RATED=}, {Q_RATED_perrotor=}, {T_RATED_perrotor=}, {P_RATED_perrotor=}, {radius=}, {CT=}, {CP=}')
 print(f'{estimated_a=}')
+CP_glauert = 4*estimated_a*(1-estimated_a)**2
+print((CP_glauert-CP)/CP_glauert)
