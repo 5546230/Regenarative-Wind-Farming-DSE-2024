@@ -105,24 +105,44 @@ class Mesh:
 
 class FEM_Solve:
     def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array):
-        N_dof = 3
-
+        self.n_dof = 3
         self.mesh = mesh
         self.bc_indices = bc_indices
 
         constraints = bc_constraints
-        global_constraints = np.zeros(mesh.N_nodes*N_dof)
+        global_constraints = np.zeros(mesh.N_nodes*self.n_dof)
         for i, idx in enumerate(self.bc_indices):
-            global_constraints[idx*N_dof:(idx+1)*N_dof] =  constraints[:,i]
+            global_constraints[idx*self.n_dof:(idx+1)*self.n_dof] =  constraints[:,i]
+
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
-        print(self.constr_dofs)
+
+        #print(mesh.element_indices)
 
     def assemble_global(self):
         mesh = self.mesh
+        Ks = mesh.element_Ks
 
+        N_active = self.active_dofs.size
+        S = np.zeros((N_active, N_active))
 
-        return
+        start_points = mesh.element_indices[0, :]
+        end_points = mesh.element_indices[1, :]
+        dof_range = np.linspace(0, self.n_dof-1, self.n_dof, dtype=int)
+
+        'each column is a node, each row is a x,y,z dof'
+        start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
+        end_dof_idxs = dof_range[:, np.newaxis] +  end_points*self.n_dof
+
+        for i in range(mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:,i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+            m = np.isin(elem_dofs, self.active_dofs)
+            m1, m2 = np.meshgrid(m,m)
+            mask  = np.logical_and(m1==True, m2==True)
+            S += Ks[i][mask].reshape(S.shape)
+        return S
 
 
 if __name__ == '__main__':
@@ -155,3 +175,4 @@ if __name__ == '__main__':
     #print(TEST.element_lengths)
 
     SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints)
+    SOLVER.assemble_global()
