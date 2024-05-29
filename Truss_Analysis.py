@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Structure_Defs import verif_geom_1, tb_val, verif_geom_3
+from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1
 np.set_printoptions(linewidth=7000)
 
 class Material:
