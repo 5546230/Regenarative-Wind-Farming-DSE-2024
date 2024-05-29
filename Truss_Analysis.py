@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from Structure_Defs import verif_geom_1, tb_val, verif_geom_3
+np.set_printoptions(linewidth=7000)
 
 class Material:
     def __init__(self, E=190e9, rho=7800, sig_y=340e6):
@@ -157,7 +158,7 @@ class FEM_Solve:
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
         print(self.active_dofs)
-        #print(mesh.element_indices)
+
 
     def assemble_global_stiffness(self):
         mesh = self.mesh
@@ -170,6 +171,7 @@ class FEM_Solve:
         end_points = mesh.element_indices[1, :]
         dof_range = np.linspace(0, self.n_dof-1, self.n_dof, dtype=int)
 
+
         'each column is a node, each row is a x,y,z dof'
         start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
         end_dof_idxs = dof_range[:, np.newaxis] +  end_points*self.n_dof
@@ -178,10 +180,13 @@ class FEM_Solve:
             elem_start_dofs = start_dof_idxs[:,i]
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
-            m = np.isin(elem_dofs, self.active_dofs)
-            m1, m2 = np.meshgrid(m,m)
-            mask  = np.logical_and(m1==True, m2==True)
-            S += Ks[i][mask].reshape(S.shape)
+            #print(elem_dofs)
+            mask = np.isin(elem_dofs, self.active_dofs)
+            #print(mask)
+            S_mask = np.isin(self.active_dofs, elem_dofs)
+            S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
+            #print('\n\n\n')
+        #print(S)
         return S
 
     def assemble_loading_vector(self):
@@ -192,82 +197,22 @@ class FEM_Solve:
         return global_loading_vector[self.active_dofs]
 
 
+
 if __name__ == '__main__':
-    XYZ_coords = 12*np.array([[-6, 12, 6, -12, 0],
-                           [0, 0, 0, 0, 24],
-                           [8, 8, -8, -8, 0]])
-    
-    def verif_geom():
-        XYZ_coords = np.array([[0, 0, 0, 0, 1, 1, 1, 1],
-                                [0, 1, 0, 1, 0, 1, 0, 1],
-                                [0, 0, 1, 1, 0, 0, 1, 1]])
-        
-        member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
-                                    [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
-        
-        section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-        material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
 
-        bc_indices = [0,1,4,5]
-        bc_constraints= np.array([[1,1,1,1],
-                                    [1,0,1,0],
-                                    [1,1,1,1]])
-        
-        load_indices = [3, 7]
-        applied_loads = np.array([[0, 0],
-                                    [100, 100],
-                                    [0, 0]])
-
-        
-        return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
-
-    def hex_geom():
-        XYZ_coords = np.array([[0, 31.07, 31.07, 0, -31.07, -31.07, 1, 1],
-                                [0, 0, 0, 0, 0, 0, 0, 1],
-                                [-35.877, -17.398, 17.398, 35.877, 17.398, -17.398, 1, 1]])
-        
-        member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
-                                    [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
-        
-        section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-        material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-
-        bc_indices = [0,1,4,5]
-        bc_constraints= np.array([[1,1,1,1],
-                                    [1,0,1,0],
-                                    [1,1,1,1]])
-        
-        load_indices = [3, 7]
-        applied_loads = np.array([[0, 0],
-                                    [100, 100],
-                                    [0, 0]])
-
-        
-        return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
-
-    member_indices = np.array([[0, 1, 2, 3],
-                               [4, 4, 4, 4]])
-    section_indices = np.array([0, 0, 0, 0])
-    material_indices = np.array([0, 0, 0, 0])
-
-    bc_indices = [0,1,2,3]
-    bc_constraints = np.array([[1,1,1,1],
-                               [1,1,1,1],
-                               [1,1,1,1]])
-    
-
-    load_indices = [4]
-    applied_loads = np.array([[0],
-                              [-100],
-                              [-50]])
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom()
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
     section_val = Section(radius=1, thickness=0.01)
     section_val.A = 8.4
-    material_library = [material_val, steel]
-    section_library = [section_val, Section(radius=0.5, thickness=0.005)]
+
+    material_val_3 = Material(E=200e9, rho=6600, sig_y=340e6)
+    section_val_3 = Section(radius=1, thickness=0.01)
+    section_val_3.A = 4000e-6
+
+    material_library = [material_val, material_val_3]
+    section_library = [section_val, section_val_3]
 
 
     TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
@@ -276,5 +221,7 @@ if __name__ == '__main__':
 
     SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
     S = SOLVER.assemble_global_stiffness()
+
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
+    print(d*1000)
