@@ -4,24 +4,44 @@ import matplotlib.pyplot as plt
 
 class Material:
     def __init__(self, E=190e9, rho=7800, sig_y=340e6):
-        'source: [cite]'
-        self.E = E     #[Pa]
-        self.rho = rho     #[kg/m^3]
-        self.sig_y = sig_y  #[Pa]
+        '''
+        :param E: Modulus of Elasticity [Pa]
+        :param rho: Density [kg/m^3]
+        :param sig_y: yield stress [Pa]
+        '''
+        self.E = E
+        self.rho = rho
+        self.sig_y = sig_y
 
 
 class Section:
     def __init__(self, radius, thickness,):
+        '''
+        :param radius: outer radius [m]
+        :param thickness: wall thickness [m]
+        '''
         self.R = radius
         self.t = thickness
         self.A = self.calc_area()
 
     def calc_area(self):
+        '''
+        :return: cs area, thin walled approx. [m^2]
+        '''
         return 2*np.pi*self.R*self.t
 
 
 class Mesh:
-    def __init__(self, XYZ_coords: np.array, member_indices: np.array, section_ids: np.array, material_ids: np.array, materials, sections):
+    def __init__(self, XYZ_coords: np.array, member_indices: np.array, section_ids: np.array, material_ids: np.array, materials: list, sections: list):
+        '''
+        :param XYZ_coords: (3 x N_nodes) coordinates of each node on the mesh
+        :param member_indices: (2 x N_elems) connectivity defining the members by node index
+        :param section_ids: (N_elems) section property index of each element
+        :param material_ids: (N_elems) material property index of each element
+        :param materials: list of materials objects
+        :param sections: list of sections objects
+        '''
+
         N_dof = 3
         self.XYZ_coords = XYZ_coords
         self.X_coords = XYZ_coords[0,:]
@@ -50,6 +70,9 @@ class Mesh:
 
 
     def calc_element_lengths(self):
+        '''
+        :return: (N_elems, ) Length of each element
+        '''
         start_points = self.XYZ_coords[:, member_indices[0, :]]
         end_points = self.XYZ_coords[:, member_indices[1, :]]
 
@@ -58,6 +81,9 @@ class Mesh:
         return lengths
 
     def transfer_matrix(self):
+        '''
+        :return: (2,n_dof) Transfer matrix T from global to local coordinates
+        '''
         I2 = np.eye(2)
         Ts = []
         Ls = self.element_lengths
@@ -74,6 +100,10 @@ class Mesh:
         return Ts
 
     def element_stiffness(self):
+        '''
+        :return: (N_elems, 2*n_dof, 2*n_dof) multi-dimensional array containing each local element stiffness
+                                                matrix, indexed by the order of self.element_indices
+        '''
         single_element_top = np.array([[1, -1], [-1, 1]])[np.newaxis, :,:]
         all_elements_top = np.repeat(single_element_top, self.N_elems, axis=0)
 
@@ -81,6 +111,9 @@ class Mesh:
         return ks
 
     def transform_stiffness_to_global(self):
+        '''
+        :return: Transformation local --> global using tensor product over T
+        '''
         Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, self.element_ks, self.element_Ts)
         return Ks
 
