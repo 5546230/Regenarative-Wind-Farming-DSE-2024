@@ -42,7 +42,10 @@ class Mesh:
         self.element_Ts = self.transfer_matrix()
         self.element_ks = self.element_stiffness()
         self.element_Ks = self.transform_stiffness_to_global()
-        print(self.element_Ts.shape, self.element_ks.shape, self.element_Ks.shape)
+
+        #print(self.element_Ts.shape, self.element_ks.shape, self.element_Ks.shape)
+        #print(self.element_lengths[0])
+        #print(self.element_Ks[0])
 
     def calc_element_lengths(self):
         start_points = self.XYZ_coords[:, member_indices[0, :]]
@@ -97,7 +100,7 @@ class Mesh:
 
 
 if __name__ == '__main__':
-    XYZ_coords = np.array([[-6, 12, 6, -12, 0],
+    XYZ_coords = 12*np.array([[-6, 12, 6, -12, 0],
                            [0, 0, 0, 0, 24],
                            [8, 8, -8, -8, 0]])
 
@@ -107,9 +110,11 @@ if __name__ == '__main__':
     material_indices = np.array([0, 0, 0, 0])
 
     steel = Material()
-    material_2 = Material(E=100e9, rho=6600, sig_y=340e6)
-    material_library = [steel, material_2]
-    section_library = [Section(radius=1, thickness=0.01), Section(radius=0.5, thickness=0.005)]
+    material_val = Material(E=10000, rho=6600, sig_y=340e6)
+    section_val = Section(radius=1, thickness=0.01)
+    section_val.A = 8.4
+    material_library = [material_val, steel]
+    section_library = [section_val, Section(radius=0.5, thickness=0.005)]
 
 
     TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
