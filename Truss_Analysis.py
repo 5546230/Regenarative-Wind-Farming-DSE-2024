@@ -1,7 +1,11 @@
 import numpy as np
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1
+from matplotlib.ticker import FormatStrFormatter
+import matplotlib.patheffects as pe
 np.set_printoptions(linewidth=7000)
+
 
 class Material:
     def __init__(self, E=190e9, rho=7800, sig_y=340e6):
@@ -158,8 +162,20 @@ class FEM_Solve:
 
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
-        print(self.active_dofs)
+        #print(self.active_dofs)
 
+
+    def get_start_end_indices(self):
+        mesh=self.mesh
+        start_points = mesh.element_indices[0, :]
+        end_points = mesh.element_indices[1, :]
+        dof_range = np.linspace(0, self.n_dof - 1, self.n_dof, dtype=int)
+
+        'each column is a node, each row is a x,y,z dof'
+        start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
+        end_dof_idxs = dof_range[:, np.newaxis] + end_points * self.n_dof
+
+        return start_dof_idxs, end_dof_idxs
 
     def assemble_global_stiffness(self):
         mesh = self.mesh
@@ -167,14 +183,7 @@ class FEM_Solve:
 
         N_active = self.active_dofs.size
         S = np.zeros((N_active, N_active))
-
-        start_points = mesh.element_indices[0, :]
-        end_points = mesh.element_indices[1, :]
-        dof_range = np.linspace(0, self.n_dof-1, self.n_dof, dtype=int)
-
-        'each column is a node, each row is a x,y,z dof'
-        start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
-        end_dof_idxs = dof_range[:, np.newaxis] +  end_points*self.n_dof
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
 
         for i in range(mesh.N_elems):
             elem_start_dofs = start_dof_idxs[:,i]
@@ -193,7 +202,7 @@ class FEM_Solve:
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
         return global_loading_vector[self.active_dofs]
 
-    def solve_system(self, factor = 1, plot: bool = True):
+    def solve_system(self, factor = 1, plot: bool = True,):
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector()
         d = np.linalg.solve(S, P)
@@ -202,14 +211,40 @@ class FEM_Solve:
 
         stacked_coords = np.column_stack((m.X_coords, m.Y_coords, m.Z_coords))
         flattened_coords = stacked_coords.ravel()
+        global_displacements = np.zeros_like(flattened_coords)
+
         flattened_coords[np.isin(m.dof_indices, self.active_dofs)] += d*factor
+        global_displacements[np.isin(m.dof_indices, self.active_dofs)] += d*factor
 
         reshaped_array = flattened_coords.reshape(-1, 3)
         X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
-        self.plot_displacements(X, Y, Z)
+        element_Qs, element_sigmas = self.get_internal_loading(global_ds=global_displacements)
 
-        return
+        if plot:
+            self.plot_displacements(X, Y, Z)
+            self.plot_stresses(X,Y,Z,element_sigmas)
+        return d, element_Qs, element_sigmas
 
+    def get_internal_loading(self, global_ds):
+        'compute local end displacements'
+        mesh=self.mesh
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+
+        Qs = []
+        for i in range(mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:, i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            v = global_ds[np.isin(mesh.dof_indices, elem_dofs)]
+            T = mesh.element_Ts[i]
+            u = T @ v
+            k =mesh.element_ks[i]
+            Q = k @ u
+            Qs.append(-1*Q[1])
+        Qs = np.array(Qs)
+        sigmas = Qs / mesh.element_As
+        return Qs, sigmas
 
     def plot_displacements(self, Xp, Yp, Zp):
         m = self.mesh
@@ -232,6 +267,46 @@ class FEM_Solve:
 
             plt.plot(Xs, Ys, Zs, color='k')
             plt.plot(Xps, Yps, Zps, color='red')
+        plt.show()
+
+    def plot_stresses(self, Xp, Yp, Zp, sigmas):
+        m = self.mesh
+
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+        part_stresses = np.array(sigmas) * 1e-6
+        min_stress = 0.85 * np.min(part_stresses)
+        max_stress = 1.25 * np.max(part_stresses)
+
+        norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
+        mapper = cm.ScalarMappable(norm=norm, cmap=cm.YlOrRd)
+
+        cbar = fig.colorbar(mapper, ax=ax)
+        cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
+
+        sorted_indices = np.argsort(part_stresses)
+
+        for i in sorted_indices:
+            member_ends = m.element_indices[:, i]
+            Xps = Xp[member_ends]
+            Yps = Yp[member_ends]
+            Zps = Zp[member_ends]
+
+            color = mapper.to_rgba(part_stresses[i])
+            legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
+
+            ax.plot(Xps, Yps, Zps, color=color, linewidth=2,
+                    path_effects=[pe.Stroke(linewidth=5, foreground='black'), pe.Normal()], label=legend_string)
+
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='lower center', ncol=3)
+
         plt.show()
 
 
@@ -262,5 +337,6 @@ if __name__ == '__main__':
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
 
-    SOLVER.solve_system(plot=True, factor=500)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
     print(d*1000)
+    print(sigma/1e6)
