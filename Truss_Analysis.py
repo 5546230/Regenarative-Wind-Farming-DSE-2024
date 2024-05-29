@@ -159,7 +159,7 @@ class FEM_Solve:
         print(self.active_dofs)
         #print(mesh.element_indices)
 
-    def assemble_global(self):
+    def assemble_global_stiffness(self):
         mesh = self.mesh
         Ks = mesh.element_Ks
 
@@ -228,15 +228,11 @@ if __name__ == '__main__':
                                [1,1,1,1]])
     
 
-<<<<<<< Updated upstream
     load_indices = [4]
     applied_loads = np.array([[0],
                               [-100],
                               [-50]])
-
-=======
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints = verif_geom()
->>>>>>> Stashed changes
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
