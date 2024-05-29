@@ -198,24 +198,52 @@ if __name__ == '__main__':
                            [8, 8, -8, -8, 0]])
     
     def verif_geom():
-            XYZ_coords = np.array([[0, 0, 0, 0, 1, 1, 1, 1],
-                                    [0, 1, 0, 1, 0, 1, 0, 1],
-                                    [0, 0, 1, 1, 0, 0, 1, 1]])
-            
-            member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
-                                       [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
-            
-            section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-            material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        XYZ_coords = np.array([[0, 0, 0, 0, 1, 1, 1, 1],
+                                [0, 1, 0, 1, 0, 1, 0, 1],
+                                [0, 0, 1, 1, 0, 0, 1, 1]])
+        
+        member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
+                                    [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
+        
+        section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
 
-            bc_indices = [0,1,4,5]
-            bc_constraints= np.array([[1,1,1,1],
-                                      [1,0,1,0],
-                                      [1,1,1,1]])
-            
-            return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints
+        bc_indices = [0,1,4,5]
+        bc_constraints= np.array([[1,1,1,1],
+                                    [1,0,1,0],
+                                    [1,1,1,1]])
+        
+        load_indices = [3, 7]
+        applied_loads = np.array([[0, 0],
+                                    [100, 100],
+                                    [0, 0]])
 
+        
+        return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 
+    def hex_geom():
+        XYZ_coords = np.array([[0, 31.07, 31.07, 0, -31.07, -31.07, 1, 1],
+                                [0, 0, 0, 0, 0, 0, 0, 1],
+                                [-35.877, -17.398, 17.398, 35.877, 17.398, -17.398, 1, 1]])
+        
+        member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
+                                    [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
+        
+        section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+
+        bc_indices = [0,1,4,5]
+        bc_constraints= np.array([[1,1,1,1],
+                                    [1,0,1,0],
+                                    [1,1,1,1]])
+        
+        load_indices = [3, 7]
+        applied_loads = np.array([[0, 0],
+                                    [100, 100],
+                                    [0, 0]])
+
+        
+        return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 
     member_indices = np.array([[0, 1, 2, 3],
                                [4, 4, 4, 4]])
@@ -232,7 +260,7 @@ if __name__ == '__main__':
     applied_loads = np.array([[0],
                               [-100],
                               [-50]])
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints = verif_geom()
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom()
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
