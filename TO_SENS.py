@@ -277,9 +277,9 @@ def system_trade_off(score_change = False):
     criterion_weights = np.array([0.3, 0.25, 0.2, 0.25])
 
     if not score_change:
-        scores = np.array([[2,3,4],
-                           [2,3,1],
-                           [3,4,3],
+        scores = np.array([[2,3,3],
+                           [3,3,1],
+                           [4,3,3],
                            [5,4,2]])
     else:
         scores = np.array([[3, 4, 2],
