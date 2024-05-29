@@ -124,7 +124,7 @@ class Sizing(ABC):
 
 
 class SingleTower(Sizing):
-    def __init__(self, length, material, M_truss, sum_M_RNA, F_T,):
+    def __init__(self, length, material, M_truss, sum_M_RNA, F_T, F_L = 0, F_D = 0):
         '''
         :param length: [m]
         :param material: object
@@ -136,6 +136,8 @@ class SingleTower(Sizing):
         self.M_truss = M_truss
         self.sum_M_RNA = sum_M_RNA
         self.F_T = F_T
+        self.F_L = F_L
+        self.F_D = F_D
 
     def __str__(self):
         return f'(i) Tower+Truss: L={self.L:.2f}'
@@ -151,7 +153,8 @@ class SingleTower(Sizing):
         '''
         :return: max internal bending moment
         '''
-        M = self.F_T * self.L
+
+        M = (self.F_T) * self.L + self.F_L * 25  + self.F_D*(self.L+350/2)
         return M
 
     def calc_total_mass(self, M_tower):
@@ -408,7 +411,7 @@ if __name__ == '__main__':
     T_rated = P_rated / V_infty
     T_perR = T_rated / N_rot
 
-    M_truss = 2235959.595  # [kg]
+    M_truss = 7000e3#2235959.595  # [kg]
     sum_RNA = 1280085.241  # [kg]
 
     max_depth = 60  # [m]
@@ -416,8 +419,8 @@ if __name__ == '__main__':
     clearance_height = 25  # [m]
 
     '(i) SINGLE TOWER'
-    h_single = max_depth + clearance_height + frame_height / 2
-    single_tower = SingleTower(length=h_single, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated,)
+    h_single = 25+25+10#max_depth + clearance_height + frame_height / 2
+    single_tower = SingleTower(length=h_single, material=Steel(), M_truss=M_truss, sum_M_RNA=sum_RNA, F_T=T_rated, F_L=3.4e6, F_D=300e3)
     R_single, t_single, M_single = single_tower.sizing_analysis(verbose=True)
     print(M_single*(1+uncertainty_range_D[0])*(1+uncertainty_range_t[0])/1000, M_single*(1-uncertainty_range_D[1])*(1-uncertainty_range_t[1])/1000)
 
