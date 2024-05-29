@@ -40,20 +40,20 @@ def ainduction(CT):
 
 # plot CT as a function of induction "a", with and without Glauert correction
 # define a as a range
-a = np.arange(-.5,1,.01)
-CTmom = CTfunction(a) # CT without correction
-CTglauert = CTfunction(a, True) # CT with Glauert's correction
-a2 = ainduction(CTglauert)
+# a = np.arange(-.5,1,.01)
+# CTmom = CTfunction(a) # CT without correction
+# CTglauert = CTfunction(a, True) # CT with Glauert's correction
+# a2 = ainduction(CTglauert)
 
-fig1 = plt.figure(figsize=(12, 6))
-plt.plot(a, CTmom, 'k-', label='$C_T$')
-plt.plot(a, CTglauert, 'b--', label='$C_T$ Glauert')
-plt.plot(a, CTglauert*(1-a), 'g--', label='$C_P$ Glauert')
-plt.xlabel('a')
-plt.ylabel(r'$C_T$ and $C_P$')
-plt.grid()
-plt.legend()
-plt.show()
+# fig1 = plt.figure(figsize=(12, 6))
+# plt.plot(a, CTmom, 'k-', label='$C_T$')
+# plt.plot(a, CTglauert, 'b--', label='$C_T$ Glauert')
+# plt.plot(a, CTglauert*(1-a), 'g--', label='$C_P$ Glauert')
+# plt.xlabel('a')
+# plt.ylabel(r'$C_T$ and $C_P$')
+# plt.grid()
+# plt.legend()
+# plt.show()
 
 
 def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial_induction):
@@ -71,17 +71,17 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
 
 
 # plot Prandtl tip, root and combined correction for a number of blades and induction 'a', over the non-dimensioned radius
-r_R = np.arange(0.1, 1, .01)
-a = np.zeros(np.shape(r_R))+0.3
-Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, 0.1, 1, 7, 3, a)
+# r_R = np.arange(0.1, 1, .01)
+# a = np.zeros(np.shape(r_R))+0.3
+# Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, 0.1, 1, 7, 3, a)
 
-fig1 = plt.figure(figsize=(12, 6))
-plt.plot(r_R, Prandtl, 'r-', label='Prandtl')
-plt.plot(r_R, Prandtltip, 'g.', label='Prandtl tip')
-plt.plot(r_R, Prandtlroot, 'b.', label='Prandtl root')
-plt.xlabel('r/R')
-plt.legend()
-plt.show()
+# fig1 = plt.figure(figsize=(12, 6))
+# plt.plot(r_R, Prandtl, 'r-', label='Prandtl')
+# plt.plot(r_R, Prandtltip, 'g.', label='Prandtl tip')
+# plt.plot(r_R, Prandtlroot, 'b.', label='Prandtl root')
+# plt.xlabel('r/R')
+# plt.legend()
+# plt.show()
 
 
 # import polar
@@ -219,9 +219,11 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
 delta_r_R = .01
 r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
 pitch = inps.pitch # degrees
-chord_distribution = 3*(1-r_R)+1 # meters
-twist_distribution = -14*(1-r_R)+pitch # degrees
-
+tip_chord = inps.tip_chord
+root_chord  = inps.root_chord
+root_twist = inps.root_twist
+chord_distribution = root_chord*(1-r_R)+tip_chord # meters
+twist_distribution = root_twist*(1-r_R)+pitch # degrees
 Uinf = inps.V_RATED # unperturbed wind speed in m/s
 TSR = inps.TSR # tip speed ratio
 Radius = inps.init_Radius
@@ -244,7 +246,7 @@ RootLocation_R =  0.2
 
 # solve BEM model
 
-def BEMsolver(radius):
+def BEMsolver(radius, chord_distribution, twist_distribution):
 
     results =np.zeros([len(r_R)-1,6]) 
 
@@ -278,7 +280,7 @@ if iteration:
     
     for ix in range(iterations):
         Radiuss_init = Radiuss
-        resultss = BEMsolver(Radiuss)
+        resultss = BEMsolver(Radiuss, chord_distribution, twist_distribution)
         areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
         dr = (r_R[1:]-r_R[:-1])*Radiuss
         CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
@@ -287,7 +289,7 @@ if iteration:
         if np.abs(Radiuss-Radiuss_init) < 0.01:
             break
 
-results = BEMsolver(Radiuss)
+results = BEMsolver(Radiuss, chord_distribution, twist_distribution)
 Radius = Radiuss
 print(f'{Radius=}')
 
@@ -305,35 +307,52 @@ print("CP is ", CP)
 
 
 
+optimize = inps.optimize
+def CPCT_function(root_chord, tip_chord, root_twist, pitch):
+    areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
+    dr = (r_R[1:]-r_R[:-1])*Radius
+    chord_distribution = root_chord*(1-r_R)+tip_chord # meters
+    twist_distribution = root_twist*(1-r_R)+pitch # degrees
+    results = BEMsolver(Radius, chord_distribution, twist_distribution)
+    CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+    CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
+    return CP, CT
 
 
 
+def objective_function(root_chord, tip_chord, root_twist, pitch):
+    CP_o, CT_o = CPCT_function(root_chord, tip_chord, root_twist, pitch)
+    return -CP_o + CT_o  
+from scipy.optimize import minimize
+initial_guess = [inps.root_chord, inps.tip_chord, inps.root_twist, inps.pitch]
+result = minimize(objective_function, initial_guess, method='SLSQP')
+optimal_inputs = result.x
+optimal_CP, optimal_CT = CPCT_function(optimal_inputs[0], optimal_inputs[1])
 
 
+# fig1 = plt.figure(figsize=(12, 6))
+# plt.title('Axial and tangential induction')
+# plt.plot(results[:,2], results[:,0], 'r-', label=r'$a$')
+# plt.plot(results[:,2], results[:,1], 'g--', label=r'$a^,$')
+# plt.grid()
+# plt.xlabel('r/R')
+# plt.legend()
+# plt.show()
 
-fig1 = plt.figure(figsize=(12, 6))
-plt.title('Axial and tangential induction')
-plt.plot(results[:,2], results[:,0], 'r-', label=r'$a$')
-plt.plot(results[:,2], results[:,1], 'g--', label=r'$a^,$')
-plt.grid()
-plt.xlabel('r/R')
-plt.legend()
-plt.show()
-
-fig1 = plt.figure(figsize=(12, 6))
-plt.title(r'Normal and tagential force, non-dimensioned by $\frac{1}{2} \rho U_\infty^2 R$')
-plt.plot(results[:,2], results[:,3]/(0.5*Uinf**2*Radius), 'r-', label=r'Fnorm')
-plt.plot(results[:,2], results[:,4]/(0.5*Uinf**2*Radius), 'g--', label=r'Ftan')
-plt.grid()
-plt.xlabel('r/R')
-plt.legend()
-plt.show()
+# fig1 = plt.figure(figsize=(12, 6))
+# plt.title(r'Normal and tagential force, non-dimensioned by $\frac{1}{2} \rho U_\infty^2 R$')
+# plt.plot(results[:,2], results[:,3]/(0.5*Uinf**2*Radius), 'r-', label=r'Fnorm')
+# plt.plot(results[:,2], results[:,4]/(0.5*Uinf**2*Radius), 'g--', label=r'Ftan')
+# plt.grid()
+# plt.xlabel('r/R')
+# plt.legend()
+# plt.show()
 
 
-fig1 = plt.figure(figsize=(12, 6))
-plt.title(r'Circulation distribution, non-dimensioned by $\frac{\pi U_\infty^2}{\Omega * NBlades } $')
-plt.plot(results[:,2], results[:,5]/(np.pi*Uinf**2/(NBlades*Omega)), 'r-', label=r'$\Gamma$')
-plt.grid()
-plt.xlabel('r/R')
-plt.legend()
-plt.show()
+# fig1 = plt.figure(figsize=(12, 6))
+# plt.title(r'Circulation distribution, non-dimensioned by $\frac{\pi U_\infty^2}{\Omega * NBlades } $')
+# plt.plot(results[:,2], results[:,5]/(np.pi*Uinf**2/(NBlades*Omega)), 'r-', label=r'$\Gamma$')
+# plt.grid()
+# plt.xlabel('r/R')
+# plt.legend()
+# plt.show()
