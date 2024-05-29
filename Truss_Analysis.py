@@ -118,7 +118,7 @@ class Mesh:
         Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, self.element_ks, self.element_Ts)
         return Ks
 
-    def plot_structure(self):
+    def plot_structure(self, show: bool = True):
         '#d plot of nodes and members'
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
@@ -132,7 +132,8 @@ class Mesh:
             Ys = self.Y_coords[member_ends]
             Zs = self.Z_coords[member_ends]
             plt.plot(Xs, Ys, Zs, color='k')
-        plt.show()
+        if show:
+            plt.show()
 
 
 class FEM_Solve:
@@ -171,7 +172,6 @@ class FEM_Solve:
         end_points = mesh.element_indices[1, :]
         dof_range = np.linspace(0, self.n_dof-1, self.n_dof, dtype=int)
 
-
         'each column is a node, each row is a x,y,z dof'
         start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
         end_dof_idxs = dof_range[:, np.newaxis] +  end_points*self.n_dof
@@ -180,13 +180,10 @@ class FEM_Solve:
             elem_start_dofs = start_dof_idxs[:,i]
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
-            #print(elem_dofs)
+
             mask = np.isin(elem_dofs, self.active_dofs)
-            #print(mask)
             S_mask = np.isin(self.active_dofs, elem_dofs)
             S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
-            #print('\n\n\n')
-        #print(S)
         return S
 
     def assemble_loading_vector(self):
@@ -196,6 +193,46 @@ class FEM_Solve:
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
         return global_loading_vector[self.active_dofs]
 
+    def solve_system(self, factor = 1, plot: bool = True):
+        S = self.assemble_global_stiffness()
+        P = self.assemble_loading_vector()
+        d = np.linalg.solve(S, P)
+
+        m = self.mesh
+
+        stacked_coords = np.column_stack((m.X_coords, m.Y_coords, m.Z_coords))
+        flattened_coords = stacked_coords.ravel()
+        flattened_coords[np.isin(m.dof_indices, self.active_dofs)] += d*factor
+
+        reshaped_array = flattened_coords.reshape(-1, 3)
+        X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
+        self.plot_displacements(X, Y, Z)
+
+        return
+
+
+    def plot_displacements(self, Xp, Yp, Zp):
+        m = self.mesh
+        '#d plot of nodes and members'
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        for i in range(m.element_indices.shape[1]):
+            member_ends = m.element_indices[:, i]
+            Xs = m.X_coords[member_ends]
+            Ys = m.Y_coords[member_ends]
+            Zs = m.Z_coords[member_ends]
+
+            Xps = Xp[member_ends]
+            Yps = Yp[member_ends]
+            Zps = Zp[member_ends]
+
+            plt.plot(Xs, Ys, Zs, color='k')
+            plt.plot(Xps, Yps, Zps, color='red')
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -224,4 +261,6 @@ if __name__ == '__main__':
 
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
+
+    SOLVER.solve_system(plot=True, factor=500)
     print(d*1000)
