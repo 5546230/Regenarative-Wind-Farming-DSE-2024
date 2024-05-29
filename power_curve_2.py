@@ -4,19 +4,20 @@ Improved way of power curve
 
 import numpy as np
 from matplotlib import pyplot as plt
-
+import simpleBEMmodel as BEM
+import inputs_BEM_powerCurve as inps
 # +----------------------------+
 # |          Inputs            |
 # +----------------------------+
 #equivalent_radius = 170 # [m]
-rho = 1.225 # [kg/m^3]
-n_rotors = 33
-P_RATED = 30e6 # [W]
-V_RATED = 10 # [m/s]     #select this
-TSR = 8 # [-]     #select this too
-CP = 0.46     #   select assumed Cp
-cut_in = 3 # [m/s]
-cut_off = 25 # [m/s]
+rho = inps.rho # [kg/m^3]
+n_rotors = inps.n_rotors
+P_RATED = inps.P_RATED # [W]
+V_RATED = inps.V_RATED # [m/s]     #select this
+TSR = inps.TSR # [-]     #select this too
+CP = BEM.CP     #   select assumed Cp
+cut_in = inps.cut_in # [m/s]
+cut_off = inps.cut_off # [m/s]
 #////////////////////////////////
 
 # Calculate radius of multi rotor
