@@ -23,7 +23,7 @@ cut_off = inps.cut_off # [m/s]
 # Calculate radius of multi rotor
 #radius = equivalent_radius / (n_rotors ** 0.5)
 AREA = P_RATED/(CP*0.5*rho*V_RATED**3)
-radius = np.sqrt(AREA/(np.pi*n_rotors))
+radius = BEM.Radius
 
 # Initialize Array
 U_array = np.linspace(0, 27, 350)
