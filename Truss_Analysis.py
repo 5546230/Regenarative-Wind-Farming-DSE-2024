@@ -156,8 +156,15 @@ class FEM_Solve:
 
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
+<<<<<<< Updated upstream
 
     def assemble_global_stiffness(self):
+=======
+        print(self.active_dofs)
+        #print(mesh.element_indices)
+
+    def assemble_global(self):
+>>>>>>> Stashed changes
         mesh = self.mesh
         Ks = mesh.element_Ks
 
@@ -194,6 +201,25 @@ if __name__ == '__main__':
     XYZ_coords = 12*np.array([[-6, 12, 6, -12, 0],
                            [0, 0, 0, 0, 24],
                            [8, 8, -8, -8, 0]])
+    
+    def verif_geom():
+            XYZ_coords = np.array([[0, 0, 0, 0, 1, 1, 1, 1],
+                                    [0, 1, 0, 1, 0, 1, 0, 1],
+                                    [0, 0, 1, 1, 0, 0, 1, 1]])
+            
+            member_indices = np.array([[0,0,0,0,1,1,2,2,3,4,4,4,5,6],
+                                       [1,2,3,4,3,5,3,6,7,5,6,7,7,7]])
+            
+            section_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+            material_indices = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+
+            bc_indices = [0,1,4,5]
+            bc_constraints= np.array([[1,1,1,1],
+                                      [1,0,1,0],
+                                      [1,1,1,1]])
+            
+            return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints
+
 
 
     member_indices = np.array([[0, 1, 2, 3],
@@ -205,12 +231,17 @@ if __name__ == '__main__':
     bc_constraints = np.array([[1,1,1,1],
                                [1,1,1,1],
                                [1,1,1,1]])
+    
 
+<<<<<<< Updated upstream
     load_indices = [4]
     applied_loads = np.array([[0],
                               [-100],
                               [-50]])
 
+=======
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints = verif_geom()
+>>>>>>> Stashed changes
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
