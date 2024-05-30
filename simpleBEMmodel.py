@@ -362,6 +362,7 @@ if optimize:
 # plt.xlabel('r/R')
 # plt.legend()
 # plt.show()
+
 def BEMsolver_ale(pitch_ale):
     omega = Omega
     radius = Radius
@@ -391,7 +392,8 @@ def BEMsolver_ale(pitch_ale):
 
         # Call the solveStreamtube function with the selected airfoil data
         results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
-    return results
+        CT_ale = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*radius**2))
+    return CT_ale
 from scipy.interpolate import RectBivariateSpline
 from scipy.io import savemat
 ale_shit = inps.ale_shit
