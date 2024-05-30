@@ -459,7 +459,7 @@ if __name__ == '__main__':
     'solve'
     #P = SOLVER.assemble_loading_vector()
     #d = np.linalg.solve(S, P)
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100)
 
     print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
     print(f'      displacement [mm] = {d*1000}')
