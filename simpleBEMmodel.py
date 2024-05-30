@@ -286,7 +286,7 @@ if iteration:
         areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
         dr = (r_R[1:]-r_R[:-1])*Radiuss
         CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
-        CP = np.clip(CP,0.01, 0.999)
+        #CP = np.clip(CP,0.01, 0.999)
         AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
         Radiuss = np.sqrt(AREA/(np.pi*inps.n_rotors))
         if np.abs(Radiuss-Radiuss_init) < 0.01:
