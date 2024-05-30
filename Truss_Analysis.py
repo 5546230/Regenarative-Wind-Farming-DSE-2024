@@ -151,13 +151,17 @@ class Mesh:
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
         ax.set_zlabel('Z [m]')
+        X, Y, Z = self.X_coords, self.Y_coords, self.Z_coords
 
-        ax.scatter(self.X_coords, self.Y_coords, self.Z_coords, color='k', s=10)
+        for idx in range(len(X)):
+            ax.text(X[idx], Y[idx], Z[idx], f'{idx}', size=8, zorder=1, color='black')
+
+        ax.scatter(X,Y,Z, color='k', s=10)
         for i in range(self.element_indices.shape[1]):
             member_ends =  self.element_indices[:,i]
-            Xs = self.X_coords[member_ends]
-            Ys = self.Y_coords[member_ends]
-            Zs = self.Z_coords[member_ends]
+            Xs = X[member_ends]
+            Ys = Y[member_ends]
+            Zs = Z[member_ends]
             plt.plot(Xs, Ys, Zs, color='k')
         if show:
             plt.show()
@@ -318,8 +322,6 @@ class FEM_Solve:
             delta_length = new_lengths[i] - mesh.element_lengths[i]
             Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
             Qs.append(Q_new)
-            #print(-1*Q[0], Q_new)
-            #print()
         Qs = np.array(Qs)
         sigmas = Qs / mesh.element_As
         return Qs, sigmas
@@ -344,6 +346,9 @@ class FEM_Solve:
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
         ax.set_zlabel('Z [m]')
+
+        for idx in range(len(Xp)):
+            ax.text(Xp[idx], Yp[idx], Zp[idx], f'{idx}', size=8, zorder=1, color='black')
 
         ax.scatter(Xp, Yp, Zp, color= 'red', s=10)
         for i in range(m.element_indices.shape[1]):
@@ -385,6 +390,10 @@ class FEM_Solve:
         cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
         sorted_indices = np.argsort(part_stresses)
 
+        for idx in range(len(Xp)):
+            ax.text(Xp[idx], Yp[idx], Zp[idx], f'{idx}', size=12, zorder=100, color='black')
+
+        ax.scatter(Xp, Yp, Zp, color='k')
         for i in sorted_indices:
             member_ends = m.element_indices[:, i]
             Xps = Xp[member_ends]
@@ -394,8 +403,10 @@ class FEM_Solve:
             color = mapper.to_rgba(part_stresses[i])
             legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
 
-            ax.plot(Xps, Yps, Zps, color=color, linewidth=2,
-                    path_effects=[pe.Stroke(linewidth=5, foreground='black'), pe.Normal()], label=legend_string)
+            #ax.plot(Xps, Yps, Zps, color=color, linewidth=2,
+             #       path_effects=[pe.Stroke(linewidth=5, foreground='black'), pe.Normal()], label=legend_string)
+            ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
+
 
         handles, labels = ax.get_legend_handles_labels()
         fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='lower center', ncol=3)
