@@ -62,10 +62,10 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
     given a root and tip radius (also non-dimensioned), a tip speed ratio TSR, the number lf blades NBlades and the axial induction factor
     """
     
-    temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-axial_induction)**2))
+    temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-np.clip(axial_induction, 0, 0.999))**2))
     Ftip = np.array(2/np.pi*np.arccos(np.exp(temp1)))
     Ftip[np.isnan(Ftip)] = 0
-    temp1 = NBlades/2*(rootradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-axial_induction)**2))
+    temp1 = NBlades/2*(rootradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-np.clip(axial_induction, 0, 0.999))**2))
     Froot = np.array(2/np.pi*np.arccos(np.exp(temp1)))
     Froot[np.isnan(Froot)] = 0
     return Froot*Ftip, Ftip, Froot
@@ -147,7 +147,7 @@ def loadBladeElement(vnorm, vtan, r_R, chord, twist):
 
 # define function to determine load in the blade element
 
-
+induction_factors = []
 def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd ):
     """
     solve balance of momentum between blade element load and loading in the streamtube
@@ -282,10 +282,11 @@ if iteration:
     
     for ix in range(iterations):
         Radiuss_init = Radiuss
-        resultss = BEMsolver(Radiuss, chord_distribution, twist_distribution,Omega)
+        resultss = BEMsolver(Radiuss, chord_distribution, twist_distribution, Omega)
         areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
         dr = (r_R[1:]-r_R[:-1])*Radiuss
         CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
+        CP = np.clip(CP,0.01, 0.999)
         AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
         Radiuss = np.sqrt(AREA/(np.pi*inps.n_rotors))
         if np.abs(Radiuss-Radiuss_init) < 0.01:
@@ -409,8 +410,9 @@ if ale_shit:
 
     interp_spline = RectBivariateSpline(pitch_ale, TSR_ale, results_ales)
     coefficients = interp_spline.get_coeffs()
-    print(coefficients)
+    #print(coefficients)
     savemat('alemat.mat', {'coefficients': coefficients, 'pitch': pitch_ale, 'TSR': TSR_ale})
-
+if np.max(results[:,0])>0.4:
+    print("MODEL INVALID")
 
             
