@@ -15,6 +15,9 @@ class Hexagonal_Truss(Geometry_Definition):
                                    [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13,
                                     13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
 
+    def visual_check(self):
+        return
+
     def get_XYZ_coords(self):
         return
 
