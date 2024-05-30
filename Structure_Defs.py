@@ -139,7 +139,7 @@ def verif_geom_1():
 def tb_val():
     XYZ_coords = 12 * np.array([[-6, 12, 6, -12, 0],
                                 [0, 0, 0, 0, 24],
-                                [8, 8, -8, -8, 0]])
+                                [8, 8, -8, -8, 0]], dtype=float)
 
     member_indices = np.array([[0, 1, 2, 3],
                                [4, 4, 4, 4]])

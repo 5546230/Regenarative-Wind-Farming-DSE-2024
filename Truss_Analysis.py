@@ -234,14 +234,16 @@ class FEM_Solve:
 
         reshaped_array = flattened_coords.reshape(-1, 3)
         X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
-        element_Qs, element_sigmas = self.get_internal_loading(global_ds=global_displacements)
+        global_coords = np.vstack((X,Y,Z))
+
+        element_Qs, element_sigmas = self.get_internal_loading(global_ds=global_displacements, global_coords=global_coords)
 
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X,Y,Z,element_sigmas/factor)
         return d, element_Qs, element_sigmas
 
-    def get_internal_loading(self, global_ds):
+    def get_internal_loading(self, global_ds, global_coords):
         '''
         :param global_ds: global displacement vector
         :return: internal forces, internal axial stresses
@@ -250,6 +252,13 @@ class FEM_Solve:
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
 
         Qs = []
+
+        start_points = global_coords[:, member_indices[0, :]]
+        end_points = global_coords[:, member_indices[1, :]]
+
+        differences = end_points - start_points
+        new_lengths = np.linalg.norm(differences, axis=0)
+
         for i in range(mesh.N_elems):
             elem_start_dofs = start_dof_idxs[:, i]
             elem_end_dofs = end_dof_idxs[:, i]
@@ -261,6 +270,14 @@ class FEM_Solve:
             k =mesh.element_ks[i]
             Q = k @ u
             Qs.append(-1*Q[1])
+
+            delta_length = new_lengths[i] - mesh.element_lengths[i]
+            print(new_lengths[i], mesh.element_lengths[i], delta_length)
+            Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
+            print(Q)
+            print(Q_new)
+            print()
+
         Qs = np.array(Qs)
         sigmas = Qs / mesh.element_As
         return Qs, sigmas
@@ -338,7 +355,9 @@ class FEM_Solve:
 
 
 if __name__ == '__main__':
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
@@ -363,6 +382,6 @@ if __name__ == '__main__':
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
 
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=750)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
     print(d*1000)
     print(sigma/1e6)
