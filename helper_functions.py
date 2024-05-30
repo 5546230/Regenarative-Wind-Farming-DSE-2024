@@ -3,6 +3,7 @@ from matplotlib import cm
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm, LinearSegmentedColormap
+
 def custom_map():
     colors = [
         (0, 'blue'),  # Blue for negative values
