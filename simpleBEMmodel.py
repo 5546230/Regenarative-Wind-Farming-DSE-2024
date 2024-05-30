@@ -362,8 +362,9 @@ if optimize:
 # plt.xlabel('r/R')
 # plt.legend()
 # plt.show()
-def BEMsolver_ale(radius, chord_distribution, pitch_ale, omega):
-
+def BEMsolver_ale(pitch_ale):
+    omega = Omega
+    radius = Radius
     twist_distribution = root_twist*(1-r_R)+pitch_ale # degrees
     results =np.zeros([len(r_R)-1,6]) 
 
