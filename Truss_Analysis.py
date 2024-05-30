@@ -296,34 +296,33 @@ class FEM_Solve:
         :return: internal forces, internal axial stresses
         '''
         mesh=self.mesh
-        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        #start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
 
-        Qs = []
-
-        'new calc'
         start_points = global_coords[:, mesh.element_indices[0, :]]
         end_points = global_coords[:, mesh.element_indices[1, :]]
 
         differences = end_points - start_points
         new_lengths = np.linalg.norm(differences, axis=0)
 
-        for i in range(mesh.N_elems):
-            elem_start_dofs = start_dof_idxs[:, i]
-            elem_end_dofs = end_dof_idxs[:, i]
-            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+        delta_length = new_lengths - mesh.element_lengths
+        Qs = delta_length * mesh.element_Es * mesh.element_As / mesh.element_lengths
+        '''
+        #for i in range(mesh.N_elems):
+        #    elem_start_dofs = start_dof_idxs[:, i]
+        #    elem_end_dofs = end_dof_idxs[:, i]
+          #  elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
 
-            v = global_ds[np.isin(mesh.dof_indices, elem_dofs)]
-            T = mesh.element_Ts[i]
-            u = T @ v
-            
-            k =mesh.element_ks[i]
-            Q = k @ u
+            #v = global_ds[np.isin(mesh.dof_indices, elem_dofs)]
+            #T = mesh.element_Ts[i]
+            #u = T @ v
+            #k =mesh.element_ks[i]
+            #Q = k @ u
             #Qs.append(-1*Q[1])
 
-            'new calc'
-            delta_length = new_lengths[i] - mesh.element_lengths[i]
-            Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
-            Qs.append(Q_new)
+         #   delta_length = new_lengths[i] - mesh.element_lengths[i]
+         #   Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
+         #   Qs.append(Q_new)
+        '''
         Qs = np.array(Qs)
         sigmas = Qs / mesh.element_As
         return Qs, sigmas
@@ -421,54 +420,6 @@ class FEM_Solve:
 
         plt.show()
 
-    def plot_stresses_(self, Xp, Yp, Zp, sigmas):
-        '''
-        :param sigmas: axial stresses
-        '''
-        m = self.mesh
-
-        fig = plt.figure(figsize=(7, 7))
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-
-        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-
-        part_stresses = np.array(sigmas) * 1e-6
-        min_stress = np.min(part_stresses)[0]
-        max_stress = np.max(part_stresses)[0]
-
-        #norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
-        norm = TwoSlopeNorm(vmin=min_stress, vcenter=0., vmax=max_stress)
-        mapper = cm.ScalarMappable(norm=norm, cmap='bwr')
-
-        cbar = fig.colorbar(mapper, ax=ax)
-        cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
-        sorted_indices = np.argsort(part_stresses)
-
-        for idx in range(len(Xp)):
-            ax.text(Xp[idx], Yp[idx], Zp[idx], f'{idx}', size=12, zorder=100, color='black')
-
-        ax.scatter(Xp, Yp, Zp, color='k')
-        for i in sorted_indices:
-            member_ends = m.element_indices[:, i]
-            Xps = Xp[member_ends]
-            Yps = Yp[member_ends]
-            Zps = Zp[member_ends]
-
-            color = mapper.to_rgba(part_stresses[i])
-            legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
-
-            #ax.plot(Xps, Yps, Zps, color=color, linewidth=2,
-             #       path_effects=[pe.Stroke(linewidth=5, foreground='black'), pe.Normal()], label=legend_string)
-            ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
-
-
-        handles, labels = ax.get_legend_handles_labels()
-        fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='center', fontsize='small', ncol=2)
-        plt.show()
-
 
 
 if __name__ == '__main__':
@@ -478,6 +429,7 @@ if __name__ == '__main__':
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_4()
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hexagon_geom_25()
+
     'material and section definitions'
     steel = Material()
     standard_section = Section(radius=0.6, thickness=0.01)
