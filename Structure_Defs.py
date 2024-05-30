@@ -115,23 +115,23 @@ class Verif_3(Geometry_Definition):
 def verif_geom_1():
     XYZ_coords = np.array([[0, 0, 0, 0, 1, 1, 1, 1],
                            [0, 1, 0, 1, 0, 1, 0, 1],
-                           [0, 0, 1, 1, 0, 0, 1, 1]])
+                           [0, 0, 1, 1, 0, 0, 1, 1]], dtype=float)
 
-    member_indices = np.array([[0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 0, 5, 0, 5],
-                               [2, 3, 3, 3, 6, 7, 6, 7, 7, 7, 4, 4, 1, 1]])
+    member_indices = np.array([[0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 0, 5, 0, 5, 3, 2, 2],
+                               [2, 3, 3, 3, 6, 7, 6, 7, 7, 7, 4, 4, 1, 1, 5, 4, 7]])
 
-    section_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    material_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    section_indices = np.array(np.zeros(len(member_indices[0]), dtype= int))
+    material_indices = np.array(np.zeros(len(member_indices[0]), dtype=int))
 
     bc_indices = [0, 1, 4, 5]  # [0,1,4,5]
     bc_constraints = np.array([[1, 1, 1, 1],
-                               [1, 1, 1, 1],
+                               [1, 0, 1, 0],
                                [1, 1, 1, 1]])
 
     load_indices = [5]
     applied_loads = np.array([[0],
-                              [-100],
-                              [-50]])
+                              [-1000],
+                              [0]])
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 

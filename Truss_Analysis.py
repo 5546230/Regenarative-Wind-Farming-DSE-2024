@@ -267,6 +267,7 @@ class FEM_Solve:
             v = global_ds[np.isin(mesh.dof_indices, elem_dofs)]
             T = mesh.element_Ts[i]
             u = T @ v
+            
             k =mesh.element_ks[i]
             Q = k @ u
             Qs.append(-1*Q[1])
@@ -355,9 +356,13 @@ class FEM_Solve:
 
 
 if __name__ == '__main__':
+<<<<<<< Updated upstream
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
+=======
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
+>>>>>>> Stashed changes
 
     steel = Material()
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
@@ -382,6 +387,10 @@ if __name__ == '__main__':
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
 
+<<<<<<< Updated upstream
     d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
+=======
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=10)
+>>>>>>> Stashed changes
     print(d*1000)
     print(sigma/1e6)
