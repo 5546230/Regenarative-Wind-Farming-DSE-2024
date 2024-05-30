@@ -1,6 +1,6 @@
 import numpy as np
 
-V_RATED = 17.5  #13.6 is effectively the biggest for 33 rotors
+V_RATED = 13.48  #13.6 is effectively the biggest for 33 rotors
 TSR = 8
 P_RATED = 30*10**6
 n_rotors = 33
@@ -27,3 +27,4 @@ ale_shit = False
 
 if automatic_radius:
     init_Radius = Radiuss
+
