@@ -394,7 +394,7 @@ import pickle
 with open('interpolated_function.pkl', 'wb') as f:
     pickle.dump(interp_function, f)
 
-with open('interpolated_function.pkl', 'rb') as f:
-    loaded_interp_function = pickle.load(f)
+# with open('interpolated_function.pkl', 'rb') as f:
+#     loaded_interp_function = pickle.load(f)
 
-print(loaded_interp_function(3))  # loaded_interp_function(pitchangle)
+# print(loaded_interp_function(3))  # loaded_interp_function(pitchangle)
