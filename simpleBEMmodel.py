@@ -54,13 +54,15 @@ def ainduction(CT):
 # plt.grid()
 # plt.legend()
 # plt.show()
-
+axial_inductions = []
 
 def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial_induction):
     """
     This function calcualte steh combined tip and root Prandtl correction at agiven radial position 'r_R' (non-dimensioned by rotor radius), 
     given a root and tip radius (also non-dimensioned), a tip speed ratio TSR, the number lf blades NBlades and the axial induction factor
     """
+    axial_inductions.append(axial_induction)
+    axial_induction = 0.33
     temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-axial_induction)**2))
     Ftip = np.array(2/np.pi*np.arccos(np.exp(temp1)))
     Ftip[np.isnan(Ftip)] = 0
@@ -192,7 +194,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
         anew =  ainduction(CT)
         
         # correct new axial induction with Prandtl's correction
-        Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, Omega*Radius/Uinf, NBlades, anew);
+        Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, Omega*Radius/Uinf, NBlades, anew)
         if (Prandtl < 0.0001): 
             Prandtl = 0.0001 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
@@ -320,15 +322,18 @@ def CPCT_function(root_chord, tip_chord, root_twist, pitch):
 
 
 
-def objective_function(root_chord, tip_chord, root_twist, pitch):
+def objective_function(inputs):
+    root_chord, tip_chord, root_twist, pitch = inputs
     CP_o, CT_o = CPCT_function(root_chord, tip_chord, root_twist, pitch)
     return -CP_o + CT_o  
-from scipy.optimize import minimize
-initial_guess = [inps.root_chord, inps.tip_chord, inps.root_twist, inps.pitch]
-result = minimize(objective_function, initial_guess, method='SLSQP')
-optimal_inputs = result.x
-optimal_CP, optimal_CT = CPCT_function(optimal_inputs[0], optimal_inputs[1])
 
+from scipy.optimize import minimize
+if optimize:
+    initial_guess = np.array([inps.root_chord, inps.tip_chord, inps.root_twist, inps.pitch])
+    result = minimize(objective_function, initial_guess, method='SLSQP')
+    optimal_inputs = result.x
+    optimal_CP, optimal_CT = CPCT_function(optimal_inputs[0], optimal_inputs[1], optimal_inputs[2], optimal_inputs[3])
+    print(f'{optimal_inputs=},{optimal_CP=}, {optimal_CT=}')
 
 # fig1 = plt.figure(figsize=(12, 6))
 # plt.title('Axial and tangential induction')
@@ -356,3 +361,4 @@ optimal_CP, optimal_CT = CPCT_function(optimal_inputs[0], optimal_inputs[1])
 # plt.xlabel('r/R')
 # plt.legend()
 # plt.show()
+print(np.max(np.array(axial_inductions)))
