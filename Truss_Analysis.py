@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4
+from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.patheffects as pe
 np.set_printoptions(linewidth=7000)
@@ -405,11 +405,11 @@ class FEM_Solve:
 
 if __name__ == '__main__':
     'Geometry definitions'
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_4()
-
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hexagon_geom_25()
     'material and section definitions'
     steel = Material()
     standard_section = Section(radius=0.6, thickness=0.01)
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 
     material_val_3 = Material(E=200e9, rho=6600, sig_y=340e6)
     section_val_3 = Section(radius=1, thickness=0.01)
-    section_val_3.A = 4000e-6
+    #section_val_3.A = 4000e-6
 
     material_val_4 = Material(E=70e9, rho=6600, sig_y=340e6)
     section_val_4 = Section(radius=1, thickness=0.01)
