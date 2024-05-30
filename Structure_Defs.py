@@ -120,23 +120,23 @@ def verif_geom_1():
     member_indices = np.array([[0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 0, 5, 0, 5, 3, 2, 2],
                                [2, 3, 3, 3, 6, 7, 6, 7, 7, 7, 4, 4, 1, 1, 5, 4, 7]])
 
-    section_indices = np.array(np.zeros(len(member_indices[0]), dtype= int))
-    material_indices = np.array(np.zeros(len(member_indices[0]), dtype=int))
+    section_indices = np.array(np.ones(len(member_indices[0]), dtype= int))
+    material_indices = np.array(np.ones(len(member_indices[0]), dtype=int))
 
     bc_indices = [0, 1, 4, 5]  # [0,1,4,5]
     bc_constraints = np.array([[1, 1, 1, 1],
                                [1, 0, 1, 0],
                                [1, 1, 1, 1]])
 
-    load_indices = [5]
-    applied_loads = np.array([[0],
-                              [-1000],
-                              [0]])
+    load_indices = [5, 7]
+    applied_loads = np.array([[0, 100000],
+                              [-100000, 100000],
+                              [0, 0]])
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 
-
 def tb_val():
+    'example problem (similar to 8.3)'
     XYZ_coords = 12 * np.array([[-6, 12, 6, -12, 0],
                                 [0, 0, 0, 0, 24],
                                 [8, 8, -8, -8, 0]], dtype=float)
@@ -158,8 +158,8 @@ def tb_val():
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 
-
 def verif_geom_3():
+    'problem 8.5'
     XYZ_coords = np.array([[-4, 4, 4, -4, -2, 2, 2, -2],
                            [0,  0, 0, 0,  10, 10, 10, 10],
                            [4,  4,-4, -4, 2,  2, -2, -2]], dtype=float)
@@ -181,3 +181,28 @@ def verif_geom_3():
                               [0, 0,    0, 0]])
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
+
+def verif_geom_4():
+    'problem 8.1'
+    XYZ_coords = np.array([[-3, 9, 2, 0],
+                            [0, 0, 0, 12],
+                           [5, 6, -3, 0]], dtype=float)
+
+    member_indices = np.array([[0, 1, 2],
+                               [3, 3, 3]])
+
+    section_indices = np.ones(3, dtype=int)*3
+    material_indices = np.ones(3, dtype=int)*3
+
+    bc_indices = [0, 1, 2]  # [0,1,4,5]
+    bc_constraints = np.array([[1, 1, 1],
+                               [1, 1, 1],
+                               [1, 1, 1]])
+
+    load_indices = [3]
+    applied_loads = 1000*np.array([[75],
+                              [-150],
+                              [0]])
+
+    return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
+

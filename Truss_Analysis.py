@@ -1,14 +1,21 @@
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1
+from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.patheffects as pe
 np.set_printoptions(linewidth=7000)
+'''
+NOTES + ASSUMPTIONS:
+-  be careufl with scaling factor (fix!)
+- finalize material library
+- organise validation cases
+- DO MORE V&V
+'''
 
 
 class Material:
-    def __init__(self, E=190e9, rho=7800, sig_y=340e6):
+    def __init__(self, E=190e9, rho=7850, sig_y=340e6):
         '''
         :param E: Modulus of Elasticity [Pa]
         :param rho: Density [kg/m^3]
@@ -46,6 +53,8 @@ class Mesh:
         :param material_ids: (N_elems) material property index of each element
         :param materials: list of materials objects
         :param sections: list of sections objects
+        sources: [https://www.ce.memphis.edu/7117/notes/presentations/chapter_16.pdf]
+                [https://repository.bakrie.ac.id/10/1/%5BTSI-LIB-131%5D%5BAslam_Kassimali%5D_Matrix_Analysis_of_Structure.pdf]
         '''
 
         N_dof = 3
@@ -68,11 +77,13 @@ class Mesh:
         self.element_Es = np.array([self.materials[i].E for i in self.material_indices])
         self.element_As = np.array([self.sections[i].A for i in self.section_indices])
         self.element_rhos = np.array([self.materials[i].rho for i in self.material_indices])
-        self.elment_ms = self.element_As * self.element_lengths * self.element_rhos
+        self.elment_total_ms = self.element_As * self.element_lengths * self.element_rhos
 
         self.element_Ts = self.transfer_matrix()
         self.element_ks = self.element_stiffness()
-        self.element_Ks = self.transform_stiffness_to_global()
+        self.element_lumped_ms = self.element_lumped_mass()
+        self.element_Ks = self.transform_stiffness_to_global(local_matrix=self.element_ks)
+        self.element_Ms = self.transform_stiffness_to_global(local_matrix=self.element_lumped_ms)
 
         self.dof_indices = np.linspace(0, N_dof*self.N_nodes-1, N_dof*self.N_nodes, dtype=int)
 
@@ -81,8 +92,8 @@ class Mesh:
         '''
         :return: (N_elems, ) Length of each element
         '''
-        start_points = self.XYZ_coords[:, member_indices[0, :]]
-        end_points = self.XYZ_coords[:, member_indices[1, :]]
+        start_points = self.XYZ_coords[:, self.element_indices[0, :]]
+        end_points = self.XYZ_coords[:, self.element_indices[1, :]]
 
         differences = end_points - start_points
         lengths = np.linalg.norm(differences, axis=0)
@@ -95,8 +106,8 @@ class Mesh:
         I2 = np.eye(2)
         Ts = []
         Ls = self.element_lengths
-        start_points = self.XYZ_coords[:, member_indices[0, :]]
-        end_points = self.XYZ_coords[:, member_indices[1, :]]
+        start_points = self.XYZ_coords[:, self.element_indices[0, :]]
+        end_points = self.XYZ_coords[:, self.element_indices[1, :]]
         differences = end_points - start_points
 
         cosines = differences / Ls
@@ -114,15 +125,23 @@ class Mesh:
         '''
         single_element_top = np.array([[1, -1], [-1, 1]])[np.newaxis, :,:]
         all_elements_top = np.repeat(single_element_top, self.N_elems, axis=0)
-
         ks = np.einsum('ijk, i->ijk', all_elements_top, self.element_Es*self.element_As/self.element_lengths)
         return ks
 
-    def transform_stiffness_to_global(self):
+    def element_lumped_mass(self):
+        '''
+        :return: lumped (2x2) mass matrix, source: [https://www.ce.memphis.edu/7117/notes/presentations/chapter_16.pdf]
+        '''
+        m_single = np.eye(2)[np.newaxis, :,:]
+        m_all = np.repeat(m_single, self.N_elems, axis=0)
+        ms = np.einsum('ijk, i->ijk', m_all, self.element_rhos * self.element_As *self.element_lengths/2)
+        return ms
+
+    def transform_stiffness_to_global(self, local_matrix):
         '''
         :return: Transformation: local --> global, using tensor product over T
         '''
-        Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, self.element_ks, self.element_Ts)
+        Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, local_matrix, self.element_Ts)
         return Ks
 
     def plot_structure(self, show: bool = True):
@@ -133,6 +152,7 @@ class Mesh:
         ax.set_ylabel('Y [m]')
         ax.set_zlabel('Z [m]')
 
+        ax.scatter(self.X_coords, self.Y_coords, self.Z_coords, color='k', s=10)
         for i in range(self.element_indices.shape[1]):
             member_ends =  self.element_indices[:,i]
             Xs = self.X_coords[member_ends]
@@ -141,7 +161,6 @@ class Mesh:
             plt.plot(Xs, Ys, Zs, color='k')
         if show:
             plt.show()
-
 
 
 class FEM_Solve:
@@ -204,6 +223,28 @@ class FEM_Solve:
             S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
         return S
 
+    def assemble_global_mass(self):
+        '''
+        :return: (n_active_dof, n_active_dof) global stiffness matrix
+        '''
+        mesh = self.mesh
+        Ms = mesh.element_Ms
+
+        N_active = self.active_dofs.size
+        M = np.zeros((N_active, N_active))
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+
+        for i in range(mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:,i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            mask = np.isin(elem_dofs, self.active_dofs)
+            M_mask = np.isin(self.active_dofs, elem_dofs)
+
+            M[np.ix_(M_mask, M_mask)] += Ms[i][np.ix_(mask, mask)]
+        return M
+
     def assemble_loading_vector(self):
         '''
         :return: (n_active_nof) Global loading vector sampled over the active indices
@@ -253,8 +294,9 @@ class FEM_Solve:
 
         Qs = []
 
-        start_points = global_coords[:, member_indices[0, :]]
-        end_points = global_coords[:, member_indices[1, :]]
+        'new calc'
+        start_points = global_coords[:, mesh.element_indices[0, :]]
+        end_points = global_coords[:, mesh.element_indices[1, :]]
 
         differences = end_points - start_points
         new_lengths = np.linalg.norm(differences, axis=0)
@@ -270,18 +312,24 @@ class FEM_Solve:
             
             k =mesh.element_ks[i]
             Q = k @ u
-            Qs.append(-1*Q[1])
+            #Qs.append(-1*Q[1])
 
+            'new calc'
             delta_length = new_lengths[i] - mesh.element_lengths[i]
-            print(new_lengths[i], mesh.element_lengths[i], delta_length)
             Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
-            print(Q)
-            print(Q_new)
-            print()
-
+            Qs.append(Q_new)
+            #print(-1*Q[0], Q_new)
+            #print()
         Qs = np.array(Qs)
         sigmas = Qs / mesh.element_As
         return Qs, sigmas
+
+    def get_natural_frequencies(self):
+        M = self.assemble_global_mass()
+        K = self.assemble_global_stiffness()
+        Minv = np.linalg.inv(M)
+        eigenfreqs = np.sqrt(np.abs(np.linalg.eig(-Minv @ K)[0]))
+        return np.sort(eigenfreqs)
 
     def plot_displacements(self, Xp, Yp, Zp):
         '''
@@ -297,6 +345,7 @@ class FEM_Solve:
         ax.set_ylabel('Y [m]')
         ax.set_zlabel('Z [m]')
 
+        ax.scatter(Xp, Yp, Zp, color= 'red', s=10)
         for i in range(m.element_indices.shape[1]):
             member_ends = m.element_indices[:, i]
             Xs = m.X_coords[member_ends]
@@ -334,7 +383,6 @@ class FEM_Solve:
 
         cbar = fig.colorbar(mapper, ax=ax)
         cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
-
         sorted_indices = np.argsort(part_stresses)
 
         for i in sorted_indices:
@@ -356,15 +404,16 @@ class FEM_Solve:
 
 
 if __name__ == '__main__':
-<<<<<<< Updated upstream
-    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
+    'Geometry definitions'
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
-=======
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
->>>>>>> Stashed changes
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_4()
 
+    'material and section definitions'
     steel = Material()
+    standard_section = Section(radius=0.6, thickness=0.01)
+
     material_val = Material(E=10000, rho=6600, sig_y=340e6)
     section_val = Section(radius=1, thickness=0.01)
     section_val.A = 8.4
@@ -373,24 +422,29 @@ if __name__ == '__main__':
     section_val_3 = Section(radius=1, thickness=0.01)
     section_val_3.A = 4000e-6
 
-    material_library = [material_val, material_val_3]
-    section_library = [section_val, section_val_3]
+    material_val_4 = Material(E=70e9, rho=6600, sig_y=340e6)
+    section_val_4 = Section(radius=1, thickness=0.01)
+    section_val_4.A = 2000e-6
 
+    'create libraries'
+    material_library = [material_val, material_val_3, steel, material_val_4]
+    section_library = [section_val, section_val_3, standard_section, section_val_4]
 
-    TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
-    TEST.plot_structure()
-    #print(np.sum(TEST.elment_ms))
+    'initialise mesh'
+    MESH = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
+    MESH.plot_structure()
+    #print(np.sum(MESH.elment_ms))
 
-    SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
+    'initialise solver'
+    SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
     S = SOLVER.assemble_global_stiffness()
 
-    P = SOLVER.assemble_loading_vector()
-    d = np.linalg.solve(S, P)
-
-<<<<<<< Updated upstream
+    'solve'
+    #P = SOLVER.assemble_loading_vector()
+    #d = np.linalg.solve(S, P)
     d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
-=======
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=10)
->>>>>>> Stashed changes
-    print(d*1000)
-    print(sigma/1e6)
+
+    print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
+    print(f'      displacement [mm] = {d*1000}')
+    print(f'   Internal forces [kN] = {Q/1000}')
+    print(f'internal stresses [MPa] = {sigma/1e6}')
