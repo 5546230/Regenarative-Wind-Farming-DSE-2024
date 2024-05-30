@@ -37,7 +37,8 @@ class Section:
 
 
 class Mesh:
-    def __init__(self, XYZ_coords: np.array, member_indices: np.array, section_ids: np.array, material_ids: np.array, materials: list, sections: list):
+    def __init__(self, XYZ_coords: np.array, member_indices: np.array, section_ids: np.array,
+                 material_ids: np.array, materials: list, sections: list):
         '''
         :param XYZ_coords: (3 x N_nodes) coordinates of each node on the mesh
         :param member_indices: (2 x N_elems) connectivity defining the members by node index
@@ -66,6 +67,8 @@ class Mesh:
 
         self.element_Es = np.array([self.materials[i].E for i in self.material_indices])
         self.element_As = np.array([self.sections[i].A for i in self.section_indices])
+        self.element_rhos = np.array([self.materials[i].rho for i in self.material_indices])
+        self.elment_ms = self.element_As * self.element_lengths * self.element_rhos
 
         self.element_Ts = self.transfer_matrix()
         self.element_ks = self.element_stiffness()
@@ -106,7 +109,7 @@ class Mesh:
 
     def element_stiffness(self):
         '''
-        :return: (N_elems, 2*n_dof, 2*n_dof) multi-dimensional array containing each local element stiffness
+        :return: (N_elems, 2*n_dof, 2*n_dof) multidimensional array containing each local element stiffness
                                                 matrix, indexed by the order of self.element_indices
         '''
         single_element_top = np.array([[1, -1], [-1, 1]])[np.newaxis, :,:]
@@ -117,18 +120,18 @@ class Mesh:
 
     def transform_stiffness_to_global(self):
         '''
-        :return: Transformation local --> global using tensor product over T
+        :return: Transformation: local --> global, using tensor product over T
         '''
         Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, self.element_ks, self.element_Ts)
         return Ks
 
     def plot_structure(self, show: bool = True):
-        '#d plot of nodes and members'
+        '3d plot of nodes and members'
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+        ax.set_xlabel('X [m]')
+        ax.set_ylabel('Y [m]')
+        ax.set_zlabel('Z [m]')
 
         for i in range(self.element_indices.shape[1]):
             member_ends =  self.element_indices[:,i]
@@ -138,6 +141,7 @@ class Mesh:
             plt.plot(Xs, Ys, Zs, color='k')
         if show:
             plt.show()
+
 
 
 class FEM_Solve:
@@ -171,7 +175,6 @@ class FEM_Solve:
         start_points = mesh.element_indices[0, :]
         end_points = mesh.element_indices[1, :]
         dof_range = np.linspace(0, self.n_dof - 1, self.n_dof, dtype=int)
-
 
         'each column is a node, each row is a x,y,z dof'
         start_dof_idxs = dof_range[:, np.newaxis] + start_points * self.n_dof
@@ -222,7 +225,6 @@ class FEM_Solve:
         d = np.linalg.solve(S, P)
 
         m = self.mesh
-
         stacked_coords = np.column_stack((m.X_coords, m.Y_coords, m.Z_coords))
         flattened_coords = stacked_coords.ravel()
         global_displacements = np.zeros_like(flattened_coords)
@@ -236,7 +238,7 @@ class FEM_Solve:
 
         if plot:
             self.plot_displacements(X, Y, Z)
-            self.plot_stresses(X,Y,Z,element_sigmas)
+            self.plot_stresses(X,Y,Z,element_sigmas/factor)
         return d, element_Qs, element_sigmas
 
     def get_internal_loading(self, global_ds):
@@ -273,9 +275,9 @@ class FEM_Solve:
         '#d plot of nodes and members'
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+        ax.set_xlabel('X [m]')
+        ax.set_ylabel('Y [m]')
+        ax.set_zlabel('Z [m]')
 
         for i in range(m.element_indices.shape[1]):
             member_ends = m.element_indices[:, i]
@@ -287,11 +289,14 @@ class FEM_Solve:
             Yps = Yp[member_ends]
             Zps = Zp[member_ends]
 
-            plt.plot(Xs, Ys, Zs, color='k')
-            plt.plot(Xps, Yps, Zps, color='red')
+            plt.plot(Xs, Ys, Zs, color='k', linestyle='-')
+            plt.plot(Xps, Yps, Zps, color='red', linestyle='-')
         plt.show()
 
     def plot_stresses(self, Xp, Yp, Zp, sigmas):
+        '''
+        :param sigmas: axial stresses
+        '''
         m = self.mesh
 
         fig = plt.figure(figsize=(10, 7))
@@ -328,12 +333,11 @@ class FEM_Solve:
 
         handles, labels = ax.get_legend_handles_labels()
         fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='lower center', ncol=3)
-
         plt.show()
 
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
 
     steel = Material()
@@ -351,6 +355,7 @@ if __name__ == '__main__':
 
     TEST = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
     TEST.plot_structure()
+    #print(np.sum(TEST.elment_ms))
 
     SOLVER = FEM_Solve(mesh=TEST, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
     S = SOLVER.assemble_global_stiffness()
@@ -358,6 +363,6 @@ if __name__ == '__main__':
     P = SOLVER.assemble_loading_vector()
     d = np.linalg.solve(S, P)
 
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=750)
     print(d*1000)
     print(sigma/1e6)
