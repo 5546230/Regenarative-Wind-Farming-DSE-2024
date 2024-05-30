@@ -414,10 +414,7 @@ class FEM_Solve:
             ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
 
         handles, labels = ax.get_legend_handles_labels()
-
-        # Create the legend in the separate subplot
-        legend_ax.legend(handles, labels, loc='center', title="Legend")
-
+        legend_ax.legend(handles, labels, loc='center', title="Legend", fontsize=8)
         plt.show()
 
 
