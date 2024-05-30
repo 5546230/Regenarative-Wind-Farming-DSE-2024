@@ -15,15 +15,20 @@ n_rotors = inps.n_rotors
 P_RATED = inps.P_RATED # [W]
 V_RATED = inps.V_RATED # [m/s]     #select this
 TSR = inps.TSR # [-]     #select this too
-CP = BEM.CP     #   select assumed Cp
+CP = BEM.CP
+if np.isnan(CP):
+    CP = inps.assumed_CP #   select assumed Cp
 cut_in = inps.cut_in # [m/s]
 cut_off = inps.cut_off # [m/s]
 #////////////////////////////////
 
 # Calculate radius of multi rotor
 #radius = equivalent_radius / (n_rotors ** 0.5)
-AREA = P_RATED/(CP*0.5*rho*V_RATED**3)
+
 radius = BEM.Radius
+if np.isnan(BEM.CP):
+    radius = inps.Radiuss
+AREA = n_rotors*np.pi*radius**2
 
 # Initialize Array
 U_array = np.linspace(0, 27, 350)
@@ -93,6 +98,8 @@ crossings = find_all_x_crossings(x_data, y_data, y_targets)
 estimated_a = np.min(crossings[y_targets[0]])
 
 CT = BEM.CT
+if np.isnan(CT):
+    CT = 4*estimated_a*(1-estimated_a)
 T_RATED = CT*0.5*rho*V_RATED**2*AREA
 Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2
 T_RATED_perrotor = T_RATED/n_rotors
