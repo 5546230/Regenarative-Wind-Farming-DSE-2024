@@ -3,7 +3,9 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
 from matplotlib.ticker import FormatStrFormatter
-import matplotlib.patheffects as pe
+from matplotlib.gridspec import GridSpec
+from matplotlib.colors import TwoSlopeNorm
+from helper_functions import custom_map
 np.set_printoptions(linewidth=7000)
 '''
 NOTES + ASSUMPTIONS:
@@ -371,7 +373,61 @@ class FEM_Solve:
         '''
         m = self.mesh
 
-        fig = plt.figure(figsize=(10, 7))
+        # Create a figure with GridSpec layout
+        fig = plt.figure(figsize=(12, 7))
+        gs = GridSpec(1, 2, width_ratios=[4, 1])
+        ax = fig.add_subplot(gs[0], projection='3d')
+        legend_ax = fig.add_subplot(gs[1])
+        legend_ax.axis('off')  # Turn off the axis for the legend subplot
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+        part_stresses = np.array(sigmas) * 1e-6
+        min_stress = 1 * np.min(part_stresses)
+        max_stress = 1 * np.max(part_stresses)
+
+        #norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
+        norm = TwoSlopeNorm(vmin=min_stress, vcenter=0, vmax=max_stress)
+        custom_cmap = custom_map()
+        mapper = cm.ScalarMappable(norm=norm, cmap=custom_cmap)#'coolwarm')
+
+        cbar = fig.colorbar(mapper, ax=ax)
+        cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
+        sorted_indices = np.argsort(part_stresses)
+
+        for idx in range(len(Xp)):
+            ax.text(Xp[idx], Yp[idx], Zp[idx], f'{idx}', size=12, zorder=100, color='black')
+
+        ax.scatter(Xp, Yp, Zp, color='k')
+        for i in sorted_indices:
+            member_ends = m.element_indices[:, i]
+            Xps = Xp[member_ends]
+            Yps = Yp[member_ends]
+            Zps = Zp[member_ends]
+
+            color = mapper.to_rgba(part_stresses[i])
+            legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
+
+            ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
+
+        handles, labels = ax.get_legend_handles_labels()
+
+        # Create the legend in the separate subplot
+        legend_ax.legend(handles, labels, loc='center', title="Legend")
+
+        plt.show()
+
+    def plot_stresses_(self, Xp, Yp, Zp, sigmas):
+        '''
+        :param sigmas: axial stresses
+        '''
+        m = self.mesh
+
+        fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection='3d')
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -380,11 +436,12 @@ class FEM_Solve:
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
         part_stresses = np.array(sigmas) * 1e-6
-        min_stress = 0.85 * np.min(part_stresses)
-        max_stress = 1.25 * np.max(part_stresses)
+        min_stress = np.min(part_stresses)[0]
+        max_stress = np.max(part_stresses)[0]
 
-        norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
-        mapper = cm.ScalarMappable(norm=norm, cmap='YlOrRd')
+        #norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
+        norm = TwoSlopeNorm(vmin=min_stress, vcenter=0., vmax=max_stress)
+        mapper = cm.ScalarMappable(norm=norm, cmap='bwr')
 
         cbar = fig.colorbar(mapper, ax=ax)
         cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
@@ -409,7 +466,7 @@ class FEM_Solve:
 
 
         handles, labels = ax.get_legend_handles_labels()
-        fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='lower center', ncol=3)
+        fig.legend(handles, labels, bbox_to_anchor=(0.5, -0.05), loc='center', fontsize='small', ncol=2)
         plt.show()
 
 
@@ -430,7 +487,7 @@ if __name__ == '__main__':
     section_val.A = 8.4
 
     material_val_3 = Material(E=200e9, rho=6600, sig_y=340e6)
-    section_val_3 = Section(radius=1, thickness=0.01)
+    section_val_3 = Section(radius=.1, thickness=0.0025)
     #section_val_3.A = 4000e-6
 
     material_val_4 = Material(E=70e9, rho=6600, sig_y=340e6)
