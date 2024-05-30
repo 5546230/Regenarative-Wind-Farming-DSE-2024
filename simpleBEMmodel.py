@@ -391,11 +391,12 @@ def BEMsolver_ale(radius, chord_distribution, pitch_ale, omega):
         results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
     return results
 from scipy.interpolate import RectBivariateSpline
+from scipy.io import savemat
 ale_shit = inps.ale_shit
 if ale_shit:
     delta_r_R = .01
     r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
-    pitch_ale = np.linspace(-8, 8, 10)
+    pitch_ale = np.linspace(-6, 6, 10)
     TSR_ale = np.linspace(6, 9, 4)
     omega_ale = Uinf*TSR_ale/Radius
     
@@ -409,6 +410,7 @@ if ale_shit:
     interp_spline = RectBivariateSpline(pitch_ale, TSR_ale, results_ales)
     coefficients = interp_spline.get_coeffs()
     print(coefficients)
+    savemat('alemat.mat', {'coefficients': coefficients, 'pitch': pitch_ale, 'TSR': TSR_ale})
 
 
             
