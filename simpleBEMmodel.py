@@ -54,15 +54,14 @@ def ainduction(CT):
 # plt.grid()
 # plt.legend()
 # plt.show()
-axial_inductions = []
+
 
 def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial_induction):
     """
     This function calcualte steh combined tip and root Prandtl correction at agiven radial position 'r_R' (non-dimensioned by rotor radius), 
     given a root and tip radius (also non-dimensioned), a tip speed ratio TSR, the number lf blades NBlades and the axial induction factor
     """
-    axial_inductions.append(axial_induction)
-    axial_induction = 0.33
+    
     temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-axial_induction)**2))
     Ftip = np.array(2/np.pi*np.arccos(np.exp(temp1)))
     Ftip[np.isnan(Ftip)] = 0
@@ -119,6 +118,7 @@ polar_alpha_tip, polar_cl_tip, polar_cd_tip = import_polar_data('s817.csv')
 # axs[1].set_xlabel(r'$C_d$')
 # axs[1].grid()
 # plt.show()
+
 def loadBladeElement(vnorm, vtan, r_R, chord, twist):
     """
     calculates the load in the blade element
@@ -199,7 +199,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
             Prandtl = 0.0001 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
         a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
-
+        #a = np.min(a,1)
         # calculate aximuthal induction
         aline = ftan*NBlades/(2*np.pi*Uinf*(1-a)*Omega*2*(r_R*Radius)**2)
         aline =aline/Prandtl # correct estimate of azimuthal induction with Prandtl's correction
@@ -248,7 +248,7 @@ RootLocation_R =  0.2
 
 # solve BEM model
 
-def BEMsolver(radius, chord_distribution, twist_distribution):
+def BEMsolver(radius, chord_distribution, twist_distribution, omega):
 
     results =np.zeros([len(r_R)-1,6]) 
 
@@ -274,7 +274,7 @@ def BEMsolver(radius, chord_distribution, twist_distribution):
             polar_cd = polar_cd_tip
 
         # Call the solveStreamtube function with the selected airfoil data
-        results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, Omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
+        results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
     return results
 Radiuss = Radius
 if iteration:
@@ -282,7 +282,7 @@ if iteration:
     
     for ix in range(iterations):
         Radiuss_init = Radiuss
-        resultss = BEMsolver(Radiuss, chord_distribution, twist_distribution)
+        resultss = BEMsolver(Radiuss, chord_distribution, twist_distribution,Omega)
         areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radiuss**2
         dr = (r_R[1:]-r_R[:-1])*Radiuss
         CP = np.sum(dr*resultss[:,4]*resultss[:,2]*NBlades*Radiuss*Omega/(0.5*Uinf**3*np.pi*Radiuss**2))
@@ -291,7 +291,7 @@ if iteration:
         if np.abs(Radiuss-Radiuss_init) < 0.01:
             break
 
-results = BEMsolver(Radiuss, chord_distribution, twist_distribution)
+results = BEMsolver(Radiuss, chord_distribution, twist_distribution, Omega)
 Radius = Radiuss
 print(f'{Radius=}')
 
@@ -315,7 +315,7 @@ def CPCT_function(root_chord, tip_chord, root_twist, pitch):
     dr = (r_R[1:]-r_R[:-1])*Radius
     chord_distribution = root_chord*(1-r_R)+tip_chord # meters
     twist_distribution = root_twist*(1-r_R)+pitch # degrees
-    results = BEMsolver(Radius, chord_distribution, twist_distribution)
+    results = BEMsolver(Radius, chord_distribution, twist_distribution, Omega)
     CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
     CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
     return CP, CT
@@ -361,4 +361,54 @@ if optimize:
 # plt.xlabel('r/R')
 # plt.legend()
 # plt.show()
-print(np.max(np.array(axial_inductions)))
+def BEMsolver_ale(radius, chord_distribution, pitch_ale, omega):
+
+    twist_distribution = root_twist*(1-r_R)+pitch_ale # degrees
+    results =np.zeros([len(r_R)-1,6]) 
+
+    for i in range(len(r_R)-1):
+        r_avg = (r_R[i] + r_R[i+1]) / 2  # Midpoint of the radial segment
+        
+        # Interpolate chord and twist distribution
+        chord = np.interp(r_avg, r_R, chord_distribution)
+        twist = np.interp(r_avg, r_R, twist_distribution)
+
+        # Select appropriate airfoil data based on radial position
+        if r_avg <= root_boundary_R:
+            polar_alpha = polar_alpha_root
+            polar_cl = polar_cl_root
+            polar_cd = polar_cd_root
+        elif root_boundary_R < r_avg <= mid_boundary_R:
+            polar_alpha = polar_alpha_mid
+            polar_cl = polar_cl_mid
+            polar_cd = polar_cd_mid
+        else:
+            polar_alpha = polar_alpha_tip
+            polar_cl = polar_cl_tip
+            polar_cd = polar_cd_tip
+
+        # Call the solveStreamtube function with the selected airfoil data
+        results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
+    return results
+from scipy.interpolate import RectBivariateSpline
+ale_shit = inps.ale_shit
+if ale_shit:
+    delta_r_R = .01
+    r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
+    pitch_ale = np.linspace(-8, 8, 10)
+    TSR_ale = np.linspace(6, 9, 4)
+    omega_ale = Uinf*TSR_ale/Radius
+    
+    results_ales = array = np.zeros((len(pitch_ale), len(omega_ale)))
+    for x in range(len(pitch_ale)):
+        for y in range(len(omega_ale)):
+            resultss = BEMsolver_ale(Radius, chord_distribution,pitch_ale[x], omega_ale[y])
+            CT_ale = np.sum(dr*resultss[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+            results_ales[x,y] = CT_ale
+
+    interp_spline = RectBivariateSpline(pitch_ale, TSR_ale, results_ales)
+    coefficients = interp_spline.get_coeffs()
+    print(coefficients)
+
+
+            
