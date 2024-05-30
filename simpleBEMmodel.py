@@ -4,10 +4,11 @@ import numpy as np
 import inputs_BEM_powerCurve as inps
 #inputs : change chord, twist, airfoils, Uinf, TSR, 
 
+
 root_boundary_R = 0.4
 mid_boundary_R = 0.75
 
-iteration = inps.iteration
+iteration = inps.iteration 
 
 
 def CTfunction(a, glauert = False):
@@ -38,22 +39,7 @@ def ainduction(CT):
     return a
 
 
-# plot CT as a function of induction "a", with and without Glauert correction
-# define a as a range
-# a = np.arange(-.5,1,.01)
-# CTmom = CTfunction(a) # CT without correction
-# CTglauert = CTfunction(a, True) # CT with Glauert's correction
-# a2 = ainduction(CTglauert)
 
-# fig1 = plt.figure(figsize=(12, 6))
-# plt.plot(a, CTmom, 'k-', label='$C_T$')
-# plt.plot(a, CTglauert, 'b--', label='$C_T$ Glauert')
-# plt.plot(a, CTglauert*(1-a), 'g--', label='$C_P$ Glauert')
-# plt.xlabel('a')
-# plt.ylabel(r'$C_T$ and $C_P$')
-# plt.grid()
-# plt.legend()
-# plt.show()
 
 
 def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial_induction):
@@ -61,6 +47,9 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
     This function calcualte steh combined tip and root Prandtl correction at agiven radial position 'r_R' (non-dimensioned by rotor radius), 
     given a root and tip radius (also non-dimensioned), a tip speed ratio TSR, the number lf blades NBlades and the axial induction factor
     """
+    # if axial_induction > 1:
+        #print("invalid induction")
+        
     
     temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-np.clip(axial_induction, 0, 0.999))**2))
     Ftip = np.array(2/np.pi*np.arccos(np.exp(temp1)))
@@ -71,30 +60,12 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
     return Froot*Ftip, Ftip, Froot
 
 
-# plot Prandtl tip, root and combined correction for a number of blades and induction 'a', over the non-dimensioned radius
-# r_R = np.arange(0.1, 1, .01)
-# a = np.zeros(np.shape(r_R))+0.3
-# Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, 0.1, 1, 7, 3, a)
-
-# fig1 = plt.figure(figsize=(12, 6))
-# plt.plot(r_R, Prandtl, 'r-', label='Prandtl')
-# plt.plot(r_R, Prandtltip, 'g.', label='Prandtl tip')
-# plt.plot(r_R, Prandtlroot, 'b.', label='Prandtl root')
-# plt.xlabel('r/R')
-# plt.legend()
-# plt.show()
 
 
 # import polar
 
 import pandas as pd
 
-# airfoil = 'DU95W180.cvs'
-# data1=pd.read_csv(airfoil, header=0,
-#                     names = ["alfa", "cl", "cd", "cm"],  sep='\s+')
-# polar_alpha = data1['alfa'][:]
-# polar_cl = data1['cl'][:]
-# polar_cd = data1['cd'][:]
 
 def import_polar_data(airfoil_file):
     data = pd.read_csv(airfoil_file, header=0, names=["alfa", "cl", "cd", "cm"], sep=',')
@@ -105,19 +76,6 @@ polar_alpha_root, polar_cl_root, polar_cd_root = import_polar_data('s818.csv')
 polar_alpha_mid, polar_cl_mid, polar_cd_mid = import_polar_data('s816.csv')
 polar_alpha_tip, polar_cl_tip, polar_cd_tip = import_polar_data('s817.csv')
 
-# plot polars of the airfoil C-alfa and Cl-Cd
-
-# fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-# axs[0].plot(polar_alpha, polar_cl)
-# axs[0].set_xlim([-30,30])
-# axs[0].set_xlabel(r'$\alpha$')
-# axs[0].set_ylabel(r'$C_l$')
-# axs[0].grid()
-# axs[1].plot(polar_cd, polar_cl)
-# axs[1].set_xlim([0,.1])
-# axs[1].set_xlabel(r'$C_d$')
-# axs[1].grid()
-# plt.show()
 
 def loadBladeElement(vnorm, vtan, r_R, chord, twist):
     """
@@ -209,8 +167,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
         
         #// test convergence of solution, by checking convergence of axial induction
         if (np.abs(a-anew) < Erroriterations): 
-            # print("iterations")
-            # print(i)
+            
             break
 
     return [a , aline, r_R, fnorm , ftan, gamma]
@@ -326,44 +283,22 @@ def CPCT_function(root_chord, tip_chord, root_twist, pitch):
 def objective_function(inputs):
     root_chord, tip_chord, root_twist, pitch = inputs
     CP_o, CT_o = CPCT_function(root_chord, tip_chord, root_twist, pitch)
-    return -CP_o + CT_o  
+    return -CP_o+CT_o
 
 from scipy.optimize import minimize
 if optimize:
     initial_guess = np.array([inps.root_chord, inps.tip_chord, inps.root_twist, inps.pitch])
-    result = minimize(objective_function, initial_guess, method='SLSQP')
+    bounds = np.array([(2,6),(1,3),(-25,25),(-10,25)])
+    result = minimize(objective_function, initial_guess,bounds = bounds, method='SLSQP')
     optimal_inputs = result.x
     optimal_CP, optimal_CT = CPCT_function(optimal_inputs[0], optimal_inputs[1], optimal_inputs[2], optimal_inputs[3])
     print(f'{optimal_inputs=},{optimal_CP=}, {optimal_CT=}')
 
-# fig1 = plt.figure(figsize=(12, 6))
-# plt.title('Axial and tangential induction')
-# plt.plot(results[:,2], results[:,0], 'r-', label=r'$a$')
-# plt.plot(results[:,2], results[:,1], 'g--', label=r'$a^,$')
-# plt.grid()
-# plt.xlabel('r/R')
-# plt.legend()
-# plt.show()
 
-# fig1 = plt.figure(figsize=(12, 6))
-# plt.title(r'Normal and tagential force, non-dimensioned by $\frac{1}{2} \rho U_\infty^2 R$')
-# plt.plot(results[:,2], results[:,3]/(0.5*Uinf**2*Radius), 'r-', label=r'Fnorm')
-# plt.plot(results[:,2], results[:,4]/(0.5*Uinf**2*Radius), 'g--', label=r'Ftan')
-# plt.grid()
-# plt.xlabel('r/R')
-# plt.legend()
-# plt.show()
-
-
-# fig1 = plt.figure(figsize=(12, 6))
-# plt.title(r'Circulation distribution, non-dimensioned by $\frac{\pi U_\infty^2}{\Omega * NBlades } $')
-# plt.plot(results[:,2], results[:,5]/(np.pi*Uinf**2/(NBlades*Omega)), 'r-', label=r'$\Gamma$')
-# plt.grid()
-# plt.xlabel('r/R')
-# plt.legend()
-# plt.show()
-def BEMsolver_ale(radius, chord_distribution, pitch_ale, omega):
-
+def BEMsolver_ale(pitch_ale):
+    radius = Radius
+    omega = Omega
+    
     twist_distribution = root_twist*(1-r_R)+pitch_ale # degrees
     results =np.zeros([len(r_R)-1,6]) 
 
@@ -390,7 +325,9 @@ def BEMsolver_ale(radius, chord_distribution, pitch_ale, omega):
 
         # Call the solveStreamtube function with the selected airfoil data
         results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
-    return results
+        dr_ale = (r_R[1:]-r_R[:-1])*Radius
+        CT_ale = np.sum(dr_ale*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+    return CT_ale
 from scipy.interpolate import RectBivariateSpline
 from scipy.io import savemat
 ale_shit = inps.ale_shit
@@ -415,4 +352,23 @@ if ale_shit:
 if np.max(results[:,0])>0.4:
     print("MODEL INVALID")
 
-            
+rotor_solidity = (3*(np.min(chord_distribution) + np.max(chord_distribution))/2*0.8*Radius)/(np.pi*Radius**2-np.pi*(0.2*Radius)**2)
+print(chord_distribution)
+print(f'{rotor_solidity=}')
+if optimize:
+    chord_distribution = optimal_inputs[0]*(1-r_R)+optimal_inputs[1] # meters
+    print(chord_distribution)
+    rotor_solidity = (3*(np.min(chord_distribution) + np.max(chord_distribution))/2*0.8*Radius)/(np.pi*Radius**2-np.pi*(0.2*Radius)**2)
+    print(f'{rotor_solidity=}')
+
+
+
+pitch_ales = np.arange(-10,25,1)
+CT_ales = []
+for i in range(len(pitch_ales)):
+    CT_ales.append(BEMsolver_ale(pitch_ales[i]))
+
+CT_ales = np.array(CT_ales)
+print(CT_ales)
+plt.plot(pitch_ales, CT_ales)
+plt.show()

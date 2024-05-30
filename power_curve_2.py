@@ -108,3 +108,4 @@ print(f'{P_RATED=}, {T_RATED=}, {Q_RATED_perrotor=}, {T_RATED_perrotor=}, {P_RAT
 print(f'{estimated_a=}')
 CP_glauert = 4*estimated_a*(1-estimated_a)**2
 print((CP_glauert-CP)/CP_glauert)
+print("speed at rotors is: ", V_RATED*(1-estimated_a))
