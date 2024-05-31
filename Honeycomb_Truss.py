@@ -7,6 +7,12 @@ np.set_printoptions(linewidth=7000)
 
 class Hexagonal_Truss(Geometry_Definition):
     def __init__(self, n_rotors: int = 33, r_per_rotor = 12.5, spacing_factor=1, verbose: bool = True):
+        '''
+        :param n_rotors: number of hexagons
+        :param r_per_rotor: rotor radius (per MR)
+        :param spacing_factor: keep = 1
+        :param verbose: print
+        '''
         self.spacing_factor = spacing_factor
         self.n_rotors = n_rotors
         self.r_rot = r_per_rotor
@@ -34,7 +40,6 @@ class Hexagonal_Truss(Geometry_Definition):
         stacked_connections = np.hstack(all_hex_connect)
         unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
         unique_indices = np.arange(unique_indices.size, dtype=int)
-        #rounded_unique_nodes = np.round(unique_nodes, decimals=2)
         _, reverse_indices = np.unique(stacked_coordinates.T, axis=0, return_inverse=True)
 
         'map from unique indices to unique nodes'
@@ -61,8 +66,7 @@ class Hexagonal_Truss(Geometry_Definition):
             X, Y, Z = unique_nodes[:, 0], unique_nodes[:, 1], unique_nodes[:, 2]
             ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
             plt.show()
-            # print(unique_edges)
-            # print(np.unique(np.sort(unique_edges, axis=0), axis=1).shape)
+
             print(f'Unique indices: {unique_indices}')
             print(f'number of nodes before = {node_indices.shape[0]}')
             print(f'number of edges before = {stacked_connections.shape[1]}')
@@ -89,6 +93,9 @@ class Hexagonal_Truss(Geometry_Definition):
             self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
 
     def transform_coordinates(self):
+        '''
+        :return: re-mapping of single hexagon to a set of all hexagons
+        '''
         centre_single_hex_Y = (np.max(self.X_single_hex)+np.min(self.X_single_hex))/2
         centre_single_hex_Z = (np.max(self.X_single_hex)+np.min(self.X_single_hex))/2
         datum_YZ = self.hex_positions[0]
@@ -113,7 +120,6 @@ class Hexagonal_Truss(Geometry_Definition):
 
 
     def plot_circles(self, positions, width, height, title):
-        """Plot circles with given positions."""
         fig, ax = plt.subplots()
         ax.set_xlim(0, width)
         ax.set_ylim(0, height)
