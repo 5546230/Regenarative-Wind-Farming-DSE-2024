@@ -1,7 +1,3 @@
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import FormatStrFormatter
-import numpy as np
 import math
 from matplotlib.colors import TwoSlopeNorm, LinearSegmentedColormap
 

@@ -34,8 +34,9 @@ class Hexagonal_Truss(Geometry_Definition):
         #rounded_unique_nodes = np.round(unique_nodes, decimals=2)
         _, reverse_indices = np.unique(stacked_coordinates.T, axis=0, return_inverse=True)
 
-
+        'map from unique indices to unique nodes'
         coord_to_index_map = {tuple(coord): idx for coord, idx in zip(unique_nodes, unique_indices)}
+        're-map the original connections to the unique node indices'
         new_connections = stacked_connections.copy()
 
         for i in range(len(node_indices)):
@@ -44,6 +45,7 @@ class Hexagonal_Truss(Geometry_Definition):
                 new_index = coord_to_index_map[coord]
                 new_connections[stacked_connections == node_indices[i]] = new_index
 
+        'remove any duplicate edges'
         unique_edges = np.unique(new_connections, axis=1)
         unique_edges = np.unique(np.sort(unique_edges, axis=0), axis=1)
 
@@ -57,7 +59,6 @@ class Hexagonal_Truss(Geometry_Definition):
             X, Y, Z = unique_nodes[:, 0], unique_nodes[:, 1], unique_nodes[:, 2]
             ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
             plt.show()
-
             # print(unique_edges)
             # print(np.unique(np.sort(unique_edges, axis=0), axis=1).shape)
             print(f'Unique indices: {unique_indices}')
