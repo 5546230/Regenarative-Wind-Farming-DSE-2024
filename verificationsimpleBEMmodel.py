@@ -26,5 +26,6 @@ def test1ainduction():
     CT_1 = 0
     CT_2 = 1
     a = BEM.ainduction(np.array([CT_1, CT_2]))
-    
+    return a
+print(test1ainduction())
 
