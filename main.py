@@ -21,7 +21,7 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
 
     if verbose:
         print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
@@ -37,7 +37,7 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
 if __name__ == '__main__':
     'material and section definitions'
     steel = Material()
-    standard_section = Section(radius=0.6, thickness=0.01)
+    standard_section = Section(radius=0.1, thickness=0.0025)
 
     'create libraries'
     material_library = [steel, steel, steel, steel]
