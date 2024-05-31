@@ -46,10 +46,7 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
     """
     This function calcualte steh combined tip and root Prandtl correction at agiven radial position 'r_R' (non-dimensioned by rotor radius), 
     given a root and tip radius (also non-dimensioned), a tip speed ratio TSR, the number lf blades NBlades and the axial induction factor
-    """
-    # if axial_induction > 1:
-        #print("invalid induction")
-        
+    """       
     
     temp1 = -NBlades/2*(tipradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-np.clip(axial_induction, 0, 0.999))**2))
     Ftip = np.array(2/np.pi*np.arccos(np.exp(temp1)))
@@ -57,6 +54,7 @@ def PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, TSR, NBlades, axial
     temp1 = NBlades/2*(rootradius_R-r_R)/r_R*np.sqrt( 1+ ((TSR*r_R)**2)/((1-np.clip(axial_induction, 0, 0.999))**2))
     Froot = np.array(2/np.pi*np.arccos(np.exp(temp1)))
     Froot[np.isnan(Froot)] = 0
+    #print(Froot*Ftip)
     return Froot*Ftip, Ftip, Froot
 
 
@@ -258,7 +256,7 @@ print(f'{Radius=}')
 
 areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
 dr = (r_R[1:]-r_R[:-1])*Radius
-CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))  #[a , aline, r_R, fnorm , ftan, gamma]
 CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
 a_total = ainduction(CT)
 Prandtl_1, Prandtltip_1, Prandtlroot_1 = PrandtlTipRootCorrection(0.6, RootLocation_R, TipLocation_R, Omega*Radius/Uinf, NBlades, a_total)
@@ -269,6 +267,7 @@ a_total= a_total/Prandtl_1 # correct estimate of axial induction
 print(f'{a_total=}')
 print("CT is ", CT)
 print("CP is ", CP)
+# print('a', results[:,0])
 
 
 
@@ -398,3 +397,18 @@ if ale_shit_2:
     import pickle
     with open('interpolated_function.pkl', 'wb') as f:
         pickle.dump(interp_function, f)
+
+
+def Reynoldsnumber(r1, r2):
+    r_R = (r1+r2)/2
+    Vtan = (1+np.average(results[:,1]))*Omega*r_R*Radius
+    Vmag = np.sqrt(Vtan**2 + (Uinf*(1-a_total))**2)
+    chords = np.average(chord_distribution)
+    mu = 1.48e-05
+    return Vmag*inps.rho*chords/mu
+
+reynolds_root = Reynoldsnumber(0,root_boundary_R)
+reynolds_mid = Reynoldsnumber(root_boundary_R,mid_boundary_R)
+reynolds_tip = Reynoldsnumber(mid_boundary_R, 1)
+print(f'{reynolds_root=}, {reynolds_mid=}, {reynolds_tip=}')
+    
