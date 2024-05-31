@@ -225,5 +225,5 @@ def hexagon_geom_25():
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687/2, depth=35)
+    truss = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687/2*1.05, depth=35)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)

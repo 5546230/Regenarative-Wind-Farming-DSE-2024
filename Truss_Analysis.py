@@ -262,7 +262,7 @@ class FEM_Solve:
         return global_loading_vector[self.active_dofs]
 
     def assemble_self_loading(self):
-        'assumes gravity to act in z'
+        'assumes gravity acts in z'
         mesh = self.mesh
         global_SL = np.zeros(mesh.N_nodes*self.n_dof)
 
