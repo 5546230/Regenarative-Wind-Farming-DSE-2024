@@ -47,54 +47,56 @@ class Wave():
         return F
 
 
+if __name__ == "__main__":
+    wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.3e-3)
+    z = np.arange(-wave.water_depth, 0, 0.1)
+    t = np.arange(0, 1000, 5)
+    print(wave.compute_fluid_properties())
+    Z, T = np.meshgrid(z,t)
+    F_dist=[]
+    avg=0
+    avg_lst=[]
+    for i in t:
 
-wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.8e-5)
-z = np.arange(-wave.water_depth, 0, 0.1)
-t = np.arange(0, 1000, 5)
-print(wave.compute_fluid_properties())
-Z, T = np.meshgrid(z,t)
-F_dist=[]
-avg=0
-avg_lst=[]
-for i in t:
+        F = wave.compute_Morison(z, i)
+        F_dist.append(F)
+        avg = np.average(F)
+        avg_lst.append(avg)
 
-    F = wave.compute_Morison(z, i)
-    F_dist.append(F)
-    avg = np.average(F)
-    avg_lst.append(avg)
+    F_dist = np.array(F_dist)
+    avg = np.array(avg_lst)
+    max_idx = np.argmax(avg)
 
-F_dist = np.array(F_dist)
-avg = np.array(avg_lst)
-max_idx = np.argmax(avg)
+    F_dist_max = F_dist[max_idx]
 
-F_dist_max = F_dist[max_idx]
+    F_eq = np.sum(0.1*F_dist_max)
 
-F_eq = np.sum(0.1*F_dist_max)
+    Z_avg = np.sum(0.1*F_dist_max*z)/F_eq
 
-Z_avg = np.sum(0.1*F_dist_max*z)/F_eq
+    M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
 
-M_base= np.sum 
+  
 
-print(F_eq, Z_avg+wave.water_depth, F_eq*(Z_avg+wave.water_depth))
+    print(F_eq, Z_avg+wave.water_depth, M_base)
 
-'''fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+    '''fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-# Scatter plot
-ax.scatter(T, Z, F_dist)
+    # Scatter plot
+    ax.scatter(T, Z, F_dist)
 
-# Set labels
-ax.set_xlabel('Time [s]')
-ax.set_ylabel('Depth [m]')
-ax.set_zlabel('Force per unit length [N/m]')'''
-plt.plot(F_dist_max, z)
-plt.vlines(np.average(F_dist_max), ymin = -wave.water_depth, ymax=0)
-plt.hlines(Z_avg, xmin = np.min(F_dist_max), xmax = np.max(F_dist_max))
-plt.grid()
-plt.xlabel('Force per unit length [N]')
-plt.ylabel('Depth [m]')
-# Show plot
-plt.show()
+    # Set labels
+    ax.set_xlabel('Time [s]')
+    ax.set_ylabel('Depth [m]')
+    ax.set_zlabel('Force per unit length [N/m]')'''
+    plt.plot(F_dist_max, z)
+    plt.vlines(np.average(F_dist_max), ymin = -wave.water_depth, ymax=0)
+    plt.hlines(Z_avg, xmin = np.min(F_dist_max), xmax = np.max(F_dist_max))
+    plt.grid()
+    plt.xlabel('Force per unit length [N]')
+    plt.ylabel('Depth [m]')
+    # Show plot
+    plt.show()
 
 
 
