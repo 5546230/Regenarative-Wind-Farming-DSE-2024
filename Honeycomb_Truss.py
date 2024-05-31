@@ -180,7 +180,7 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.array([14])
 
     def get_applied_loads(self):
-        return np.array([[0],[-1e6],[0]])
+        return np.array([[0],[-1e8],[0]])
 
     def get_material_indices(self):
         return np.ones(self.n_unique_edges, dtype=int)
