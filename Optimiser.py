@@ -5,11 +5,13 @@ import numpy as np
 
 
 class Optimizer:
-    def __init__(self, mesh: Mesh, solver: FEM_Solve, plot_output: bool = False, r_t = 1/100):
+    def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, plot_output: bool = False, r_t = 1/100, verbose: bool = False):
         self.mesh = mesh
         self.solver = solver
         self.r_t = r_t
         self.plot_output = plot_output
+        self.minimum_D = minimum_D
+        self.verbose = verbose
 
     def calc_buckling_diameter(self, l_i: np.array, E_i: np.array, F_bar_i: np.array, gamma_buckling=1.2):
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
@@ -26,7 +28,7 @@ class Optimizer:
     def calc_bar_masses(self, A_i: np.array, l_i: np.array, rho_i: np.array):
         return A_i * l_i * rho_i
 
-    def run_optimisation(self, ):
+    def run_optimisation(self, tolerance = 1e-6):
         'initialise mesh'
         m = self.mesh
         s = self.solver
@@ -34,7 +36,7 @@ class Optimizer:
 
         'collect element properties'
         Es = m.element_Es
-        sigys = np.array([m.materials[i].E for i in m.material_indices])
+        sigys = np.array([m.materials[i].sig_y for i in m.material_indices])
         As = m.element_As
         Ds = 2 * np.array([m.sections[i].R for i in m.section_indices])
         rhos = m.element_rhos
@@ -46,12 +48,32 @@ class Optimizer:
         D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
         D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
         Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
-        print(As)
-        D_output = Ds.copy()
-        if np.any(Ds < Ds_sizing):
-            Ds[np.where(Ds < Ds_sizing)] = Ds_sizing[np.where(Ds < Ds_sizing)]
-            m.element_As = self.calc_A_thin(D_i=Ds, )
+        Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
 
+        if self.verbose:
+            print(f'Sigma_max = {np.max(sigma / 1e6)}')
+            print('================================================================================')
+
+        D_output = Ds.copy()
+        if np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
+            while np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
+                #Ds[np.where(Ds < Ds_sizing)] = Ds_sizing[np.where(Ds < Ds_sizing)]
+                if self.verbose:
+                    print(f'Sigma_max = {np.max(sigma / 1e6)}, max_diff={np.max(Ds_sizing - Ds):.5f},')
+                Ds[:] = Ds_sizing
+
+                m.element_As = self.calc_A_thin(D_i=Ds, )
+                m.element_ks = m.element_stiffness()
+                m.element_lumped_ms = m.element_lumped_mass()
+                m.element_Ks = m.transform_stiffness_to_global(local_matrix=m.element_ks)
+                s.mesh = m
+
+                d, Q, sigma = s.solve_system(plot=False, factor=1)
+                D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
+                D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
+                Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
+                Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
+        print(f'\nFinal Sigma_max = {np.max(sigma / 1e6)}')
         D_output = np.vstack((D_output, Ds))
         M_output = [sum(m.elment_total_ms), np.sum(self.calc_bar_masses(A_i=m.element_As, l_i=lengths, rho_i=rhos))]
 
@@ -65,10 +87,11 @@ class Optimizer:
         return np.array(M_output), D_output
 
 
+
 if __name__ == "__main__":
     'material and section definitions'
-    steel = Material()
-    standard_section = Section(radius=0.1, thickness=0.0025)
+    steel = Material(sig_y=200e6)
+    standard_section = Section(radius=.05, thickness=0.001)
 
     'create libraries'
     material_library = [steel, steel, steel, steel]
@@ -83,11 +106,12 @@ if __name__ == "__main__":
     'initialise solver'
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True)
+    'Initialise optimiser'
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True)
     Mchange, Dchange = OPT.run_optimisation()
 
     np.set_printoptions(precision=2)
-    print(f'Initial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
-    print()
-    print(Dchange[0])
+    print('=========================================================================================================')
+    print(f'\nInitial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
+    #print(Dchange[0])
     print(Dchange[1])
