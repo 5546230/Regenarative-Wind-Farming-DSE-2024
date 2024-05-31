@@ -366,8 +366,8 @@ if optimize:
     rotor_solidity = (3*(np.min(chord_distribution) + np.max(chord_distribution))/2*0.8*Radius)/(np.pi*Radius**2-np.pi*(0.2*Radius)**2)
     print(f'{rotor_solidity=}')
 
-
-if ale_shit:
+ale_shit_2 = inps.ale_shit_2
+if ale_shit_2:
     pitch_ales = np.arange(-10,25,1)
     CT_ales = []
     for i in range(len(pitch_ales)):
