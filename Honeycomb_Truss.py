@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=7000)
 
+
 class Hexagonal_Truss(Geometry_Definition):
     def __init__(self, n_rotors: int = 33, r_per_rotor = 12.5, spacing_factor=1, verbose: bool = True):
         self.spacing_factor = spacing_factor
@@ -22,13 +23,12 @@ class Hexagonal_Truss(Geometry_Definition):
                                    [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
 
         self.n_per_hex = self.X_single_hex.size
-        self.all_hex_XYZ, self.all_hex_connect = self.transform_coordinates()
+        all_hex_XYZ, all_hex_connect = self.transform_coordinates()
+        node_indices = np.arange(all_hex_XYZ[:,0].ravel().size, dtype=int)
 
-        node_indices = np.arange(self.all_hex_XYZ[:,0].ravel().size, dtype=int)
-
-        stacked_coordinates = np.hstack(self.all_hex_XYZ)
+        stacked_coordinates = np.hstack(all_hex_XYZ)
         rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=2)
-        stacked_connections = np.hstack(self.all_hex_connect)
+        stacked_connections = np.hstack(all_hex_connect)
         unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
         unique_indices = np.arange(unique_indices.size, dtype=int)
         #rounded_unique_nodes = np.round(unique_nodes, decimals=2)
@@ -46,20 +46,21 @@ class Hexagonal_Truss(Geometry_Definition):
 
         unique_edges = np.unique(new_connections, axis=1)
         unique_edges = np.unique(np.sort(unique_edges, axis=0), axis=1)
-        print(unique_edges)
-        print(np.unique(np.sort(unique_edges, axis=0), axis=1).shape)
 
-
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(projection='3d')
-        ax.set_xlabel('X [m]')
-        ax.set_ylabel('Y [m]')
-        ax.set_zlabel('Z [m]')
-        X, Y, Z = unique_nodes[:,0], unique_nodes[:,1], unique_nodes[:,2]
-        ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
-        plt.show()
 
         if verbose:
+            fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_subplot(projection='3d')
+            ax.set_xlabel('X [m]')
+            ax.set_ylabel('Y [m]')
+            ax.set_zlabel('Z [m]')
+            X, Y, Z = unique_nodes[:, 0], unique_nodes[:, 1], unique_nodes[:, 2]
+            ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
+            plt.show()
+
+            # print(unique_edges)
+            # print(np.unique(np.sort(unique_edges, axis=0), axis=1).shape)
+            print(f'Unique indices: {unique_indices}')
             print(f'number of nodes before = {node_indices.shape[0]}')
             print(f'number of edges before = {stacked_connections.shape[1]}')
             print('----------------------------------------------------------')
@@ -73,15 +74,16 @@ class Hexagonal_Truss(Geometry_Definition):
         self.X_coords = unique_nodes.T[0,:]
         self.Y_coords = unique_nodes.T[1,:]
         self.Z_coords = unique_nodes.T[2,:]
-        self.plot_structure(show=True)
         super().__init__()
 
-        plt.plot(unique_nodes[:,0], unique_nodes[:,2], linestyle='', marker= 'x')
-        for i in range(n_rotors):
-            plt.plot(self.all_hex_XYZ[i,0], self.all_hex_XYZ[i,2])
-            plt.plot(self.hex_positions[i][0], self.hex_positions[i][1], marker='o', color='red')
-        plt.show()
-        self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
+        self.plot_structure(show=True)
+        if verbose:
+            plt.plot(unique_nodes[:,0], unique_nodes[:,2], linestyle='', marker= 'x')
+            for i in range(n_rotors):
+                plt.plot(all_hex_XYZ[i,0], all_hex_XYZ[i,2])
+                plt.plot(self.hex_positions[i][0], self.hex_positions[i][1], marker='o', color='red')
+            plt.show()
+            self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
 
     def transform_coordinates(self):
         centre_single_hex_Y = (np.max(self.X_single_hex)+np.min(self.X_single_hex))/2
@@ -156,31 +158,33 @@ class Hexagonal_Truss(Geometry_Definition):
             plt.show()
 
     def get_XYZ_coords(self):
-        return
+        XYZ_stacked = np.vstack((self.X_coords, self.Y_coords, self.Z_coords))
+        return XYZ_stacked
 
     def get_member_indices(self):
-        return
+        return self.total_edge_con
 
     def get_section_indices(self):
-        return
+        return np.ones(self.n_unique_edges, dtype=int)
 
     def get_bc_indices(self):
-        pass
+        return np.array([4, 8, 20, 24], dtype=int)
 
     def get_bc_constraints(self):
-        pass
+        return np.ones((3, 4))
 
     def get_load_indices(self):
-        pass
+        return np.array([14])
 
     def get_applied_loads(self):
-        pass
+        return np.array([[0],[-1e6],[0]])
 
     def get_material_indices(self):
-        pass
+        return np.ones(self.n_unique_edges, dtype=int)
 
-
-
+    def function(self):
+        return (self.XYZ_array, self.member_indices, self.section_indices, self.material_indices,
+                self.bc_indices, self.bc_constraints, self.load_indices, self.applied_loads)
 
 
 
@@ -212,4 +216,4 @@ def hexagon_geom_25():
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=9, r_per_rotor=12.5)
+    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=12.5)

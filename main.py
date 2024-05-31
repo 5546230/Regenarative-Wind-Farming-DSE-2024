@@ -1,4 +1,5 @@
 from Structure_Defs import verif_geom_3 as geometry
+from Honeycomb_Truss import Hexagonal_Truss
 from Truss_Analysis import Mesh, FEM_Solve, Material, Section
 
 
@@ -20,7 +21,7 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1100)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100)
 
     if verbose:
         print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
@@ -29,6 +30,7 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
         print(f'internal stresses [MPa] = {sigma / 1e6}')
 
     return
+
 
 
 if __name__ == '__main__':
@@ -40,4 +42,5 @@ if __name__ == '__main__':
     material_library = [steel, steel, steel, steel]
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
-    run_analysis(section_lib=section_library, material_lib=material_library, geometry=geometry)
+    geom = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 12.5, spacing_factor=1, verbose=False)
+    run_analysis(section_lib=section_library, material_lib=material_library, geometry=geom.function)
