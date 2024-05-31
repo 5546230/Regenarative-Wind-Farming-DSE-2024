@@ -9,7 +9,7 @@ from helper_functions import custom_map
 np.set_printoptions(linewidth=7000)
 '''
 NOTES + ASSUMPTIONS:
--  be careufl with scaling factor (fix!)
+-  be careful with scaling factor (fix!)
 - finalize material library
 - organise validation cases
 - DO MORE V&V
@@ -262,6 +262,10 @@ class FEM_Solve:
         return global_loading_vector[self.active_dofs]
 
     def assemble_self_loading(self):
+        '''
+        :return: Assemble self-loading (weight) over the active DOFs
+        '''
+
         'assumes gravity acts in z'
         mesh = self.mesh
         global_SL = np.zeros(mesh.N_nodes*self.n_dof)
