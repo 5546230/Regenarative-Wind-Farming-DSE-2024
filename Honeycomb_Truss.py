@@ -197,33 +197,19 @@ class Hexagonal_Truss(Geometry_Definition):
 
 
 
-def hexagon_geom_25():
-    '25m diameter hexagon 30m deep'
-    XYZ_coords = np.array([[0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5],
-                           [-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0]], dtype=float)
+def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth = 25, spacing_factor=1, verbose: bool = True):
+    truss = Hexagonal_Truss(n_rotors, r_per_rotor, depth, spacing_factor, verbose=verbose)
 
-    member_indices = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4,  5,  6, 7, 8, 9, 10, 11,  1,  2,  4,  5,  7,  8, 10, 11,  5, 2, 12,  1,  5,  0,  3,  6,  9, 2, 4, 5, 1],
-                               [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
+    #truss.load_indices = []
+    #truss.applied_loads = []
 
-    section_indices = np.ones(len(member_indices[0]), dtype=int)
-    material_indices = np.ones(len(member_indices[0]), dtype=int)
+    truss.bc_indices = np.array([12,56,100,144,188,232,23,67,111,155,109, 243])
+    truss.bc_constraints = np.ones((3,truss.bc_indices.shape[1]))
 
-    bc_indices = [1, 5, 7, 11, 0, 6] #[1, 5, 7, 11, 0, 6]  # [0,1,4,5]
-    bc_constraints = np.array([[1, 1, 1, 1, 1, 1],
-                               [1, 1, 1, 1, 1, 1],
-                               [1, 1, 1, 1, 1, 1]])
-
-    load_indices = [12]
-    applied_loads = np.array([[0],
-                              [-1e5],
-                              [-500e2]])
-
-    return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
-
-
+    return truss
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    #truss = Hexagonal_Truss(n_rotors=5, r_per_rotor=40.1079757687/2*1.05, depth=35)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
+    sizing_truss()

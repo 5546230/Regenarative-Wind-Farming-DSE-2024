@@ -479,7 +479,7 @@ if __name__ == '__main__':
     S = SOLVER.assemble_global_stiffness()
 
     'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100, include_self_load=False)
 
     print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
     print(f'      displacement [mm] = {d*1000}')
