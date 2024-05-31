@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Optimizer:
-    def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, plot_output: bool = False, r_t = 1/100, verbose: bool = False):
+    def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, plot_output: bool = False, r_t = 1/120, verbose: bool = False):
         '''
         :param mesh: instance of Mesh class
         :param solver: instance of Solver class

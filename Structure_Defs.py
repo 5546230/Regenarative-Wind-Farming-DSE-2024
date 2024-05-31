@@ -128,10 +128,10 @@ def verif_geom_1():
                                [1, 0, 1, 0],
                                [1, 1, 1, 1]])
 
-    load_indices = [5, 7]
-    applied_loads = np.array([[0, 100000],
-                              [-100000, 100000],
-                              [0, 0]])
+    load_indices = [3, 7]
+    applied_loads = np.array([[-1e5, 0],
+                              [0, 0],
+                              [1e6, 1e6]])
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 

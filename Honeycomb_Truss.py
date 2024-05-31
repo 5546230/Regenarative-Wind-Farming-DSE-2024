@@ -183,12 +183,12 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.ones((3, 4))
 
     def get_load_indices(self):
-        return np.array([15, 19])
+        return np.array([23, 27])
 
     def get_applied_loads(self):
-        return np.array([[0, 1e5],
-                         [1e4, 1e4],
-                         [0, 0]])
+        return np.array([[-5e5, -5e5],
+                         [0, 0],
+                         [0*1e6, 0*1e6]])
 
     def get_material_indices(self):
         return np.ones(self.n_unique_edges, dtype=int)
@@ -212,6 +212,6 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=7, r_per_rotor=40.1079757687/2*1.05, depth=35)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()
