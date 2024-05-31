@@ -276,7 +276,7 @@ class FEM_Solve:
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
 
             mask = np.isin(mesh.dof_indices[2::3], elem_dofs)
-            global_SL[2::3][mask] += collapsed[i] * 9.80665
+            global_SL[2::3][mask] -= collapsed[i] * 9.80665
         return global_SL[np.isin(mesh.dof_indices, self.active_dofs)]
 
     def solve_system(self, factor = 1, include_self_load: bool = False, plot: bool = True,):
