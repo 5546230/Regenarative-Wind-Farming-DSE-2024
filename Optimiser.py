@@ -6,6 +6,14 @@ import numpy as np
 
 class Optimizer:
     def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, plot_output: bool = False, r_t = 1/100, verbose: bool = False):
+        '''
+        :param mesh: instance of Mesh class
+        :param solver: instance of Solver class
+        :param minimum_D: minimum allowed bar diameter (prevent 0-force members from vanishing)
+        :param plot_output: plot before and after opt.
+        :param r_t: thickness ratio: r_t := t/D
+        :param verbose: print progress
+        '''
         self.mesh = mesh
         self.solver = solver
         self.r_t = r_t
@@ -14,21 +22,49 @@ class Optimizer:
         self.verbose = verbose
 
     def calc_buckling_diameter(self, l_i: np.array, E_i: np.array, F_bar_i: np.array, gamma_buckling=1.2):
+        '''
+        :param l_i: bar lengths
+        :param E_i: bar E's
+        :param F_bar_i: bar internal axial forces
+        :param gamma_buckling: buckling safety factor
+        :return: sizing diameter buckling
+        '''
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
         return D_i_buckling
 
     def calc_yield_diameter(self, F_bar_i, sigy_i: np.array, gamma_m=1.35):
+        '''
+        :param F_bar_i: bar internal axial forces
+        :param sigy_i: bar yield stresses
+        :param gamma_m: material safety factor
+        :return: sizing bar diameters for yield
+        '''
         D_i = np.sqrt(np.abs(F_bar_i) * gamma_m / (sigy_i * np.pi * self.r_t))
         return D_i
 
     def calc_A_thin(self, D_i: np.array,):
+        '''
+        :param D_i: outer diameters
+        :return: bar areas (thin walled approx.)
+        '''
         A_i = np.pi * D_i ** 2 * self.r_t
         return A_i
 
     def calc_bar_masses(self, A_i: np.array, l_i: np.array, rho_i: np.array):
+        '''
+        :param A_i: Cross-sectional areas
+        :param l_i: bar lengths
+        :param rho_i: bar densities
+        :return: bar masses
+        '''
         return A_i * l_i * rho_i
 
     def run_optimisation(self, tolerance = 1e-6):
+        '''
+        :param tolerance: tolerance at which to end diameter opt.
+        :return: mass (before after), diameters (before after)
+        '''
+
         'initialise mesh'
         m = self.mesh
         s = self.solver
@@ -83,7 +119,6 @@ class Optimizer:
         m.element_Ms = m.transform_stiffness_to_global(local_matrix=m.element_lumped_ms)
         s.mesh = m
         s.solve_system(plot=self.plot_output, factor=1)
-
         return np.array(M_output), D_output
 
 

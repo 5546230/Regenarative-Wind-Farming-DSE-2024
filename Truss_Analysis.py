@@ -413,7 +413,9 @@ class FEM_Solve:
             ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
 
         handles, labels = ax.get_legend_handles_labels()
-        #legend_ax.legend(handles, labels, loc='center', title="Legend", fontsize=8, handlelength=2.5)
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
         legend_ax.legend(handles, labels, loc='right', title="Legend", fontsize=8, ncol=3,bbox_to_anchor=(0.5, 0.5), bbox_transform=plt.gcf().transFigure)
         plt.show()
