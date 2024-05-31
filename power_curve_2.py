@@ -95,10 +95,11 @@ y_data = 4*a*(1-a)**2
 y_targets = [CP*1.2]
 
 crossings = find_all_x_crossings(x_data, y_data, y_targets)
-estimated_a = np.min(crossings[y_targets[0]])
+estimated_a = BEM.a_total
 
 CT = BEM.CT
 if np.isnan(CT):
+    estimated_a = np.min(crossings[y_targets[0]])
     CT = 4*estimated_a*(1-estimated_a)
 T_RATED = CT*0.5*rho*V_RATED**2*AREA
 Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2

@@ -261,6 +261,11 @@ dr = (r_R[1:]-r_R[:-1])*Radius
 CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
 CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
 a_total = ainduction(CT)
+Prandtl_1, Prandtltip_1, Prandtlroot_1 = PrandtlTipRootCorrection(0.6, RootLocation_R, TipLocation_R, Omega*Radius/Uinf, NBlades, a_total)
+if (Prandtl_1 < 0.0001): 
+    Prandtl_1 = 0.0001 # avoid divide by zero
+a_total= a_total/Prandtl_1 # correct estimate of axial induction
+
 print(f'{a_total=}')
 print("CT is ", CT)
 print("CP is ", CP)
@@ -353,7 +358,7 @@ if np.max(results[:,0])>0.4:
     print("MODEL INVALID")
 
 rotor_solidity = (3*(np.min(chord_distribution) + np.max(chord_distribution))/2*0.8*Radius)/(np.pi*Radius**2-np.pi*(0.2*Radius)**2)
-print(chord_distribution)
+# print(chord_distribution)
 print(f'{rotor_solidity=}')
 if optimize:
     chord_distribution = optimal_inputs[0]*(1-r_R)+optimal_inputs[1] # meters
@@ -362,39 +367,34 @@ if optimize:
     print(f'{rotor_solidity=}')
 
 
+if ale_shit:
+    pitch_ales = np.arange(-10,25,1)
+    CT_ales = []
+    for i in range(len(pitch_ales)):
+        CT_ales.append(BEMsolver_ale(pitch_ales[i]))
 
-pitch_ales = np.arange(-10,25,1)
-CT_ales = []
-for i in range(len(pitch_ales)):
-    CT_ales.append(BEMsolver_ale(pitch_ales[i]))
+    CT_ales = np.array(CT_ales)
+    print(CT_ales)
+    plt.plot(pitch_ales, CT_ales)
+    plt.show()
+    from scipy.interpolate import interp1d
+    mask = ~np.isnan(CT_ales)
+    pitch_valid = pitch_ales[mask]
+    CT_valid = CT_ales[mask]
+    interp_function = interp1d(pitch_valid, CT_valid, kind='linear', fill_value="extrapolate")
 
-CT_ales = np.array(CT_ales)
-print(CT_ales)
-plt.plot(pitch_ales, CT_ales)
-plt.show()
-from scipy.interpolate import interp1d
-mask = ~np.isnan(CT_ales)
-pitch_valid = pitch_ales[mask]
-CT_valid = CT_ales[mask]
-interp_function = interp1d(pitch_valid, CT_valid, kind='linear', fill_value="extrapolate")
+    # Interpolate missing values
+    pitch_interp = np.linspace(min(pitch_ales), max(pitch_ales), num=50)  # Interpolated points
+    CT_interp = interp_function(pitch_interp)
 
-# Interpolate missing values
-pitch_interp = np.linspace(min(pitch_ales), max(pitch_ales), num=50)  # Interpolated points
-CT_interp = interp_function(pitch_interp)
+    plt.scatter(pitch_ales, CT_ales, label='Original data with NaNs')
+    plt.plot(pitch_interp, CT_interp, label='Interpolated data', color='red')
+    plt.legend()
+    plt.xlabel('pitch')
+    plt.ylabel('CT')
+    plt.title('Interpolation of CT')
+    plt.show()
 
-plt.scatter(pitch_ales, CT_ales, label='Original data with NaNs')
-plt.plot(pitch_interp, CT_interp, label='Interpolated data', color='red')
-plt.legend()
-plt.xlabel('pitch')
-plt.ylabel('CT')
-plt.title('Interpolation of CT')
-plt.show()
-
-import pickle
-with open('interpolated_function.pkl', 'wb') as f:
-    pickle.dump(interp_function, f)
-
-# with open('interpolated_function.pkl', 'rb') as f:
-#     loaded_interp_function = pickle.load(f)
-
-# print(loaded_interp_function(3))  # loaded_interp_function(pitchangle)
+    import pickle
+    with open('interpolated_function.pkl', 'wb') as f:
+        pickle.dump(interp_function, f)
