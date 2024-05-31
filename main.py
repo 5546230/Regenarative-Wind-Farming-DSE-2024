@@ -25,6 +25,7 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
 
     if verbose:
         print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
+        print(f'           omega_f [Hz] = {SOLVER.get_natural_frequencies()*.1592}')
         print(f'      displacement [mm] = {d * 1000}')
         print(f'   Internal forces [kN] = {Q / 1000}')
         print(f'internal stresses [MPa] = {sigma / 1e6}')
