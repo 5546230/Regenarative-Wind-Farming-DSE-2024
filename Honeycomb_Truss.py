@@ -180,7 +180,7 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.array([14])
 
     def get_applied_loads(self):
-        return np.array([[0],[-1e8],[0]])
+        return np.array([[0],[-1e7],[0]])
 
     def get_material_indices(self):
         return np.ones(self.n_unique_edges, dtype=int)
@@ -219,4 +219,5 @@ def hexagon_geom_25():
 
 
 if __name__ == "__main__":
+    #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=40.1079757687/2)
     truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
