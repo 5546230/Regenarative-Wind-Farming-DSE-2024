@@ -59,7 +59,7 @@ class Optimizer:
             while np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
                 #Ds[np.where(Ds < Ds_sizing)] = Ds_sizing[np.where(Ds < Ds_sizing)]
                 if self.verbose:
-                    print(f'Sigma_max = {np.max(sigma / 1e6)}, max_diff={np.max(Ds_sizing - Ds):.5f},')
+                    print(f'Sigma_max = {np.max(sigma / 1e6)}, max_diff={np.max(Ds_sizing - Ds):.3e},')
                 Ds[:] = Ds_sizing
 
                 m.element_As = self.calc_A_thin(D_i=Ds, )

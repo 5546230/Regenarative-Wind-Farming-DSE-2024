@@ -372,12 +372,11 @@ class FEM_Solve:
         '''
         m = self.mesh
 
-        # Create a figure with GridSpec layout
-        fig = plt.figure(figsize=(12, 7))
-        gs = GridSpec(1, 2, width_ratios=[4, 1])
-        ax = fig.add_subplot(gs[0], projection='3d')
-        legend_ax = fig.add_subplot(gs[1])
-        legend_ax.axis('off')  # Turn off the axis for the legend subplot
+        fig = plt.figure(figsize=(15, 7))
+        gs = GridSpec(1, 2, width_ratios=[2.5, 3])
+        ax = fig.add_subplot(gs[1], projection='3d')
+        legend_ax = fig.add_subplot(gs[0])
+        legend_ax.axis('off')
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -414,7 +413,9 @@ class FEM_Solve:
             ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
 
         handles, labels = ax.get_legend_handles_labels()
-        legend_ax.legend(handles, labels, loc='center', title="Legend", fontsize=8)
+        #legend_ax.legend(handles, labels, loc='center', title="Legend", fontsize=8, handlelength=2.5)
+
+        legend_ax.legend(handles, labels, loc='right', title="Legend", fontsize=8, ncol=3,bbox_to_anchor=(0.5, 0.5), bbox_transform=plt.gcf().transFigure)
         plt.show()
 
 
