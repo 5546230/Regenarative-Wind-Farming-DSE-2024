@@ -83,6 +83,7 @@ class Optimizer:
 
         D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
         D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
+
         Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
         Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
 
@@ -95,7 +96,7 @@ class Optimizer:
             while np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
                 if self.verbose:
                     print(f'Sigma_max = {(np.max(sigma / 1e6)):.3f}, max_diff={np.max(Ds_sizing - Ds):.3e},')
-                Ds[:] = Ds_sizing
+                Ds = Ds_sizing
 
                 m.element_As = self.calc_A_thin(D_i=Ds, )
                 m.element_ks = m.element_stiffness()
@@ -107,7 +108,9 @@ class Optimizer:
                 D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
                 D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
                 Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
+
                 Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
+
         print(f'\nFinal Sigma_max = {np.max(sigma / 1e6)}')
         D_output = np.vstack((D_output, Ds))
         M_output = [sum(m.elment_total_ms), np.sum(self.calc_bar_masses(A_i=m.element_As, l_i=lengths, rho_i=rhos))]
@@ -125,7 +128,7 @@ class Optimizer:
 if __name__ == "__main__":
     'material and section definitions'
     steel = Material(sig_y=200e6)
-    standard_section = Section(radius=.05, thickness=0.001)
+    standard_section = Section(radius=.005, thickness=0.001)
 
     'create libraries'
     material_library = [steel, steel, steel, steel]
@@ -141,11 +144,11 @@ if __name__ == "__main__":
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'Initialise optimiser'
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.5)
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.05)
     Mchange, Dchange = OPT.run_optimisation(tolerance=1e-5)
 
-    np.set_printoptions(precision=2)
+    #np.set_printoptions(precision=2)
     print('=========================================================================================================')
     print(f'\nInitial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
-    print(Dchange[0])
-    print(Dchange[1])
+    #print(Dchange[0])
+    print(Dchange)
