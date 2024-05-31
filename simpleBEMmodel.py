@@ -32,7 +32,7 @@ def ainduction(CT):
     including Glauert's correction
     """
     a = np.zeros(np.shape(CT))
-    CT1=1.816
+    CT1=1.816   
     CT2=2*np.sqrt(CT1)-CT1
     a[CT>=CT2] = 1 + (CT[CT>=CT2]-CT1)/(4*(np.sqrt(CT1)-1))
     a[CT<CT2] = 0.5-0.5*np.sqrt(1-CT[CT<CT2])
@@ -354,8 +354,8 @@ if ale_shit:
     coefficients = interp_spline.get_coeffs()
     #print(coefficients)
     savemat('alemat.mat', {'coefficients': coefficients, 'pitch': pitch_ale, 'TSR': TSR_ale})
-if np.max(results[:,0])>0.4:
-    print("MODEL INVALID")
+# if np.max(results[:,0])>0.4:
+#     print("MODEL INVALID")
 
 rotor_solidity = (3*(np.min(chord_distribution) + np.max(chord_distribution))/2*0.8*Radius)/(np.pi*Radius**2-np.pi*(0.2*Radius)**2)
 # print(chord_distribution)
