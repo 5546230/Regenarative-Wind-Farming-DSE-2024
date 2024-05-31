@@ -34,30 +34,6 @@ def run_analysis(section_lib: list, material_lib: list, geometry: callable, verb
     return
 
 
-def run_optimization(section_lib: list, material_lib: list, geometry: callable, verbose: bool = True):
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = geometry()
-
-    'initialise mesh'
-    MESH = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_lib, sections=section_lib)
-    MESH.plot_structure()
-
-    'collect element properties'
-    Es = MESH.element_Es
-    sigys = np.array([MESH.materials[i].E for i in MESH.material_indices])
-    As = MESH.element_As
-
-    'initialise solver'
-    SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
-
-    'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=1)
-
-    if np.any(sigma>=sigys):
-        pass
-
-    return
-
-
 if __name__ == '__main__':
     'material and section definitions'
     steel = Material()

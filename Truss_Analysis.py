@@ -261,7 +261,25 @@ class FEM_Solve:
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
         return global_loading_vector[self.active_dofs]
 
-    def solve_system(self, factor = 1, plot: bool = True,):
+    def assemble_self_loading(self):
+        'assumes gravity to act in z'
+        mesh = self.mesh
+        global_SL = np.zeros(mesh.N_nodes*self.n_dof)
+
+        'collapse local mass matrices'
+        collapsed = np.einsum('ijj->ij', mesh.element_lumped_ms)
+
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        for i in range(mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:,i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            mask = np.isin(mesh.dof_indices[2::3], elem_dofs)
+            global_SL[2::3][mask] += collapsed[i] * 9.80665
+        return global_SL[np.isin(mesh.dof_indices, self.active_dofs)]
+
+    def solve_system(self, factor = 1, include_self_load: bool = False, plot: bool = True,):
         '''
         :param factor: scaling factor to visualise displacements
         :param plot: bool, plot results
@@ -269,6 +287,8 @@ class FEM_Solve:
         '''
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector()
+        if include_self_load:
+            P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
 
         m = self.mesh
@@ -410,7 +430,7 @@ class FEM_Solve:
             color = mapper.to_rgba(part_stresses[i])
             legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
 
-            ax.plot(Xps, Yps, Zps, color=color, linewidth=2, label=legend_string)
+            ax.plot(Xps, Yps, Zps, color=color, linewidth=.75, label=legend_string)
 
         handles, labels = ax.get_legend_handles_labels()
         ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))

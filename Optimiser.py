@@ -79,7 +79,7 @@ class Optimizer:
         lengths = m.element_lengths
 
         'solve'
-        d, Q, sigma = s.solve_system(plot=self.plot_output, factor=1)
+        d, Q, sigma = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
 
         D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
         D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
@@ -93,7 +93,6 @@ class Optimizer:
         D_output = Ds.copy()
         if np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
             while np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
-                #Ds[np.where(Ds < Ds_sizing)] = Ds_sizing[np.where(Ds < Ds_sizing)]
                 if self.verbose:
                     print(f'Sigma_max = {(np.max(sigma / 1e6)):.3f}, max_diff={np.max(Ds_sizing - Ds):.3e},')
                 Ds[:] = Ds_sizing
@@ -104,7 +103,7 @@ class Optimizer:
                 m.element_Ks = m.transform_stiffness_to_global(local_matrix=m.element_ks)
                 s.mesh = m
 
-                d, Q, sigma = s.solve_system(plot=False, factor=1)
+                d, Q, sigma = s.solve_system(plot=False, factor=1, include_self_load=True)
                 D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
                 D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
                 Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
@@ -132,7 +131,7 @@ if __name__ == "__main__":
     material_library = [steel, steel, steel, steel]
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
-    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 12.5, spacing_factor=1, verbose=False)
+    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40/2, spacing_factor=1, verbose=False)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -142,11 +141,11 @@ if __name__ == "__main__":
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'Initialise optimiser'
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True)
-    Mchange, Dchange = OPT.run_optimisation()
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.5)
+    Mchange, Dchange = OPT.run_optimisation(tolerance=1e-5)
 
     np.set_printoptions(precision=2)
     print('=========================================================================================================')
     print(f'\nInitial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
-    #print(Dchange[0])
+    print(Dchange[0])
     print(Dchange[1])

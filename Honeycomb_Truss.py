@@ -6,7 +6,7 @@ np.set_printoptions(linewidth=7000)
 
 
 class Hexagonal_Truss(Geometry_Definition):
-    def __init__(self, n_rotors: int = 33, r_per_rotor = 12.5, spacing_factor=1, verbose: bool = True):
+    def __init__(self, n_rotors: int = 33, r_per_rotor = 12.5, depth = 12.5, spacing_factor=1, verbose: bool = True):
         '''
         :param n_rotors: number of hexagons
         :param r_per_rotor: rotor radius (per MR)
@@ -21,9 +21,9 @@ class Hexagonal_Truss(Geometry_Definition):
         hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x)
         self.hex_positions = np.array(hex_positions)
 
-        self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0], dtype=float)
-        self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5], dtype=float)
-        self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0], dtype=float)
+        self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0], dtype=float)*r_per_rotor/12.5
+        self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5], dtype=float) * depth/12.5
+        self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0], dtype=float)*r_per_rotor/12.5
 
         #self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 2, 4, 5, 7, 8, 10, 11, 5, 2, 12, 1, 5, 0, 3, 6, 9, 2, 4, 5, 1],
         #                           [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
@@ -136,7 +136,7 @@ class Hexagonal_Truss(Geometry_Definition):
 
     def plot_structure(self, show: bool = True):
         '3d plot of nodes and members'
-        fig = plt.figure(figsize=(10,10))
+        fig = plt.figure(figsize=(13,9), layout='constrained')
         ax = fig.add_subplot(projection='3d')
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
@@ -225,5 +225,5 @@ def hexagon_geom_25():
 
 
 if __name__ == "__main__":
-    #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=40.1079757687/2)
-    truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
+    truss = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687/2, depth=35)
+    #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
