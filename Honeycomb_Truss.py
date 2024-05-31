@@ -160,7 +160,7 @@ class Hexagonal_Truss(Geometry_Definition):
         ax.set_ylim([avgy-diff/2, avgy+diff/2])
         ax.set_xlim([avgx-diff/2, avgx+diff/2])
         ax.set_zlim([0, diff])
-
+        ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors}', fontsize=15)
         for xz in self.hex_positions:
             ax.scatter(xz[0], avgy, xz[1], color='red')
         if show:
@@ -210,6 +210,6 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
 
 
 if __name__ == "__main__":
-    #truss = Hexagonal_Truss(n_rotors=5, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=20, r_per_rotor=40.1079757687/2*1.05, depth=35)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
-    sizing_truss()
+    #sizing_truss()
