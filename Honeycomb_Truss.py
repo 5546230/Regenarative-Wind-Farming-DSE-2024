@@ -213,7 +213,7 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.array([14, 18, 15])
 
     def get_applied_loads(self):
-        return np.array([[-5e5*0, -5e5*0, 0],
+        return 0*np.array([[-5e5*0, -5e5*0, 0],
                          [1e4, 1e5, 0],
                          [0*1e6, 0*1e6, 1e6]])
 

@@ -139,7 +139,7 @@ def sort_bins(v: np.array, n_bins: int):
 
 if __name__ == "__main__":
     'material and section definitions'
-    steel = Material(sig_y=50e6)
+    steel = Material(sig_y=150e6, rho=8000)
     standard_section = Section(radius=.005, thickness=0.001)
 
     'create libraries'
