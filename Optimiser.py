@@ -119,7 +119,21 @@ class Optimizer:
         s.mesh =  self.update_mesh(mesh=m, diameters=Ds)
 
         _,_,sigma = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
-        return np.array(M_output), D_output
+        t_output = Ds*self.r_t
+        return np.array(M_output), D_output, t_output
+
+
+def sort_bins(v: np.array, n_bins: int):
+    min = np.min(v)
+    max = np.max(v)
+
+    bins = np.linspace(min, max, n_bins+1)
+    bin_placement = np.digitize(v, bins, right=False)
+    bin_placement = np.clip(bin_placement - 1, 0, n_bins - 1)
+    min_values = bins[1:]
+    v_sorted = [list(v[bin_placement==i] )for i in range(n_bins)]
+
+    return v_sorted, min_values
 
 
 
@@ -142,11 +156,15 @@ if __name__ == "__main__":
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'Initialise optimiser'
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.05)
-    Mchange, Dchange = OPT.run_optimisation(tolerance=1e-5)
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
+    Mchange, Dchange, ts = OPT.run_optimisation(tolerance=1e-5)
 
     #np.set_printoptions(precision=2)
     print('=========================================================================================================')
     print(f'\nInitial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
     #print(Dchange[0])
     print(Dchange)
+    print(ts*1000)
+
+    print('\n\n')
+    print(sort_bins(v=Dchange[1], n_bins=3))

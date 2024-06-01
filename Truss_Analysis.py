@@ -17,7 +17,7 @@ NOTES + ASSUMPTIONS:
 
 
 class Material:
-    def __init__(self, E=190e9, rho=7850, sig_y=340e6):
+    def __init__(self, E=190e9, rho=7850, sig_y=340e6, sig_el=260e6):
         '''
         :param E: Modulus of Elasticity [Pa]
         :param rho: Density [kg/m^3]
@@ -26,6 +26,7 @@ class Material:
         self.E = E
         self.rho = rho
         self.sig_y = sig_y
+        self.sig_el = sig_el
 
 
 class Section:
