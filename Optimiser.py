@@ -134,7 +134,7 @@ if __name__ == "__main__":
     material_library = [steel, steel, steel, steel]
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
-    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40/2, spacing_factor=1, verbose=False)
+    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40/2, spacing_factor=1, verbose=False, depth=35)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'

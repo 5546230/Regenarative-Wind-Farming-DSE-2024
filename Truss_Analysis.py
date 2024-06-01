@@ -148,7 +148,7 @@ class Mesh:
 
     def plot_structure(self, show: bool = True):
         '3d plot of nodes and members'
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8,7))
         ax = fig.add_subplot(projection='3d')
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
@@ -164,7 +164,7 @@ class Mesh:
             Xs = X[member_ends]
             Ys = Y[member_ends]
             Zs = Z[member_ends]
-            plt.plot(Xs, Ys, Zs, color='k')
+            plt.plot(Xs, Ys, Zs, color='k', linewidth=.85)
         if show:
             plt.show()
 
@@ -366,7 +366,7 @@ class FEM_Solve:
         '''
         m = self.mesh
         '#d plot of nodes and members'
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8,7))
         ax = fig.add_subplot(projection='3d')
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
@@ -386,8 +386,8 @@ class FEM_Solve:
             Yps = Yp[member_ends]
             Zps = Zp[member_ends]
 
-            plt.plot(Xs, Ys, Zs, color='k', linestyle='-')
-            plt.plot(Xps, Yps, Zps, color='red', linestyle='-')
+            plt.plot(Xs, Ys, Zs, color='k', linestyle='-', linewidth=.85)
+            plt.plot(Xps, Yps, Zps, color='red', linestyle='-', linewidth=.85)
         plt.show()
 
     def plot_stresses(self, Xp, Yp, Zp, sigmas):

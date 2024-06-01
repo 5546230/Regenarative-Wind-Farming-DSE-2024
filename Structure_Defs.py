@@ -131,7 +131,7 @@ def verif_geom_1():
     load_indices = [3, 7]
     applied_loads = np.array([[-1e5, 0],
                               [0, 0],
-                              [1e6, 1e6]])
+                              [2e6, 2e6]])
 
     return XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads
 
