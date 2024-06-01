@@ -16,6 +16,7 @@ class Hexagonal_Truss(Geometry_Definition):
         notes:
             - new indexing is defined i \in \{ 0, n_unique-1 \}
             - overlapping edge topology is re-mapped to the unique set
+            - IMPORTANT: removes nodes within 10 cm of each-other
         '''
         self.spacing_factor = spacing_factor
         self.n_rotors = n_rotors
@@ -38,9 +39,12 @@ class Hexagonal_Truss(Geometry_Definition):
                                              [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
 
         self.n_per_hex = self.X_single_hex.size
+
+        'Transform single hex to packing of n_rotors'
         all_hex_XYZ, all_hex_connect = self.transform_coordinates()
         node_indices = np.arange(all_hex_XYZ[:,0].ravel().size, dtype=int)
 
+        'Re-map overlapping mesh to unique coordinates'
         unique_nodes, unique_indices, unique_edges = self.get_unique_mesh(all_hex_XYZ, all_hex_connect, node_indices)
 
         if verbose:
@@ -79,9 +83,10 @@ class Hexagonal_Truss(Geometry_Definition):
             self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
 
     def __str__(self):
-        return f'Hexagonal Honeycomb: N_rotors={self.n_rotors}, r_rotor={self.r_rot}, depth={self.depth}'
+        return f'Hexagonal Honeycomb: N_rotors={self.n_rotors}, r_rotor={self.r_rot:.3f} [m], depth={self.depth:.3f} [m]'
 
-    def get_unique_mesh(self, all_hex_XYZ, all_hex_connect, node_indices):
+    @staticmethod
+    def get_unique_mesh(all_hex_XYZ, all_hex_connect, node_indices):
         '''
         :param all_hex_XYZ: (n_rotors, 3, n_nodes_per_hex): array containing x,y,z coordinates of all the hexagons
         :param all_hex_connect: (n_rotors, 2, n_edges_per_hex): array defining the connectivity of each hex
@@ -90,9 +95,10 @@ class Hexagonal_Truss(Geometry_Definition):
         '''
 
         stacked_coordinates = np.hstack(all_hex_XYZ)
-        rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=2)
+        rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=1)
         stacked_connections = np.hstack(all_hex_connect)
         unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
+        print(unique_nodes.T)
         unique_indices = np.arange(unique_indices.size, dtype=int)
         _, reverse_indices = np.unique(stacked_coordinates.T, axis=0, return_inverse=True)
 
@@ -110,7 +116,7 @@ class Hexagonal_Truss(Geometry_Definition):
         'remove any duplicate edges'
         unique_edges = np.unique(new_connections, axis=1)
         unique_edges = np.unique(np.sort(unique_edges, axis=0), axis=1)
-
+        #print(unique_edges)
         return unique_nodes, unique_indices, unique_edges
 
     def transform_coordinates(self):
@@ -233,7 +239,7 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=5, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()
