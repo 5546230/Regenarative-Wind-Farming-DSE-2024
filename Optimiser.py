@@ -59,6 +59,14 @@ class Optimizer:
         '''
         return A_i * l_i * rho_i
 
+    def update_mesh(self, mesh, diameters, ):
+        mesh.element_As = self.calc_A_thin(D_i=diameters, )
+        mesh.element_ks = mesh.element_stiffness()
+        mesh.element_lumped_ms = mesh.element_lumped_mass()
+        mesh.element_Ks = mesh.transform_stiffness_to_global(local_matrix=mesh.element_ks)
+        mesh.element_Ms = mesh.transform_stiffness_to_global(local_matrix=mesh.element_lumped_ms)
+        return mesh
+
     def run_optimisation(self, tolerance = 1e-6):
         '''
         :param tolerance: tolerance at which to end diameter opt.
@@ -73,7 +81,6 @@ class Optimizer:
         'collect element properties'
         Es = m.element_Es
         sigys = np.array([m.materials[i].sig_y for i in m.material_indices])
-        As = m.element_As
         Ds = 2 * np.array([m.sections[i].R for i in m.section_indices])
         rhos = m.element_rhos
         lengths = m.element_lengths
@@ -83,51 +90,42 @@ class Optimizer:
 
         D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
         D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
-
         Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
         Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
 
         if self.verbose:
-            print(f'Sigma_max = {np.max(sigma / 1e6)}')
+            print(f'Sigma_max = {np.max(np.abs(sigma) / 1e6)}')
             print('================================================================================')
 
         D_output = Ds.copy()
         if np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
             while np.any(Ds < Ds_sizing-tolerance) or np.any(Ds > Ds_sizing+tolerance):
                 if self.verbose:
-                    print(f'Sigma_max = {(np.max(sigma / 1e6)):.3f}, max_diff={np.max(Ds_sizing - Ds):.3e},')
+                    print(f'Sigma_max = {(np.max(np.abs(sigma) / 1e6)):.3f}, max_diff={np.max(Ds_sizing - Ds):.3e},')
                 Ds = Ds_sizing
-
-                m.element_As = self.calc_A_thin(D_i=Ds, )
-                m.element_ks = m.element_stiffness()
-                m.element_lumped_ms = m.element_lumped_mass()
-                m.element_Ks = m.transform_stiffness_to_global(local_matrix=m.element_ks)
-                s.mesh = m
-
+                s.mesh = self.update_mesh(mesh=m, diameters=Ds)
                 d, Q, sigma = s.solve_system(plot=False, factor=1, include_self_load=True)
+
                 D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
                 D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
                 Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
-
                 Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
 
-        print(f'\nFinal Sigma_max = {np.max(sigma / 1e6)}')
+        print(f'\nFinal Sigma_max = {np.max(np.abs(sigma) / 1e6)}')
         D_output = np.vstack((D_output, Ds))
         M_output = [sum(m.elment_total_ms), np.sum(self.calc_bar_masses(A_i=m.element_As, l_i=lengths, rho_i=rhos))]
 
-        m.element_ks = m.element_stiffness()
-        m.element_lumped_ms = m.element_lumped_mass()
-        m.element_Ks = m.transform_stiffness_to_global(local_matrix=m.element_ks)
-        m.element_Ms = m.transform_stiffness_to_global(local_matrix=m.element_lumped_ms)
-        s.mesh = m
-        s.solve_system(plot=self.plot_output, factor=1)
+        Ds = Ds_sizing
+        s.mesh =  self.update_mesh(mesh=m, diameters=Ds)
+
+        _,_,sigma = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
         return np.array(M_output), D_output
 
 
 
 if __name__ == "__main__":
     'material and section definitions'
-    steel = Material(sig_y=200e6)
+    steel = Material(sig_y=50e6)
     standard_section = Section(radius=.005, thickness=0.001)
 
     'create libraries'

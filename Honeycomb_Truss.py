@@ -12,11 +12,17 @@ class Hexagonal_Truss(Geometry_Definition):
         :param r_per_rotor: rotor radius (per MR)
         :param spacing_factor: keep = 1
         :param verbose: print
+
+        notes:
+            - new indexing is defined i \in \{ 0, n_unique-1 \}
+            - overlapping edge topology is re-mapped to the unique set
         '''
         self.spacing_factor = spacing_factor
         self.n_rotors = n_rotors
+        self.depth = depth
         self.r_rot = r_per_rotor
         self.r_hex = self.r_rot * spacing_factor
+
         x = int(np.ceil(np.sqrt(self.n_rotors)))
         hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x)
         self.hex_positions = np.array(hex_positions)
@@ -34,6 +40,54 @@ class Hexagonal_Truss(Geometry_Definition):
         self.n_per_hex = self.X_single_hex.size
         all_hex_XYZ, all_hex_connect = self.transform_coordinates()
         node_indices = np.arange(all_hex_XYZ[:,0].ravel().size, dtype=int)
+
+        unique_nodes, unique_indices, unique_edges = self.get_unique_mesh(all_hex_XYZ, all_hex_connect, node_indices)
+
+        if verbose:
+            fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_subplot(projection='3d')
+            ax.set_xlabel('X [m]')
+            ax.set_ylabel('Y [m]')
+            ax.set_zlabel('Z [m]')
+            X, Y, Z = unique_nodes[:, 0], unique_nodes[:, 1], unique_nodes[:, 2]
+            ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
+            plt.show()
+
+            print(f'Unique indices: {unique_indices}')
+            print(f'number of nodes before = {node_indices.shape[0]}')
+            print(f'number of edges before = {np.hstack(all_hex_connect).shape[1]}')
+            print('----------------------------------------------------------')
+            print(f'\nnumber of nodes after = {unique_nodes.shape[0]}')
+            print(f'number of edges after = {unique_edges.shape[1]}')
+
+        self.total_edge_con = unique_edges
+        self.n_unique_nodes = unique_indices.size
+        self.n_unique_edges = unique_edges[0,:].size
+
+        self.X_coords = unique_nodes.T[0,:]
+        self.Y_coords = unique_nodes.T[1,:]
+        self.Z_coords = unique_nodes.T[2,:]
+        super().__init__()
+
+        self.plot_structure(show=True)
+        if verbose:
+            plt.plot(unique_nodes[:,0], unique_nodes[:,2], linestyle='', marker= 'x')
+            for i in range(n_rotors):
+                plt.plot(all_hex_XYZ[i,0], all_hex_XYZ[i,2])
+                plt.plot(self.hex_positions[i][0], self.hex_positions[i][1], marker='o', color='red')
+            plt.show()
+            self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
+
+    def __str__(self):
+        return f'Hexagonal Honeycomb: N_rotors={self.n_rotors}, r_rotor={self.r_rot}, depth={self.depth}'
+
+    def get_unique_mesh(self, all_hex_XYZ, all_hex_connect, node_indices):
+        '''
+        :param all_hex_XYZ: (n_rotors, 3, n_nodes_per_hex): array containing x,y,z coordinates of all the hexagons
+        :param all_hex_connect: (n_rotors, 2, n_edges_per_hex): array defining the connectivity of each hex
+        :param node_indices: array defining the indexing of the overlapping mesh
+        :return:
+        '''
 
         stacked_coordinates = np.hstack(all_hex_XYZ)
         rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=2)
@@ -57,44 +111,11 @@ class Hexagonal_Truss(Geometry_Definition):
         unique_edges = np.unique(new_connections, axis=1)
         unique_edges = np.unique(np.sort(unique_edges, axis=0), axis=1)
 
-        if verbose:
-            fig = plt.figure(figsize=(10, 10))
-            ax = fig.add_subplot(projection='3d')
-            ax.set_xlabel('X [m]')
-            ax.set_ylabel('Y [m]')
-            ax.set_zlabel('Z [m]')
-            X, Y, Z = unique_nodes[:, 0], unique_nodes[:, 1], unique_nodes[:, 2]
-            ax.scatter(X, Y, Z, color='blue', s=10, marker='x')
-            plt.show()
-
-            print(f'Unique indices: {unique_indices}')
-            print(f'number of nodes before = {node_indices.shape[0]}')
-            print(f'number of edges before = {stacked_connections.shape[1]}')
-            print('----------------------------------------------------------')
-            print(f'\nnumber of nodes after = {unique_nodes.shape[0]}')
-            print(f'number of edges after = {unique_edges.shape[1]}')
-
-        self.total_edge_con = unique_edges
-        self.n_unique_nodes = unique_indices.size
-        self.n_unique_edges = unique_edges[0,:].size
-
-        self.X_coords = unique_nodes.T[0,:]
-        self.Y_coords = unique_nodes.T[1,:]
-        self.Z_coords = unique_nodes.T[2,:]
-        super().__init__()
-
-        self.plot_structure(show=True)
-        if verbose:
-            plt.plot(unique_nodes[:,0], unique_nodes[:,2], linestyle='', marker= 'x')
-            for i in range(n_rotors):
-                plt.plot(all_hex_XYZ[i,0], all_hex_XYZ[i,2])
-                plt.plot(self.hex_positions[i][0], self.hex_positions[i][1], marker='o', color='red')
-            plt.show()
-            self.plot_circles(positions=self.hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
+        return unique_nodes, unique_indices, unique_edges
 
     def transform_coordinates(self):
         '''
-        :return: re-mapping of single hexagon to a set of all hexagons
+        :return: re-mapping of single hexagon to a set of all hexagons (overlapping)
         '''
         centre_single_hex_Y = (np.max(self.X_single_hex)+np.min(self.X_single_hex))/2
         centre_single_hex_Z = (np.max(self.X_single_hex)+np.min(self.X_single_hex))/2
@@ -212,6 +233,7 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    print(truss)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()

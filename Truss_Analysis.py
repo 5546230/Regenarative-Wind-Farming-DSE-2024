@@ -412,13 +412,12 @@ class FEM_Solve:
         min_stress = 1 * np.min(part_stresses)
         max_stress = 1 * np.max(part_stresses)
 
-        #norm = plt.Normalize(vmin=min_stress, vmax=max_stress, clip=True)
         norm = TwoSlopeNorm(vmin=min_stress, vcenter=0, vmax=max_stress)
         custom_cmap = custom_map()
         mapper = cm.ScalarMappable(norm=norm, cmap=custom_cmap)#'coolwarm')
 
         cbar = fig.colorbar(mapper, ax=ax)
-        cbar.ax.set_xlabel(r"$\sigma_x$ [MPa]")
+        cbar.ax.set_xlabel(r"$\sigma_\xi$ [MPa]")
         sorted_indices = np.argsort(part_stresses)
 
         for idx in range(len(Xp)):
@@ -432,7 +431,7 @@ class FEM_Solve:
             Zps = Zp[member_ends]
 
             color = mapper.to_rgba(part_stresses[i])
-            legend_string = f"Stress [{i}]: {part_stresses[i]:.2f} MPa"
+            legend_string = f"Stress {i}-({member_ends[0]}, {member_ends[1]}): {part_stresses[i]:.2f} MPa"
 
             ax.plot(Xps, Yps, Zps, color=color, linewidth=.75, label=legend_string)
 
@@ -448,9 +447,9 @@ class FEM_Solve:
 
 if __name__ == '__main__':
     'Geometry definitions'
-    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_1()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_4()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hexagon_geom_25()
 
