@@ -97,13 +97,14 @@ class Hexagonal_Truss(Geometry_Definition):
         stacked_coordinates = np.hstack(all_hex_XYZ)
         rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=1)
         stacked_connections = np.hstack(all_hex_connect)
-        unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
-        print(unique_nodes.T)
+        rounded_unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
+        unique_nodes = stacked_coordinates[:, unique_indices].T
+
         unique_indices = np.arange(unique_indices.size, dtype=int)
         _, reverse_indices = np.unique(stacked_coordinates.T, axis=0, return_inverse=True)
 
         'map from unique indices to unique nodes'
-        coord_to_index_map = {tuple(coord): idx for coord, idx in zip(unique_nodes, unique_indices)}
+        coord_to_index_map = {tuple(coord): idx for coord, idx in zip(rounded_unique_nodes, unique_indices)}
         're-map the original connections to the unique node indices'
         new_connections = stacked_connections.copy()
 
@@ -116,7 +117,6 @@ class Hexagonal_Truss(Geometry_Definition):
         'remove any duplicate edges'
         unique_edges = np.unique(new_connections, axis=1)
         unique_edges = np.unique(np.sort(unique_edges, axis=0), axis=1)
-        #print(unique_edges)
         return unique_nodes, unique_indices, unique_edges
 
     def transform_coordinates(self):
@@ -239,7 +239,7 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=5, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()
