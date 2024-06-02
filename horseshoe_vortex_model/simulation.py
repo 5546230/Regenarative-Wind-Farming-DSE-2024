@@ -7,7 +7,17 @@ from scipy.optimize import minimize
 
 
 def normalise(vec):
-    return vec/np.linalg.norm(vec)
+    return vec/np.linalg.norm(vec, axis=1)[:, None]
+
+
+VORTEX_ELEMENT_DTYPE = np.dtype({
+    'names': ('cor_1', 'cor_2', 'strength'),
+    'formats': ('(3,)f8', '(3,)f8', 'f8')
+})
+
+HORSESHOE_DTYPE = np.dtype([
+    ('elements', VORTEX_ELEMENT_DTYPE, (1, 3))
+])
 
 
 class VortexElement:
@@ -24,106 +34,95 @@ class VortexElement:
 
 
 class Horseshoe:
-    def __init__(self, elements: Iterable[VortexElement]) -> None:
-        self.elements = elements
-
     @staticmethod
     def initialize_horseshoe(corner_1, corner_2, strength):
-        inf_1 = np.array((10e10, *corner_1[1:]))
-        inf_2 = np.array((10e10, *corner_2[1:]))
+        inf_1 = np.column_stack(
+            (10e10 * np.ones(corner_1.shape[0]), corner_1[:, 1:]))
+        inf_2 = np.column_stack(
+            (10e10 * np.ones(corner_2.shape[0]), corner_2[:, 1:]))
+        # print(corner_1, corner_2, inf_1, inf_2, strength)
 
-        element_1 = VortexElement(
-            corner_1, inf_1, strength)
-        element_2 = VortexElement(
-            corner_1, corner_2, -strength)
-        element_3 = VortexElement(
-            corner_2, inf_2, -strength)
+        element_1 = np.array(
+            list(zip(corner_1, inf_1, strength)), dtype=VORTEX_ELEMENT_DTYPE)
+        element_2 = np.array(
+            list(zip(corner_1, corner_2, -strength)), dtype=VORTEX_ELEMENT_DTYPE)
+        element_3 = np.array(
+            list(zip(corner_2, inf_2, -strength)), dtype=VORTEX_ELEMENT_DTYPE)
+        # print(element_1, element_2, element_3)
 
-        horseshoe = Horseshoe([element_1, element_2, element_3])
-        return horseshoe
+        elements = np.column_stack((element_1, element_2, element_3))
+
+        horseshoes = np.array(elements.flatten(), dtype=VORTEX_ELEMENT_DTYPE)
+        return horseshoes
+
+    def __str__(self) -> str:
+        return str(self.elements[1])
 
 
 class Simulation:
-    def __init__(self, horseshoes: Iterable[Horseshoe], velocity, height=400) -> None:
+    def __init__(self, horseshoes, velocity, height=250) -> None:
         self.horseshoes = horseshoes
         self.freestream = velocity
         self.height = height
 
     def get_streamlines(self, initial_pos, dt, t_tot=1):
         def velocity(t, pos):
-            output_vec = np.zeros((3, ))
-            output_vec[0] = self.freestream
-            for i, vortex in enumerate(self.horseshoes):
-                for j, element in enumerate(vortex.elements):
-                    # print(element, j)
-                    ab = element[1] - element[0]
-                    ac = pos - element[0]
-                    bc = pos - element[1]
+            # Convert list to numpy array for vectorized operations
+            horseshoes = self.horseshoes
 
-                    ab_norm = normalise(ab)
-                    ac_norm = normalise(ac)
-                    bc_norm = normalise(bc)
+            pos = np.repeat(pos, len(self.horseshoes), axis=1).T
 
-                    cross = np.linalg.norm(np.cross(ab, ac))
-                    if np.isnan(cross):
-                        print('nan')
-                        print(element, pos, cross)
-                        return
-                    if np.isclose(cross, 0.):
-                        # print(element)
-                        continue
+            # Calculate ab, ac, bc
+            ab = horseshoes['cor_2'] - horseshoes['cor_1']
+            ac = pos - horseshoes['cor_1']
+            bc = pos - horseshoes['cor_2']
 
-                    h = np.linalg.norm(np.cross(ac, bc))/np.linalg.norm(ab)
-                    if j == 0:
-                        v = element.strength / \
-                            (4 * np.pi * h) * (np.dot(ac, ab) /
-                                               (np.linalg.norm(ab) * np.linalg.norm(ac))+1)
-                        # print(v)
-                    elif j == 1:
-                        phi_a = np.arccos(
-                            np.dot(ac, ab) / (np.linalg.norm(ab) * np.linalg.norm(ac)))
-                        phi_b = np.arccos(np.clip(
-                            np.dot(-ab_norm, bc_norm), -1, 1))
-                        if np.isnan(phi_b):
-                            # print(ac, bc, np.dot(-ab_norm, bc_norm),
-                            #       np.linalg.norm(ab), np.linalg.norm(bc))
-                            return (0, 0, 0)
-                        v = element.strength / \
-                            (4 * np.pi * h) * (np.cos(phi_a) + np.cos(phi_b))
-                        # print(v)
+            # Normalize ab, ac, bc
+            ab_norm = normalise(ab)
+            ac_norm = normalise(ac)
+            bc_norm = normalise(bc)
 
-                    elif j == 2:
-                        v = element.strength / \
-                            (4 * np.pi * h) * \
-                            (np.clip(np.dot(ab_norm, ac_norm), -1, 1)+1)
-                        # print(v)
+            # Calculate h
+            h = np.linalg.norm(np.cross(ac, bc), axis=1) / \
+                np.linalg.norm(ab, axis=1)
 
-                    direction = np.cross(ab, ac)
-                    # if np.isnan(np.linalg.norm(direction)):
-                    # print('nan1')
-                    # print(element, pos, direction)
-                    direction = direction / np.linalg.norm(direction)
+            # Calculate phi_a, phi_b for j%3 == 1
+            phi_a_mask = np.arange(len(horseshoes)) % 3 == 1
+            phi_a = np.arccos(
+                np.clip(np.einsum('ij,ij->i', ac_norm[phi_a_mask], ab_norm[phi_a_mask]), -1, 1))
+            phi_b = np.arccos(np.clip(
+                np.einsum('ij,ij->i', -ab_norm[phi_a_mask], bc_norm[phi_a_mask]), -1, 1))
 
-                    # if
-                    output_vec += direction.reshape((3,)) * v
-                    # print(output_vec, j)
+            # Calculate v for j%3 == 1
+            v = np.zeros_like(h)
+            v[phi_a_mask] = horseshoes[phi_a_mask]['strength'] / \
+                (4 * np.pi * h[phi_a_mask]) * (np.cos(phi_a) + np.cos(phi_b))
 
-                    # print(i, j)
-            # print(output_vec)
+            # Calculate v for j%3 == 2 or j%3 == 0
+            v_mask = np.logical_or(np.arange(len(horseshoes)) %
+                                   3 == 2, np.arange(len(horseshoes)) % 3 == 0)
+            v[v_mask] = horseshoes[v_mask]['strength'] / (4 * np.pi * h[v_mask]) * (
+                np.clip(np.einsum('ij,ij->i', ab_norm[v_mask], ac_norm[v_mask]), -1, 1) + 1)
+
+            # Calculate direction
+            direction = np.cross(ab, ac)
+            direction = direction / np.linalg.norm(direction, axis=1)[:, None]
+
+            # Calculate output_vec
+            output_vec = np.sum(direction * v[:, None], axis=0)
+            output_vec[0] += self.freestream
+
             return output_vec
 
-        def reached_top(t, pos, height):
-            return pos[2] - height
+        def reached_top(t, pos, height): return pos[2] - height
 
         def reached_top_event(t, pos): return reached_top(t, pos, self.height)
 
         reached_top_event.terminal = True
         reached_top_event.direction = 1
 
-        sol = solve_ivp(
-            velocity, [0, t_tot], initial_pos, t_eval=np.arange(0, t_tot, dt), events=[reached_top_event])
-
-        # return initial_pos + velocity(1, initial_pos)
+        sol = solve_ivp(velocity, [0, t_tot], initial_pos, t_eval=np.arange(
+            0, t_tot, dt), events=[reached_top_event], vectorized=True)
 
         return sol
 
@@ -133,9 +132,12 @@ class Simulation:
 
         return sols
 
+    def plot_horseshoes(self) -> None:
+        fig, ax = plt.figure()
+
 
 class WindSystem:
-    def __init__(self, horseshoes: Iterable[Horseshoe], height: float, velocity: float, dt: float) -> None:
+    def __init__(self, horseshoes, height: float, velocity: float, dt: float) -> None:
         self.velocity = velocity
         self.height = height
         self.dt = dt
@@ -148,8 +150,23 @@ class WindSystem:
     @horseshoes.setter
     def horseshoes(self, val) -> None:
         self._horseshoes = val
+
+        cor_1_below = self.horseshoes[1::3]['cor_1'].copy()
+        cor_1_below[:, 2] *= -1
+
+        cor_2_below = self.horseshoes[1::3]['cor_2'].copy()
+        cor_2_below[:, 2] *= -1
+
+        strengths = self.horseshoes[1::3]['strength']
+
+        self._below_horseshoes = Horseshoe.initialize_horseshoe(
+            cor_1_below, cor_2_below, strengths)
+
+        self.total_horseshoes = np.concatenate(
+            (self._horseshoes, self._below_horseshoes))
+
         self.simulation = Simulation(
-            self.horseshoes, self.velocity, self.height)
+            self.total_horseshoes, self.velocity, self.height)
 
     def find_circulation(self, distance: float):
 
@@ -157,82 +174,86 @@ class WindSystem:
             outcome = self.find_distance_circ(circ)
             return (outcome - distance) ** 2
 
-        initial = self.horseshoes[0].elements[0].strength
+        initial = self.horseshoes[0]['strength']
 
         optimized = minimize(objective, initial)
+
+        # Check if the optimization was successful
+        # if not optimized.success:
+        #     raise Exception(
+        #         f'Optimization failed: {optimized.message}')
 
         return optimized.x[0]
 
     def find_distance_circ(self, circulation: float) -> float:
-        self.horseshoes = list(
-            Horseshoe.initialize_horseshoe(hs.elements[1].cor_1, hs.elements[1].cor_2, circulation) for hs in self.horseshoes
-        )
+
+        # Update the strengths
+        self.total_horseshoes['strength'] *= circulation / \
+            self.total_horseshoes['strength'][0]
+
         return self.find_distance()
 
     def find_distance(self) -> float:
 
         initial_pos = np.array((
             0,
-            150,
-            0
+            100,
+            10
         ))
 
         sol = self.simulation.get_streamlines(initial_pos, self.dt, 1500)
+
+        # Check if the streamline reached the top
+        # if not sol.status:
+        #     raise Exception(
+        #         f'Streamline did not reach the top: {sol.message}')
+
         return sol.y_events[0][0][0]
 
 
 def main_1():
-    # Define a single vortex with one location
-    vortex1 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 310.)), np.array((1., 310., 310.)), 278.7)
-    vortex2 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 265.)), np.array((1., 310., 265.)), 278.7)
-    vortex3 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 170.)), np.array((1., 310., 170.)), 278.7)
-    vortex4 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 125.)), np.array((1., 310., 125.)), 278.7)
-    vortices = [vortex1, vortex2, vortex3, vortex4]
+
+    # TODO: Check numbers (height, span)
+    heights = np.array([235, 165, 95, 25, -235, -165, -95, -25])
+    span = 250
+    gamma = 270
+    height = 250
+
+    corner_1 = np.column_stack(
+        (np.ones(heights.shape[0]), 10 * np.ones(heights.shape[0]), heights))
+    corner_2 = np.column_stack(
+        (np.ones(heights.shape[0]), (10 + span) * np.ones(heights.shape[0]), heights))
+    strength = gamma * (-1 + 2 * (heights > 0))
+
+    vortices = Horseshoe.initialize_horseshoe(corner_1, corner_2, strength)
 
     # Create a simulation instance
     simulation = Simulation(
         horseshoes=vortices, velocity=9.29)
 
     fig = plt.figure()
-    three_d = False
+    three_d = True
     if three_d:
         ax = fig.add_subplot(111, projection='3d')
     else:
         ax = fig.add_subplot(111)
 
-    initial_positions = [
-        np.array((0, 50, 0)),
-        np.array((0, 150, 0)),
-        np.array((0, 250, 0)),
-        # np.array((0, 50, 50)),
-        np.array((0, 150, 50)),
-        # np.array((0, 250, 50)),
-        # np.array((0, 50, 100)),
-        np.array((0, 150, 100)),
-        # np.array((0, 250, 10)),
-        # np.array((0, 50, 150)),
-        np.array((0, 150, 150)),
-        # np.array((0, 250, 150)),
-        # np.array((0, 50, 200)),
-        np.array((0, 150, 200)),
-        # np.array((0, 250, 200)),
-        # np.array((0, 50, 250)),
-        np.array((0, 150, 250)),
-        # np.array((0, 250, 250)),
-    ]
+    y_values = np.array([-10, 50, 100, 150])
+    z_values = np.array([10, 50, 100, 150, 200])
 
-    sols = simulation.simulate(initial_positions, dt=0.0001, t_tot=1500)
+    y, z = np.meshgrid(y_values, z_values)
+    initial_positions = np.dstack((np.zeros_like(y), y, z)).reshape(-1, 3)
+
+    sols = simulation.simulate(initial_positions, dt=0.1, t_tot=500)
     for i, sol in enumerate(sols):
-        print(sol.t_events, sol.y_events)
+        # print(sol.t_events, sol.y_events)
         pos = sol.y
+        # if i == 0:
+        # print(sol.y)
 
         if three_d:
-            ax.plot(pos[0][::10], pos[1][::10],
-                    pos[2][::10], label='Streamline')
+            ax.plot(pos[0], pos[1],
+                    pos[2], label='Streamline')
             ax.scatter(pos[0][0], pos[1][0], pos[2][0],
                        color='red', label='Starting point')
         else:
@@ -268,22 +289,33 @@ def main_1():
 
 def main_2():
     # Define a single vortex with one location
-    vortex1 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 310.)), np.array((1., 310., 310.)), 366)
-    vortex2 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 265.)), np.array((1., 310., 265.)), 366)
-    vortex3 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 170.)), np.array((1., 310., 170.)), 366)
-    vortex4 = Horseshoe.initialize_horseshoe(
-        np.array((1., 10., 125.)), np.array((1., 310., 125.)), 366)
-    vortices = [vortex1, vortex2, vortex3, vortex4]
+    # TODO: Check numbers (height, span)
+    heights = np.array([235, 165, 95, 25])
+    span = 250
+    gamma = 270
+    height = 250
 
-    system = WindSystem(vortices, 400, 9.29, 0.001)
+    corner_1 = np.column_stack(
+        (np.ones(heights.shape[0]), 10 * np.ones(heights.shape[0]), heights))
+    corner_2 = np.column_stack(
+        (np.ones(heights.shape[0]), (10 + span) * np.ones(heights.shape[0]), heights))
+    strength = gamma * np.ones(heights.shape[0])
 
-    print(system.find_distance())
-    print(system.find_distance_circ(278.7))
+    vortices = Horseshoe.initialize_horseshoe(corner_1, corner_2, strength)
 
-    print(system.find_circulation(1700))
+    V = 9.29
+    system = WindSystem(vortices, height, V, 1)
+
+    # print(system.find_distance())
+    # print(system.find_distance_circ(278.7))
+    try:
+        circ_req = system.find_circulation(1700)
+        lift = circ_req * 1.225 * V * 250
+        cl_c = lift/(0.5*1.225*V**2*250)
+        print(f'{circ_req=}, {lift=}, {cl_c=}')
+    except Exception as e:
+        print(e)
+    print(system.find_distance_circ(250))
 
 
 if __name__ == "__main__":
