@@ -6,6 +6,7 @@ from Truss.helper_functions import CsvOutput
 import numpy as np
 
 
+
 class MRS(FEM_Solve):
     def __init__(self, truss_config: dict,
                  mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array, g_dir: str = 'z'):
@@ -23,7 +24,6 @@ class MRS(FEM_Solve):
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
         self.drag_calc = truss_config['drag_calculator']
         self.M_rna = truss_config['M_RNA']
-
 
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
         c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
@@ -67,6 +67,7 @@ class MRS(FEM_Solve):
         return global_loading_vector[self.active_dofs]
 
     def get_drag_loading(self):
+        'FIX, INCLUDES TOO MANY BARS!!!!!'
         '''
         :return: drag force loading vector
         '''
@@ -119,6 +120,7 @@ class MRS(FEM_Solve):
             loads.append(current_loads)
         indices = np.concatenate(indices)
         loads = np.hstack(loads)
+
         loading_vector = self.arbitrary_loading_vector(indices, loads)
         return loading_vector
 
@@ -185,12 +187,12 @@ if __name__ == "__main__":
             'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6, 1e6],
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
-            'drag_calculator': Drag(35, 1.225, 1),
-            'M_RNA': 10310.80866
+            'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
+            'M_RNA': 10310.8
             }
 
     'material and section definitions'
-    steel = Material(sig_y=400e6, rho=8000)
+    steel = Material()
     standard_section = Section(radius=.05, thickness=0.001)
 
     'create libraries'
