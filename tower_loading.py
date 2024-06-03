@@ -15,7 +15,7 @@ class Loads():
         self.D_truss = D_grid
         self.L_afc = 5e6
         self.D_afc = 5e5
-        self.h = truss_h/2+w_clearance+w_depth
+        self.h = truss_h/2+w_clearance
         self.d = truss_depth
         self.g = 9.80665
 
@@ -63,6 +63,35 @@ class Tower():
     
     def comp_buckling_stress(self):
         return 0.25*self.E*self.calc_Ixx()*(np.pi**2)/(self.L**2)/self.calc_area()
+    
+class Internal_loads():
+    def __init__(self, F_wave, D_truss, F_comp, M_truss, M_thrust, M_afc, thrust, water_depth, z):
+        self.F_wave= F_wave
+        self.D_truss = D_truss
+        self.D_afc = 5e5
+        self.F_z = F_comp
+        self.M_truss = M_truss
+        self.M_th = M_thrust
+        self.M_afc = M_afc
+        self.T = thrust
+        self.w_depth = water_depth
+        self.z = z
+
+    def int_axial(self):
+
+        return self.F_z
+    
+    def int_shear(self):
+
+        Vy = self.D_truss + self.T + np.cumsum(self.F_wave[::-1])+self.D_afc
+        return Vy[::-1]
+    
+    def int_moment(self):
+
+        M_x = self.M_afc+self.M_th+self.M_truss+(self.T+self.D_truss+self.D_afc)*(self.w_depth+z)+np.cumsum(self.F_wave[::-1]*0.1*(self.w_depth+z))
+        return M_x[::-1]
+    
+
 
     
 
@@ -98,11 +127,22 @@ if __name__ == "__main__":
     M_afc, M_truss, M_thrust = load.moments()
 
     F_comp = load.comp_force()
-
+    
     print(M_base+M_afc+M_thrust+M_truss)
     print(F_comp*1e-6)
-    tower = Tower(D=8.5, t = 0.05, w_clearance=25, M_applied=M_base+M_afc+M_thrust+M_truss, F_applied=F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
     
+    int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc, thrust = 3.945e6, water_depth= 25, z = z)
+    Vy = int_loads.int_shear()
+    Mx = int_loads.int_moment()
+    tower = Tower(D=8.5, t = 0.05, w_clearance=25, M_applied=Mx[0], F_applied=F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+    #plt.plot(Vy, z)
+    plt.plot(Mx, z)
+    plt.show()
+    print(Mx[0])
+    
+
+
+
     tower_stress = tower.calc_comp_stress()
     buckling = tower.comp_buckling_stress()
     D_it = 8.5

@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     Z_avg = np.sum(0.1*F_dist_max*z)/F_eq
 
-    M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
+    M_base= np.sum((wave.water_depth+z)*F_dist_max*0.1)
 
   
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # Scatter plot
     ax.scatter(T, Z, F_dist)
-
+    
     # Set labels
     ax.set_xlabel('Time [s]')
     ax.set_ylabel('Depth [m]')
@@ -97,7 +97,9 @@ if __name__ == "__main__":
     plt.ylabel('Depth [m]')
     # Show plot
     plt.show()
-
+    print(F_dist_max)
+    print(np.cumsum(F_dist_max).shape)
+          
 
 
 
