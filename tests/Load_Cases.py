@@ -160,6 +160,7 @@ class MRS(FEM_Solve):
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
             #  + self.get_inertial_loading()
+        self.calc_moment_of_inertia_Z()
         if include_self_load:
             P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
@@ -183,6 +184,22 @@ class MRS(FEM_Solve):
             self.plot_stresses(X, Y, Z, element_sigmas / factor)
         return d, element_Qs, element_sigmas
 
+    def calc_moment_of_inertia_Z(self):
+        Izz=0
+        mesh = self.mesh
+
+        collapsed_ms = np.einsum('ijj->ij', mesh.element_lumped_ms)
+        node_indices = np.arange(mesh.N_nodes, dtype=int)
+        global_point_masses = np.zeros_like(node_indices, dtype=float)
+        Xs, Ys = mesh.X_coords, mesh.Y_coords
+
+        for i in range(mesh.N_elems):
+            elem_boundaries = mesh.element_indices[:, i]
+            mask = np.isin(node_indices, elem_boundaries)
+            global_point_masses[mask] += collapsed_ms[i]
+
+        return Izz
+
 
 
 if __name__ == "__main__":
@@ -204,7 +221,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -217,7 +234,7 @@ if __name__ == "__main__":
     SOLVER = MRS(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
                        applied_loads=applied_loads, truss_config=config,)
 
-    #SOLVER.solve_system()
+    SOLVER.calc_moment_of_inertia_Z()
     'Initialise optimiser'
     file_number = 2
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
