@@ -162,6 +162,13 @@ class BEMsolver:
             
             results[i,:] = self.solveStreamtube(r_R[i], r_R[i+1], chord, twist, polar_alpha, polar_cl, polar_cd )
         return results
+    def CPCT(self):
+        delta_r_R = .01
+        r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
+        dr = (r_R[1:]-r_R[:-1])*self.radius
+        CT = np.sum(dr*self.solveBEM()[:,3]*self.NBlades/(0.5*self.Uinf**2*np.pi*self.radius**2))  #[a , aline, r_R, fnorm , ftan, gamma]
+        CP = np.sum(dr*self.solveBEM()[:,4]*self.solveBEM()[:,2]*self.NBlades*self.radius*self.omega/(0.5*self.Uinf**3*np.pi*self.radius**2))
+        return CP, CT
         
 
 class Blade:
@@ -189,10 +196,7 @@ class RadiusOptimizer:
         for ix in range(self.iterations):
             radiusbefore = Radius
             BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
-            results = BEM.solveBEM()
-            areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
-            dr = (r_R[1:]-r_R[:-1])*Radius
-            CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Uinf*TSR/Radius/(0.5*Uinf**3*np.pi*Radius**2))
+            CP, CT = BEM.CPCT()
             #CP = np.clip(CP,0.01, 0.999)
             AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
             Radius = np.sqrt(AREA/(np.pi*inps.n_rotors))
@@ -201,7 +205,9 @@ class RadiusOptimizer:
                 break
         return Radius
 # class BladeOptimizer:
-#     def __init__(self, init_root_chord)
+#     def __init__(self, init_root_chord, init_tip_chord, init_root_twist, init_pitch):
+#         self.init_root_chord, self.init_tip_chord, self.init_root_twist, self.init_pitch = init_root_chord, init_tip_chord, init_root_twist, init_pitch
+#     def 
 #airfoil characteristics  
 root_airfoil = Airfoil('s818.csv')
 mid_airfoil = Airfoil('s816.csv')
@@ -240,13 +246,8 @@ Omega = Uinf*TSR/Radius
 
 
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
-results = BEM.solveBEM()
+CP,CT = BEM.CPCT()
 
-
-areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
-dr = (r_R[1:]-r_R[:-1])*Radius
-CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))  #[a , aline, r_R, fnorm , ftan, gamma]
-CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
 
 print(f'{CT=},{CP=}')
 
