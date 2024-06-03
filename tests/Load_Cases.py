@@ -2,6 +2,7 @@ from Truss.Honeycomb_Truss import Hexagonal_Truss
 from Truss.Truss_Analysis import FEM_Solve, Mesh, Material, Section, Library
 from drag_calc import Drag
 from Truss.Optimiser import Optimizer
+from Truss.helper_functions import CsvOutput
 import numpy as np
 
 
@@ -171,10 +172,9 @@ class MRS(FEM_Solve):
 
 
 if __name__ == "__main__":
-    print('running analysis')
-    config={'wing_layer_indices': [0,1,2,3,4],
-            'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6],
-            'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5],
+    config={'wing_layer_indices': [0,1,2,3,4, 5],
+            'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6, 1e6],
+            'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
             'drag_calculator': Drag(35, 1.225, 1)
             }
@@ -203,11 +203,11 @@ if __name__ == "__main__":
 
     #SOLVER.solve_system()
     'Initialise optimiser'
-
-    file_number = 1
+    file_number = 2
+    csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
     OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    M_change, D_change, ts, sigs, elements = OPT.run_optimisation(tolerance=1e-5, output=None,)
+    M_change, D_change, ts, sigs, elements = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
 
     print('=========================================================================================================')
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')

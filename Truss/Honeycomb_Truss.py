@@ -259,7 +259,7 @@ class Hexagonal_Truss(Geometry_Definition):
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
     #truss.find_front_midpoint_indices()
     #truss.find_bottom_indices()
