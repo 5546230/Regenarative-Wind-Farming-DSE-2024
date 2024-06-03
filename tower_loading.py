@@ -11,7 +11,7 @@ class Loads():
         self.tower_mass = tower_mass
         self.truss_mass = truss_mass
         self.n_mass = nacelle_mass
-        self.T_rated = 3.975734e6
+        self.T_rated = 3.945e6
         self.D_truss = D_element*33
         self.L_afc = 5e6
         self.D_afc = 5e5
