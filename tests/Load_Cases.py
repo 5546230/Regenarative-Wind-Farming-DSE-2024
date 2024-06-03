@@ -187,7 +187,7 @@ class MRS(FEM_Solve):
 
 if __name__ == "__main__":
     config={'wing_layer_indices': [0,1],
-            'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6, 1e6],
+            'wing_lifts': [4e6, 4e6, 4e6,  4e6, 4e6, 4e6],
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
             'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
