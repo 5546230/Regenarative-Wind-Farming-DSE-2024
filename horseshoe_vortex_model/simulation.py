@@ -344,9 +344,9 @@ def main_1() -> None:
 
 def main_2() -> None:
     # TODO: Check numbers (height, span, heights, V)
-    heights = np.array([235, 165, 95, 25])
-    span = 250
-    height = 250
+    heights = np.array([279, 237, 195, 153.7, 25])
+    span = np.array([253, 211, 253, 211, 253])
+    height = 300
     V = 9.29
 
     gamma = 270
@@ -362,17 +362,17 @@ def main_2() -> None:
     system = WindSystem(vortices, height, V, 0.1)
 
     circ_req = system.find_circulation(2500)
-    lift = circ_req * 1.225 * V * span * len(heights)
-    cl_c = lift/(0.5*1.225*V**2*span*len(heights))
-    print(f'{circ_req=}, {lift=}, {cl_c=}')
+    lift = circ_req * 1.225 * V * span
+    cl_c = lift/(0.5*1.225*V**2*span)
+    print(f'{circ_req=}, {np.sum(lift)=}, {cl_c=}')
     circ_req = system.find_circulation(2000)
-    lift = circ_req * 1.225 * V * span * len(heights)
-    cl_c = lift/(0.5*1.225*V**2*span*len(heights))
-    print(f'{circ_req=}, {lift=}, {cl_c=}')
+    lift = circ_req * 1.225 * V * span
+    cl_c = lift/(0.5*1.225*V**2*span)
+    print(f'{circ_req=}, {np.sum(lift)=}, {cl_c=}')
     circ_req = system.find_circulation(1700)
-    lift = circ_req * 1.225 * V * span * len(heights)
-    cl_c = lift/(0.5*1.225*V**2*span*len(heights))
-    print(f'{circ_req=}, {lift=}, {cl_c=}')
+    lift = circ_req * 1.225 * V * span
+    cl_c = lift/(0.5*1.225*V**2*span)
+    print(f'{circ_req=}, {np.sum(lift)=}, {cl_c=}')
     print(system.find_distance_circ(285))
 
 
