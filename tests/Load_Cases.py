@@ -24,6 +24,7 @@ class MRS(FEM_Solve):
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
         self.drag_calc = truss_config['drag_calculator']
         self.M_rna = truss_config['M_RNA']
+        self.alpha = truss_config['max_alpha']
 
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
         c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
@@ -158,7 +159,6 @@ class MRS(FEM_Solve):
         '''
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
-        self.get_AFC_loading()
             #  + self.get_inertial_loading()
         if include_self_load:
             P += self.assemble_self_loading()
@@ -191,7 +191,8 @@ if __name__ == "__main__":
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
             'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
-            'M_RNA': 10310.8
+            'M_RNA': 10310.8,
+            'max_alpha': 0.,
             }
 
     'material and section definitions'
