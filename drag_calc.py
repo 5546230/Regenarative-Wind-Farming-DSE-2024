@@ -41,6 +41,10 @@ class Drag():
         D = 0.5 * rho* (V**2)* (CD1*self.L1*self.D + CD2*self.L2*self.D + CD3 * self.L3*self.D + CD4 * self.L4*self.D)
         return D
 
+    def placeholder(self, L, D):
+        D = L/L * D/D
+        return D
+
 
 
 if __name__ == "__main__":

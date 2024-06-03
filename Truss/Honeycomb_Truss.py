@@ -51,8 +51,8 @@ class Hexagonal_Truss(Geometry_Definition):
         self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5, ],dtype=float) * depth / 12.5
         self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0, ], dtype=float) * r_per_rotor / 12.5
 
-        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3,  4,  5, 6, 7, 8,  9, 10, 11,  1,  2,  4,  5,   7, 8,  10, 11,  5, 2, 12,  2, 4,   0,  3,  9, 2, 4, 5, 1, ],
-                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11,  6, 12, 12, 12, 12,  13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 9, 9, 6, 6, ]])
+        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3,  4,  5, 6, 7, 8,  9, 10, 11,  1,  2,  4,  5,   7, 8,  10, 11,  5, 2, 12,  2, 4,   0,  3,  9, 2, 4, 0, 0, ],
+                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11,  6, 12, 12, 12, 12,  13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 9, 9, 11, 7, ]])
 
         self.n_per_hex = self.X_single_hex.size
 
@@ -162,23 +162,6 @@ class Hexagonal_Truss(Geometry_Definition):
         all_hex_connectivity += connectivity_transforms[:,np.newaxis, np.newaxis]
         return all_hex_coords, all_hex_connectivity
 
-    def find_midpoint_indices(self, side: str = 'front', tolerance=0.01):
-        '''
-        :param tolerance: floating point comparison tolerance
-        :return: indices of unique nodes lying at hexagon centers, front side
-        '''
-        xs = self.hex_positions[:,0]
-        zs = self.hex_positions[:, 1]
-        ys = np.ones_like(xs) * np.min(self.Y_coords)
-        if side == 'back':
-            ys += self.depth
-        coordinates = np.vstack((xs, ys, zs))
-
-        coordinate_norms = np.linalg.norm(coordinates, axis=0)
-        global_norms = np.linalg.norm(self.get_XYZ_coords(), axis=0)
-        c_indices = np.where(np.abs(global_norms[:, np.newaxis] - coordinate_norms) < tolerance)[0]
-        return np.array(c_indices)
-
     def find_bottom_indices(self, tolerance=0.01):
         '''
         :param tolerance: floating point comparison tolerance
@@ -188,10 +171,6 @@ class Hexagonal_Truss(Geometry_Definition):
         z = np.min(self.Z_coords)
         c_indices = np.where(np.abs(self.Z_coords - z) < tolerance)[0]
         return np.array(c_indices)
-
-    def find_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
-        c_indices = np.where(np.abs(self.Y_coords - y) < tolerance)[0]
-        return c_indices
 
     def plot_circles(self, positions, width, height, title)->None:
         fig, ax = plt.subplots()
@@ -280,11 +259,10 @@ class Hexagonal_Truss(Geometry_Definition):
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=4, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
     #truss.find_front_midpoint_indices()
     #truss.find_bottom_indices()
-    print(truss.find_xz_plane_indices(y=0.))
 
     #truss_upd = sizing_truss(hex=truss)
     #print(truss_upd.load_indices)

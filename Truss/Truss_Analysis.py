@@ -102,6 +102,7 @@ class Mesh:
         self.element_Es = np.array([self.materials[i].E for i in self.material_indices])
         self.element_As = np.array([self.sections[i].A for i in self.section_indices])
         self.element_rhos = np.array([self.materials[i].rho for i in self.material_indices])
+        self.elem_Ds = 2 * np.array([self.sections[i].R for i in self.section_indices])
         self.elment_total_ms = self.element_As * self.element_lengths * self.element_rhos
 
         self.element_Ts = self.transfer_matrix()

@@ -33,6 +33,7 @@ class Optimizer:
         :return: sizing diameter buckling
         '''
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
+        t_i_buckling = ()
         return D_i_buckling
 
     def calc_yield_diameter(self, F_bar_i: np.array, sigy_i: np.array, gamma_m=1.35):

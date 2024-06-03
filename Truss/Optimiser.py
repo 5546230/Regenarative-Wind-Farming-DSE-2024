@@ -68,6 +68,7 @@ class Optimizer:
         :return: mesh with updated geometry
         '''
         mesh.element_As = self.calc_A_thin(D_i=diameters, )
+        mesh.elem_Ds = diameters
         mesh.element_ks = mesh.element_stiffness()
         mesh.element_lumped_ms = mesh.element_lumped_mass()
         mesh.element_Ks = mesh.transform_stiffness_to_global(local_matrix=mesh.element_ks)
