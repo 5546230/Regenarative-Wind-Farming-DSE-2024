@@ -394,6 +394,11 @@ class FEM_Solve:
 
             plt.plot(Xs, Ys, Zs, color='k', linestyle='-', linewidth=.85, )
             plt.plot(Xps, Yps, Zps, color='red', linestyle='-', linewidth=.85,)
+        for i, F  in enumerate(self.applied_loads.T):
+            X = Xp[self.load_indices[i]]
+            Y = Yp[self.load_indices[i]]
+            Z = Zp[self.load_indices[i]]
+            ax.quiver(X, Y, Z, [F[0]/5e4, 0, 0], [0, F[1]/5e4, 0], [0, 0, F[2]/5e4],)
         plt.show()
 
     def plot_stresses(self, Xp, Yp, Zp, sigmas)->None:
