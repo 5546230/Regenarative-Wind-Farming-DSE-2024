@@ -113,7 +113,9 @@ print(f'{estimated_a=}')
 CP_glauert = 4*estimated_a*(1-estimated_a)**2
 print((CP_glauert-CP)/CP_glauert)
 print("speed at rotors is: ", V_RATED*(1-estimated_a))
-print(CP*0.5*rho*V_RATED**3*AREA)
+diameter = radius*2
+print(f'{diameter=}')
+print(CP*0.5*rho*n_rotors*np.pi*radius**2*V_RATED**3)
 
 
 

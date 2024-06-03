@@ -276,6 +276,7 @@ Omega = Uinf*TSR/Radius
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
 print(f'{CT=},{CP=}')
+#estimating the total induction
 a_total = BEM.ainduction(CT)
 Prandtl_1, Prandtltip_1, Prandtlroot_1 = BEM.PrandtlTipRootCorrection(0.6, a_total)
 if (Prandtl_1 < 0.0001): 
@@ -284,7 +285,7 @@ a_total= a_total/Prandtl_1 # correct estimate of axial induction
 print(f'{a_total=}')
 
 
-#function for alessandro.
+#function for alessandro. Determines CT depending on the pitch. 
 def BEMsolver_ale(pitch):
     blade_ale = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade_ale.getChordTwist()
@@ -292,6 +293,7 @@ def BEMsolver_ale(pitch):
     CP,CT = BEM_ale.CPCT()
     return CT
 
+#plots the above function
 if inps.ale_shit_2:
     pitch_ales = np.arange(-10,25,1)
     CT_ales = []
@@ -325,5 +327,17 @@ if inps.ale_shit_2:
         pickle.dump(interp_function, f)
 
 
-
-
+def Reynoldsnumber(r1, r2):
+    r_R = (r1+r2)/2
+    Vtan = (1+np.average(BEM.solveBEM()[:,1]))*Omega*r_R*Radius
+    Vnor = Uinf*(1-a_total)
+    Vmag = np.sqrt(Vtan**2 + (Vnor)**2)
+    chords = np.average(chord_distribution)
+    mu = 1.48e-05
+    return Vmag*inps.rho*chords/mu
+if inps.printReynolds:
+    reynolds_root = Reynoldsnumber(0,root_boundary_R)
+    reynolds_mid = Reynoldsnumber(root_boundary_R,mid_boundary_R)
+    reynolds_tip = Reynoldsnumber(mid_boundary_R, 1)
+    print(f'{reynolds_root=}, {reynolds_mid=}, {reynolds_tip=}')
+    
