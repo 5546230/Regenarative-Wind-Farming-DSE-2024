@@ -9,6 +9,11 @@ import numpy as np
 class MRS(FEM_Solve):
     def __init__(self, truss_config: dict,
                  mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array, g_dir: str = 'z'):
+        '''
+        :param truss_config: dict specifying the MRS and loading configuration
+        NOTES:
+            - extension of FEM_Solve class to include load cases specific to the MRS
+        '''
         super().__init__(mesh=mesh, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads, g_dir=g_dir)
 
         self.T_per_rotor = truss_config['T_rated_per_rotor']
@@ -17,6 +22,7 @@ class MRS(FEM_Solve):
         self.drag_per_wing = np.array(truss_config['wing_drags'])
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
         self.drag_calc = truss_config['drag_calculator']
+        self.M_rna = truss_config['M_RNA']
 
 
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
@@ -122,12 +128,15 @@ class MRS(FEM_Solve):
         '''
         return
 
-    def get_thrust_loading(self):
+    def get_rotor_loading(self):
+        '''
+        :return: thrust loading due to each rotor
+        '''
         T_rated_per_rot = self.T_per_rotor
         front_T_indices = self.get_midpoint_indices(side='front')
         back_T_indices = self.get_midpoint_indices(side='back')
 
-        T_force = np.array([[0], [T_rated_per_rot], [0]]) / 2
+        T_force = np.array([[0], [T_rated_per_rot], [-self.M_rna*9.80665]]) / 2
         front_T_forces = np.repeat(T_force, front_T_indices.size, axis=1)
         back_T_forces = np.repeat(T_force, back_T_indices.size, axis=1)
 
@@ -143,7 +152,7 @@ class MRS(FEM_Solve):
         :return: [-]
         '''
         S = self.assemble_global_stiffness()
-        P = self.assemble_loading_vector() + self.get_thrust_loading() + self.get_drag_loading() + self.get_AFC_loading()
+        P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
         self.get_AFC_loading()
             # + self.get_drag_loading() + self.get_thrust_loading() + self.get_inertial_loading() + self.get_AFC_loading())
         if include_self_load:
@@ -176,7 +185,8 @@ if __name__ == "__main__":
             'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6, 1e6],
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
-            'drag_calculator': Drag(35, 1.225, 1)
+            'drag_calculator': Drag(35, 1.225, 1),
+            'M_RNA': 10310.80866
             }
 
     'material and section definitions'
@@ -199,7 +209,7 @@ if __name__ == "__main__":
     config['truss'] = hex
 
     SOLVER = MRS(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
-                       applied_loads=applied_loads, truss_config=config)
+                       applied_loads=applied_loads, truss_config=config,)
 
     #SOLVER.solve_system()
     'Initialise optimiser'
