@@ -155,7 +155,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
             Prandtl = 0.0001 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
         a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
-        print(a)
+        #print(a)
         #a = np.min(a,1)
         # calculate aximuthal induction
         aline = ftan*NBlades/(2*np.pi*Uinf*(1-a)*Omega*2*(r_R*Radius)**2)

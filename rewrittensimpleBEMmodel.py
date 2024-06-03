@@ -230,13 +230,18 @@ polar_alpha_mid, polar_cl_mid, polar_cd_mid = mid_airfoil.import_polar_data()
 polar_alpha_tip, polar_cl_tip, polar_cd_tip = tip_airfoil.import_polar_data()
 
 
-#blade geometry
-delta_r_R = .01
-r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
+#inputs from input file:
 pitch = inps.pitch # degrees
 tip_chord = inps.tip_chord
 root_chord  = inps.root_chord
 root_twist = inps.root_twist
+Uinf = inps.V_RATED # unperturbed wind speed in m/s
+TSR = inps.TSR # tip speed ratio
+Radius = inps.init_Radius
+Omega = Uinf*TSR/Radius
+#blade geometry
+delta_r_R = .01
+r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
 root_boundary_R = 0.4
 mid_boundary_R = 0.75
 blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
@@ -247,9 +252,7 @@ TipLocation_R =  1
 RootLocation_R =  0.2
 
 #initial conditions
-Uinf = inps.V_RATED # unperturbed wind speed in m/s
-TSR = inps.TSR # tip speed ratio
-Radius = inps.init_Radius
+
 if inps.iteration:
     Optimize = RadiusOptimizer(Radius, 1000)
     Radius = Optimize.optimizer()
@@ -260,13 +263,52 @@ if inps.optimize:
     print(root_chord, tip_chord, root_twist, pitch)
     blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade.getChordTwist()
-
-
 Omega = Uinf*TSR/Radius
+
+
 
 
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
+
+def BEMsolver_ale(pitch):
+    blade_ale = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
+    chord_distribution, twist_distribution = blade_ale.getChordTwist()
+    BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+    CP,CT = BEM.CPCT()
+    return CT
+
+if inps.ale_shit_2:
+    pitch_ales = np.arange(-10,25,1)
+    CT_ales = []
+    for i in range(len(pitch_ales)):
+        CT_ales.append(BEMsolver_ale(pitch_ales[i]))
+
+    CT_ales = np.array(CT_ales)
+    print(CT_ales)
+    plt.plot(pitch_ales, CT_ales)
+    plt.show()
+    from scipy.interpolate import interp1d
+    mask = ~np.isnan(CT_ales)
+    pitch_valid = pitch_ales[mask]
+    CT_valid = CT_ales[mask]
+    interp_function = interp1d(pitch_valid, CT_valid, kind='linear', fill_value="extrapolate")
+
+    # Interpolate missing values
+    pitch_interp = np.linspace(min(pitch_ales), max(pitch_ales), num=50)  # Interpolated points
+    CT_interp = interp_function(pitch_interp)
+
+    plt.scatter(pitch_ales, CT_ales, label='Original data with NaNs')
+    plt.plot(pitch_interp, CT_interp, label='Interpolated data', color='red')
+    plt.legend()
+    plt.xlabel('pitch')
+    plt.ylabel('CT')
+    plt.title('Interpolation of CT')
+    plt.show()
+
+    import pickle
+    with open('interpolated_function.pkl', 'wb') as f:
+        pickle.dump(interp_function, f)
 
 
 print(f'{CT=},{CP=}')
