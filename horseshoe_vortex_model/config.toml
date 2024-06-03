@@ -1,0 +1,21 @@
+[SIMULATION_PARAMETERS]
+DT = 0.001
+MAX_TIME_STEPS = 190000
+DOMAIN_W = 530
+DOMAIN_H = 280
+N_WIDTH = 101
+N_HEIGHT = 101
+ORIGIN = [-265, 30]
+
+[SIMULATION_CONTENTS]
+TRACKED_POINT = [0.0, 200.9]
+VORTEX_LIST = [
+    {position = [-265, 310], strength = -5500},
+    {position = [265, 310], strength = 5500},
+    {position = [-265, -310], strength = 5500},
+    {position = [265, -310], strength = -5500},
+    {position = [-100, 170], strength = 5500},
+    {position = [100, 170], strength = -5500},
+    {position = [-100, -170], strength = -5500},
+    {position = [100, -170], strength = 5500}
+]
