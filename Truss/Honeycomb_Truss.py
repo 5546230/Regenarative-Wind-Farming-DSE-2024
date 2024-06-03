@@ -1,5 +1,5 @@
-from Structure_Defs import Geometry_Definition
-from helper_functions import calculate_hexagonal_positions
+from Truss.Structure_Defs import Geometry_Definition
+from Truss.helper_functions import calculate_hexagonal_positions
 import numpy as np
 import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=7000)
@@ -27,13 +27,32 @@ class Hexagonal_Truss(Geometry_Definition):
         x = int(np.ceil(np.sqrt(self.n_rotors)))
         hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x)
         self.hex_positions = np.array(hex_positions)
+        ''' 
+        self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0, 12.5, -12.5], dtype=float)*r_per_rotor/12.5
+        self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5, 35/25*12.5, 35/25*12.5], dtype=float) * depth/12.5
+        self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0, -7.217, -7.217], dtype=float)*r_per_rotor/12.5
 
-        self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0], dtype=float)*r_per_rotor/12.5
-        self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5], dtype=float) * depth/12.5
-        self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0], dtype=float)*r_per_rotor/12.5
+        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4,   5, 6, 7, 8, 9,  10, 11, 1,  2,  4,  5,  7,  8, 10, 11,  5, 2, 12,  2,  4,  0,  3,  6,  9, 2, 4, 5, 1,7, 6, 14, 6, 11, 11],
+                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6, 14, 14, 15, 15, 15, 14]])
+        
+        self.X_single_hex = np.array(
+            [0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0,],
+            dtype=float) * r_per_rotor / 12.5
+        self.Y_single_hex = np.array(
+            [0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5, ],
+            dtype=float) * depth / 12.5
+        self.Z_single_hex = np.array(
+            [-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0,], dtype=float) * r_per_rotor / 12.5
 
-        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4,   5, 6, 7, 8, 9,  10, 11, 1,  2,  4,  5,  7,  8, 10, 11,  5, 2, 12,  2,  4,  0,  3,  6,  9, 2, 4, 5, 1],
-                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
+        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 2, 4, 5, 7, 8, 10, 11, 5, 2, 12, 2, 4, 0, 3, 6, 9, 2, 4, 5, 1,  ],
+                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6, ]])
+        '''
+        self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0, ],dtype=float) * r_per_rotor / 12.5
+        self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5, ],dtype=float) * depth / 12.5
+        self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0, ], dtype=float) * r_per_rotor / 12.5
+
+        self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3,  4,  5, 6, 7, 8,  9, 10, 11,  1,  2,  4,  5,   7, 8,  10, 11,  5, 2, 12,  2, 4,   0,  3,  9, 2, 4, 0, 0, ],
+                                             [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11,  6, 12, 12, 12, 12,  13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 9, 9, 11, 7, ]])
 
         self.n_per_hex = self.X_single_hex.size
 
@@ -143,21 +162,6 @@ class Hexagonal_Truss(Geometry_Definition):
         all_hex_connectivity += connectivity_transforms[:,np.newaxis, np.newaxis]
         return all_hex_coords, all_hex_connectivity
 
-    def find_front_midpoint_indices(self, tolerance=0.01):
-        '''
-        :param tolerance: floating point comparison tolerance
-        :return: indices of unique nodes lying at hexagon centers, front side
-        '''
-        xs = self.hex_positions[:,0]
-        zs = self.hex_positions[:, 1]
-        ys = np.ones_like(xs) * np.min(self.Y_coords)
-        coordinates = np.vstack((xs, ys, zs))
-
-        coordinate_norms = np.linalg.norm(coordinates, axis=0)
-        global_norms = np.linalg.norm(self.get_XYZ_coords(), axis=0)
-        c_indices = np.where(np.abs(global_norms[:, np.newaxis] - coordinate_norms) < tolerance)[0]
-        return np.array(c_indices)
-
     def find_bottom_indices(self, tolerance=0.01):
         '''
         :param tolerance: floating point comparison tolerance
@@ -237,12 +241,12 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.ones((3, self.find_bottom_indices().size))
 
     def get_load_indices(self):
-        return np.array([15, 19, 10, 2])
+        return np.array([15, 19, 30, 16, 2])
 
     def get_applied_loads(self):
-        return np.array([[-5e5,-5e5,0, 0],
-                         [0,0,0, 0],
-                         [0,0,0, 0]])
+        return np.array([[-1e5,-1e5,0, 0,0],
+                         [0,0,2e4*0, 2e4*0,2e4*0],
+                         [0,0,-3e5*0,-3e5*0,-3e5*0]])
 
     def get_material_indices(self):
         return np.ones(self.n_unique_edges, dtype=int)
@@ -252,23 +256,16 @@ class Hexagonal_Truss(Geometry_Definition):
                 self.bc_indices, self.bc_constraints, self.load_indices, self.applied_loads)
 
 
-def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth = 25, spacing_factor=1, verbose: bool = True):
-    truss = Hexagonal_Truss(n_rotors, r_per_rotor, depth, spacing_factor, verbose=verbose)
-
-    #truss.load_indices = []
-    #truss.applied_loads = []
-
-    truss.bc_indices = np.array([12,56,100,144,188,232,23,67,111,155,109, 243])
-    truss.bc_constraints = np.ones((3,truss.bc_indices.shape[1]))
-
-    return truss
-
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=4, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
-    truss.find_front_midpoint_indices()
-    truss.find_bottom_indices()
+    #truss.find_front_midpoint_indices()
+    #truss.find_bottom_indices()
+
+    #truss_upd = sizing_truss(hex=truss)
+    #print(truss_upd.load_indices)
+    #print(truss_upd.applied_loads)
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()

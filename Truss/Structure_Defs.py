@@ -47,25 +47,25 @@ class Geometry_Definition(ABC):
 
 
 class Verif_1(Geometry_Definition):
-    def XYZ_coords(self):
+    def get_XYZ_coords(self):
         return np.array([[0, 0, 0, 0, 1, 1, 1, 1],
                            [0, 1, 0, 1, 0, 1, 0, 1],
                            [0, 0, 1, 1, 0, 0, 1, 1]])
 
-    def member_indices(self):
+    def get_member_indices(self):
         return np.array([[0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 0, 5, 0, 5],
                                [2, 3, 3, 3, 6, 7, 6, 7, 7, 7, 4, 4, 1, 1]])
 
-    def section_indices(self):
+    def get_section_indices(self):
         return np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def material_indices(self):
+    def get_material_indices(self):
         return np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    def bc_indices(self):
+    def get_bc_indices(self):
         return np.array([0, 1, 4, 5])
 
-    def bc_constraints(self):
+    def get_bc_constraints(self):
         return np.array([[1, 1, 1, 1],
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
@@ -80,25 +80,25 @@ class Verif_1(Geometry_Definition):
 
 
 class Verif_3(Geometry_Definition):
-    def XYZ_coords(self):
+    def get_XYZ_coords(self):
         return np.array([[-4, 4, 4, -4, -2, 2, 2, -2],
                            [0,  0, 0, 0,  10, 10, 10, 10],
                            [4,  4,-4, -4, 2,  2, -2, -2]], dtype=float)
 
-    def member_indices(self):
+    def get_member_indices(self):
         return np.array([[0,1,2,3,0,1,2, 3, 4,5,6,7],
                                [4,5,6,7,5,6,7, 4, 5,6,7,4]])
 
-    def section_indices(self):
+    def get_section_indices(self):
         return np.ones(12, dtype=int)
 
-    def material_indices(self):
+    def get_material_indices(self):
         return np.ones(12, dtype=int)
 
-    def bc_indices(self):
+    def get_bc_indices(self):
         return  [0, 1, 2, 3]
 
-    def bc_constraints(self):
+    def get_bc_constraints(self):
         return np.array([[1, 1, 1, 1],
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
@@ -110,6 +110,39 @@ class Verif_3(Geometry_Definition):
         return 1000*np.array([[45, 45, 0, 0],
                               [-90,-90, -90, -90],
                               [0, 0,    0, 0]])
+
+
+class Verif_Geom_4(Geometry_Definition):
+    def get_XYZ_coords(self):
+        return np.array([[-3, 9, 2, 0],
+                            [0, 0, 0, 12],
+                           [5, 6, -3, 0]], dtype=float)
+
+    def get_member_indices(self):
+        return np.array([[0, 1, 2],
+                               [3, 3, 3]])
+
+    def get_section_indices(self):
+        return np.ones(3, dtype=int)*3
+
+    def get_material_indices(self):
+        return np.ones(3, dtype=int)*3
+
+    def get_bc_indices(self):
+        return   [0, 1, 2]
+
+    def get_bc_constraints(self):
+        return np.array([[1, 1, 1],
+                               [1, 1, 1],
+                               [1, 1, 1]])
+
+    def get_load_indices(self):
+        return [3]
+
+    def get_applied_loads(self):
+        return 1000*np.array([[75],
+                              [-150],
+                              [0]])
 
 
 def verif_geom_1():

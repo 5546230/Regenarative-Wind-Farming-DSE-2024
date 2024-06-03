@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
+from Truss.Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import TwoSlopeNorm
-from helper_functions import custom_map
+from Truss.helper_functions import custom_map
 from typing import Tuple, Union
 np.set_printoptions(linewidth=7000)
 '''
@@ -102,6 +102,7 @@ class Mesh:
         self.element_Es = np.array([self.materials[i].E for i in self.material_indices])
         self.element_As = np.array([self.sections[i].A for i in self.section_indices])
         self.element_rhos = np.array([self.materials[i].rho for i in self.material_indices])
+        self.elem_Ds = 2 * np.array([self.sections[i].R for i in self.section_indices])
         self.elment_total_ms = self.element_As * self.element_lengths * self.element_rhos
 
         self.element_Ts = self.transfer_matrix()

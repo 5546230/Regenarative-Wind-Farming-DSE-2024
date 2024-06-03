@@ -3,6 +3,7 @@ from Truss.Truss_Analysis import Mesh, FEM_Solve, Material, Section
 from Truss.helper_functions import CsvOutput
 import numpy as np
 
+'NEW OPTIMISER CLASS: constant diameter, variable thickness'
 
 class Optimizer:
     def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, r_t = 1/120, plot_output: bool = False, verbose: bool = False):
@@ -32,6 +33,7 @@ class Optimizer:
         :return: sizing diameter buckling
         '''
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
+        t_i_buckling = ()
         return D_i_buckling
 
     def calc_yield_diameter(self, F_bar_i: np.array, sigy_i: np.array, gamma_m=1.35):
@@ -68,7 +70,6 @@ class Optimizer:
         :return: mesh with updated geometry
         '''
         mesh.element_As = self.calc_A_thin(D_i=diameters, )
-        mesh.elem_Ds = diameters
         mesh.element_ks = mesh.element_stiffness()
         mesh.element_lumped_ms = mesh.element_lumped_mass()
         mesh.element_Ks = mesh.transform_stiffness_to_global(local_matrix=mesh.element_ks)
