@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np  
 import inputs_BEM_powerCurve as inps
 import pandas as pd
+from scipy.optimize import minimize
 class Airfoil:
     def __init__(self, csv):
         self.csv = csv
@@ -204,10 +205,22 @@ class RadiusOptimizer:
             if np.abs(Radius-radiusbefore) < 0.01:
                 break
         return Radius
-# class BladeOptimizer:
-#     def __init__(self, init_root_chord, init_tip_chord, init_root_twist, init_pitch):
-#         self.init_root_chord, self.init_tip_chord, self.init_root_twist, self.init_pitch = init_root_chord, init_tip_chord, init_root_twist, init_pitch
-#     def 
+class BladeOptimizer:
+    def __init__(self, init_root_chord, init_tip_chord, init_root_twist, init_pitch):
+        self.init_root_chord, self.init_tip_chord, self.init_root_twist, self.init_pitch = init_root_chord, init_tip_chord, init_root_twist, init_pitch
+    def objective_function(self, inputs):
+        root_chord, tip_chord, root_twist, pitch = inputs
+        blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
+        chord_distribution, twist_distribution = blade.getChordTwist()
+        BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+        CP_o, CT_o = BEM.CPCT()
+        return -CP_o
+    def optimize(self):
+        initial_guess = np.array([self.init_root_chord, self.init_tip_chord, self.init_root_twist, self.init_pitch])
+        bounds = np.array([(2,6),(1,3),(-25,25),(-10,25)])
+        result = minimize(self.objective_function, initial_guess,bounds = bounds, method='SLSQP')
+        optimal_inputs = result.x
+        return optimal_inputs
 #airfoil characteristics  
 root_airfoil = Airfoil('s818.csv')
 mid_airfoil = Airfoil('s816.csv')
@@ -241,6 +254,13 @@ if inps.iteration:
     Optimize = RadiusOptimizer(Radius, 1000)
     Radius = Optimize.optimizer()
 print(Radius)
+if inps.optimize:
+    bladeoptimizer = BladeOptimizer(root_chord, tip_chord, root_twist, pitch)
+    root_chord, tip_chord, root_twist, pitch = bladeoptimizer.optimize()
+    print(root_chord, tip_chord, root_twist, pitch)
+    blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
+    chord_distribution, twist_distribution = blade.getChordTwist()
+
 
 Omega = Uinf*TSR/Radius
 
