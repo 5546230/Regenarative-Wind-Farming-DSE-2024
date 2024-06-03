@@ -121,7 +121,7 @@ class BEMsolver:
                 Prandtl = 0.0001 # avoid divide by zero
             anew = anew/Prandtl # correct estimate of axial induction
             a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
-
+            #print(a)
             # calculate aximuthal induction
             aline = ftan*self.NBlades/(2*np.pi*self.Uinf*(1-a)*self.omega*2*(r_R*self.radius)**2)
             aline =aline/Prandtl # correct estimate of azimuthal induction with Prandtl's correction
@@ -161,7 +161,7 @@ class BEMsolver:
                 polar_cd = self.polar_cd_tip
             
             results[i,:] = self.solveStreamtube(r_R[i], r_R[i+1], chord, twist, polar_alpha, polar_cl, polar_cd )
-            return results
+        return results
         
 
 class Blade:
@@ -178,6 +178,30 @@ class Blade:
         twist_distribution = self.root_twist*(1-r_R)+self.pitch # degrees
         return chord_distribution, twist_distribution
 
+class RadiusOptimizer:
+    def __init__(self, init_radius, iterations):
+        self.init_radius = init_radius
+        self.iterations = iterations
+
+
+    def optimizer(self):
+        Radius = self.init_radius
+        for ix in range(self.iterations):
+            radiusbefore = Radius
+            BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+            results = BEM.solveBEM()
+            areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
+            dr = (r_R[1:]-r_R[:-1])*Radius
+            CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Uinf*TSR/Radius/(0.5*Uinf**3*np.pi*Radius**2))
+            #CP = np.clip(CP,0.01, 0.999)
+            AREA = inps.P_RATED/(CP*0.5*inps.rho*inps.V_RATED**3)
+            Radius = np.sqrt(AREA/(np.pi*inps.n_rotors))
+            
+            if np.abs(Radius-radiusbefore) < 0.01:
+                break
+        return Radius
+# class BladeOptimizer:
+#     def __init__(self, init_root_chord)
 #airfoil characteristics  
 root_airfoil = Airfoil('s818.csv')
 mid_airfoil = Airfoil('s816.csv')
@@ -189,6 +213,7 @@ polar_alpha_tip, polar_cl_tip, polar_cd_tip = tip_airfoil.import_polar_data()
 
 #blade geometry
 delta_r_R = .01
+r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
 pitch = inps.pitch # degrees
 tip_chord = inps.tip_chord
 root_chord  = inps.root_chord
@@ -197,25 +222,31 @@ root_boundary_R = 0.4
 mid_boundary_R = 0.75
 blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
 chord_distribution, twist_distribution = blade.getChordTwist()
-
-
-#initial conditions
-Uinf = inps.V_RATED # unperturbed wind speed in m/s
-TSR = inps.TSR # tip speed ratio
-Radius = inps.init_Radius
-Omega = Uinf*TSR/Radius
 NBlades = 3
 
 TipLocation_R =  1
 RootLocation_R =  0.2
 
+#initial conditions
+Uinf = inps.V_RATED # unperturbed wind speed in m/s
+TSR = inps.TSR # tip speed ratio
+Radius = inps.init_Radius
+if inps.iteration:
+    Optimize = RadiusOptimizer(Radius, 1000)
+    Radius = Optimize.optimizer()
+print(Radius)
+
+Omega = Uinf*TSR/Radius
+
+
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 results = BEM.solveBEM()
 
-r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
+
 areas = (r_R[1:]**2-r_R[:-1]**2)*np.pi*Radius**2
 dr = (r_R[1:]-r_R[:-1])*Radius
-CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+CT = np.sum(dr*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))  #[a , aline, r_R, fnorm , ftan, gamma]
 CP = np.sum(dr*results[:,4]*results[:,2]*NBlades*Radius*Omega/(0.5*Uinf**3*np.pi*Radius**2))
 
 print(f'{CT=},{CP=}')
+

@@ -155,6 +155,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
             Prandtl = 0.0001 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
         a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
+        print(a)
         #a = np.min(a,1)
         # calculate aximuthal induction
         aline = ftan*NBlades/(2*np.pi*Uinf*(1-a)*Omega*2*(r_R*Radius)**2)
@@ -402,10 +403,11 @@ if ale_shit_2:
 def Reynoldsnumber(r1, r2):
     r_R = (r1+r2)/2
     Vtan = (1+np.average(results[:,1]))*Omega*r_R*Radius
-    Vmag = np.sqrt(Vtan**2 + (Uinf*(1-a_total))**2)
+    Vnor = Uinf*(1-a_total)
+    Vmag = np.sqrt(Vtan**2 + (Vnor)**2)
     chords = np.average(chord_distribution)
     mu = 1.48e-05
-    return Vmag*inps.rho*chords/mu
+    return Vtan*inps.rho*chords/mu
 
 reynolds_root = Reynoldsnumber(0,root_boundary_R)
 reynolds_mid = Reynoldsnumber(root_boundary_R,mid_boundary_R)
