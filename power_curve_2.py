@@ -29,45 +29,6 @@ radius = BEM.Radius
 if np.isnan(BEM.CP):
     radius = inps.Radiuss
 AREA = n_rotors*np.pi*radius**2
-
-# Initialize Array
-U_array = np.linspace(0, 27, 350)
-
-# Calculate Power and Torque
-P_array = 0.5 * rho * CP * U_array ** 3 * np.pi * radius ** 2 * n_rotors
-Q_array = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (U_array * TSR / radius) ** 2
-
-# Apply cut-in, rated and cut-off constraints
-P_array[U_array < cut_in] = 0
-Q_array[U_array < cut_in] = 0
-Q_array[P_array > P_RATED] = Q_array[P_array > P_RATED][0]
-P_array[P_array > P_RATED] = P_RATED
-P_array[U_array > cut_off] = 0
-Q_array[U_array > cut_off] = 0
-
-P_array /= 1e6
-Q_array /= 1e3
-
-fig, axs = plt.subplots(1, 2)
-fig.set_figheight(3)
-fig.set_figwidth(10)
-
-axs[0].plot(U_array, P_array)
-axs[0].set_xlabel('Wind Speed [m/s]')
-axs[0].set_xlim(0, 27)
-axs[0].set_ylabel('Power Generated [MW]')
-axs[0].grid(True)
-
-axs[1].plot(U_array, Q_array)
-axs[1].set_xlabel('Wind Speed [m/s]')
-axs[1].set_xlim(0, 27)
-axs[1].set_ylabel('Torque per Rotor [kNm]')
-axs[1].grid(True)
-
-plt.tight_layout()
-plt.savefig('power_torque_curves.svg', format='svg')
-plt.show()
-
 def find_all_x_crossings(x_data, y_data, y_targets):
     crossings = {y: [] for y in y_targets}
 
@@ -101,6 +62,48 @@ CT = BEM.CT
 if np.isnan(CT):
     estimated_a = np.min(crossings[y_targets[0]])
     CT = 4*estimated_a*(1-estimated_a)
+
+# Initialize Array
+U_array = np.linspace(0, 27, 350)
+
+# Calculate Power and Torque
+P_array = 0.5 * rho * CP * U_array ** 3 * np.pi * radius ** 2 * n_rotors
+Q_array = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (U_array * TSR / radius) ** 2
+# T_array = 0.5*rho*CT*U_array**2*np.pi * radius**2*n_rotors
+# Apply cut-in, rated and cut-off constraints
+P_array[U_array < cut_in] = 0
+Q_array[U_array < cut_in] = 0
+# T_array[U_array<cut_in] = 0
+Q_array[P_array > P_RATED] = Q_array[P_array > P_RATED][0]
+# T_array[P_array > P_RATED] = P_RATED / U_array
+P_array[P_array > P_RATED] = P_RATED
+P_array[U_array > cut_off] = 0
+Q_array[U_array > cut_off] = 0
+
+P_array /= 1e6
+Q_array /= 1e3
+
+fig, axs = plt.subplots(1, 2)
+fig.set_figheight(3)
+fig.set_figwidth(10)
+
+axs[0].plot(U_array, P_array)
+axs[0].set_xlabel('Wind Speed [m/s]')
+axs[0].set_xlim(0, 27)
+axs[0].set_ylabel('Power Generated [MW]')
+axs[0].grid(True)
+
+axs[1].plot(U_array, Q_array)
+axs[1].set_xlabel('Wind Speed [m/s]')
+axs[1].set_xlim(0, 27)
+axs[1].set_ylabel('Torque per Rotor [kNm]')
+axs[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('power_torque_curves.svg', format='svg')
+plt.show()
+
+
 T_RATED = CT*0.5*rho*V_RATED**2*AREA
 Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2
 T_RATED_perrotor = T_RATED/n_rotors
@@ -111,3 +114,8 @@ CP_glauert = 4*estimated_a*(1-estimated_a)**2
 print((CP_glauert-CP)/CP_glauert)
 print("speed at rotors is: ", V_RATED*(1-estimated_a))
 print(CP*0.5*rho*V_RATED**3*AREA)
+
+
+
+# Uinfinity = np.arange(10, )
+# BEM.BEMsolver_mark()
