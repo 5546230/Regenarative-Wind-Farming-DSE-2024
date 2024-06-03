@@ -67,7 +67,6 @@ class MRS(FEM_Solve):
         return global_loading_vector[self.active_dofs]
 
     def get_drag_loading(self):
-        'FIX, INCLUDES TOO MANY BARS!!!!!'
         '''
         :return: drag force loading vector
         '''
@@ -80,7 +79,11 @@ class MRS(FEM_Solve):
         drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
 
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        front_indices = self.get_xz_plane_indices(y=np.min(self.mesh.Y_coords))
+
         for i in range(self.mesh.N_elems):
+            if np.any(np.isin(self.mesh.element_indices[:,i], front_indices)==False):
+                pass
             elem_start_dofs = start_dof_idxs[:, i]
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
@@ -156,7 +159,7 @@ class MRS(FEM_Solve):
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
         self.get_AFC_loading()
-            # + self.get_drag_loading() + self.get_thrust_loading() + self.get_inertial_loading() + self.get_AFC_loading())
+            #  + self.get_inertial_loading()
         if include_self_load:
             P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
@@ -183,7 +186,7 @@ class MRS(FEM_Solve):
 
 
 if __name__ == "__main__":
-    config={'wing_layer_indices': [0,1,2,3,4, 5],
+    config={'wing_layer_indices': [0,1],
             'wing_lifts': [1e6, 1e6, 1e6,  1e6, 1e6, 1e6],
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=33, r_per_rotor=40.1079757687 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
