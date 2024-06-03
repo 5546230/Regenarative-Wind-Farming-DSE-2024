@@ -17,7 +17,7 @@ root_twist = -8.420070544909368#-14
 optimize = False    #optimize blade geometry (pitch, twist, chords)
 assumed_CP = 0.46  
 ale_shit = False   #something bc alessandro wanted CT(TSR, pitch)
-ale_shit_2 = True
+ale_shit_2 = False
 
 
 AREA = P_RATED/(assumed_CP*0.5*rho*V_RATED**3)

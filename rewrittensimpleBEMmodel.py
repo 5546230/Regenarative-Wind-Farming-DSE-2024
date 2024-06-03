@@ -270,6 +270,7 @@ Omega = Uinf*TSR/Radius
 
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
+print(f'{CT=},{CP=}')
 
 def BEMsolver_ale(pitch):
     blade_ale = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
@@ -311,5 +312,5 @@ if inps.ale_shit_2:
         pickle.dump(interp_function, f)
 
 
-print(f'{CT=},{CP=}')
+
 
