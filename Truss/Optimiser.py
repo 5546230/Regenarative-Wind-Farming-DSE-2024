@@ -1,11 +1,11 @@
-from Structure_Defs import verif_geom_3 as geometry
 from Honeycomb_Truss import Hexagonal_Truss
 from Truss_Analysis import Mesh, FEM_Solve, Material, Section
+from helper_functions import CsvOutput
 import numpy as np
 
 
 class Optimizer:
-    def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, plot_output: bool = False, r_t = 1/120, verbose: bool = False):
+    def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, r_t = 1/120, plot_output: bool = False, verbose: bool = False):
         '''
         :param mesh: instance of Mesh class
         :param solver: instance of Solver class
@@ -13,6 +13,8 @@ class Optimizer:
         :param plot_output: plot before and after opt.
         :param r_t: thickness ratio: r_t := t/D
         :param verbose: print progress
+        sources:
+            [1]: https://wes.copernicus.org/articles/5/1121/2020/
         '''
         self.mesh = mesh
         self.solver = solver
@@ -32,7 +34,7 @@ class Optimizer:
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
         return D_i_buckling
 
-    def calc_yield_diameter(self, F_bar_i, sigy_i: np.array, gamma_m=1.35):
+    def calc_yield_diameter(self, F_bar_i: np.array, sigy_i: np.array, gamma_m=1.35):
         '''
         :param F_bar_i: bar internal axial forces
         :param sigy_i: bar yield stresses
@@ -59,7 +61,12 @@ class Optimizer:
         '''
         return A_i * l_i * rho_i
 
-    def update_mesh(self, mesh, diameters, ):
+    def update_mesh(self, mesh: Mesh, diameters: np.array, )->Mesh:
+        '''
+        :param mesh: current instance of Mesh
+        :param diameters: current array of bar diameters
+        :return: mesh with updated geometry
+        '''
         mesh.element_As = self.calc_A_thin(D_i=diameters, )
         mesh.element_ks = mesh.element_stiffness()
         mesh.element_lumped_ms = mesh.element_lumped_mass()
@@ -67,9 +74,10 @@ class Optimizer:
         mesh.element_Ms = mesh.transform_stiffness_to_global(local_matrix=mesh.element_lumped_ms)
         return mesh
 
-    def run_optimisation(self, tolerance = 1e-6):
+    def run_optimisation(self, tolerance = 1e-6, output: CsvOutput = None):
         '''
         :param tolerance: tolerance at which to end diameter opt.
+        :param output: (obj) instance of CsvOutput class
         :return: mass (before after), diameters (before after)
         '''
 
@@ -118,12 +126,28 @@ class Optimizer:
         Ds = Ds_sizing
         s.mesh =  self.update_mesh(mesh=m, diameters=Ds)
 
-        _,_,sigma = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
+        _,_,sigmas = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
         t_output = Ds*self.r_t
-        return np.array(M_output), D_output, t_output
+
+        if output is not None:
+            print('Writing to output... '+ output.fname)
+            fem_output = {
+                'Ds [m]': D_output[1],
+                'ts [m]': t_output,
+                'Sigmas [MPa]': sigmas / 1e6,
+                'N_0 [-]': s.mesh.element_indices[0],
+                'N_1 [-]': s.mesh.element_indices[1],
+            }
+            output.write(fem_output)
+        return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices
 
 
 def sort_bins(v: np.array, n_bins: int):
+    '''
+    :param v: array to sort
+    :param n_bins: number of bins
+    :return: v sorted into n bins
+    '''
     min = np.min(v)
     max = np.max(v)
 
@@ -131,22 +155,25 @@ def sort_bins(v: np.array, n_bins: int):
     bin_placement = np.digitize(v, bins, right=False)
     bin_placement = np.clip(bin_placement - 1, 0, n_bins - 1)
     min_values = bins[1:]
-    v_sorted = [list(v[bin_placement==i] )for i in range(n_bins)]
 
-    return v_sorted, min_values
+    indices = np.arange(v.size, dtype=int)
+    v_sorted = [list(v[bin_placement==i] )for i in range(n_bins)]
+    indices_sorted = [list(indices[bin_placement==i] )for i in range(n_bins)]
+
+    return v_sorted, indices_sorted, min_values
 
 
 
 if __name__ == "__main__":
     'material and section definitions'
-    steel = Material(sig_y=150e6, rho=8000)
+    steel = Material(sig_y=50e6, rho=8000)
     standard_section = Section(radius=.005, thickness=0.001)
 
     'create libraries'
     material_library = [steel, steel, steel, steel]
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
-    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40/2, spacing_factor=1, verbose=False, depth=35)
+    hex = Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -156,15 +183,15 @@ if __name__ == "__main__":
     SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
 
     'Initialise optimiser'
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    Mchange, Dchange, ts = OPT.run_optimisation(tolerance=1e-5)
+    file_number = 1
+    csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
-    #np.set_printoptions(precision=2)
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
+    M_change, D_change, ts, sigs, elements = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+
     print('=========================================================================================================')
-    print(f'\nInitial Mass = {Mchange[0]/1000:.2f} [t], Final Mass = {Mchange[1]/1000:.2f} [t]')
-    #print(Dchange[0])
-    print(Dchange)
+    print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')
+    print(D_change)
     print(ts*1000)
 
-    print('\n\n')
-    print(sort_bins(v=Dchange[1], n_bins=3))
+    #print(sort_bins(v=D_change[1], n_bins=3))

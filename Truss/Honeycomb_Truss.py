@@ -14,7 +14,7 @@ class Hexagonal_Truss(Geometry_Definition):
         :param verbose: print
 
         notes:
-            - new indexing is defined i \in \{ 0, n_unique-1 \}
+            - new unique indexing is defined i \in \{ 0, n_unique-1 \}
             - overlapping edge topology is re-mapped to the unique set
             - IMPORTANT: removes nodes within 10 cm of each-other
         '''
@@ -31,9 +31,6 @@ class Hexagonal_Truss(Geometry_Definition):
         self.X_single_hex = np.array([0, 12.5, 12.5, 0, -12.5, -12.5, 0, 12.5, 12.5, 0, -12.5, -12.5, 0, 0], dtype=float)*r_per_rotor/12.5
         self.Y_single_hex = np.array([0, 0, 0, 0, 0, 0, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 0, 12.5], dtype=float) * depth/12.5
         self.Z_single_hex = np.array([-14.434, -7.217, 7.217, 14.434, 7.217, -7.217, -14.434, -7.217, 7.217, 14.434, 7.217, -7.217, 0, 0], dtype=float)*r_per_rotor/12.5
-
-        #self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 2, 4, 5, 7, 8, 10, 11, 5, 2, 12, 1, 5, 0, 3, 6, 9, 2, 4, 5, 1],
-        #                           [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
 
         self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4,   5, 6, 7, 8, 9,  10, 11, 1,  2,  4,  5,  7,  8, 10, 11,  5, 2, 12,  2,  4,  0,  3,  6,  9, 2, 4, 5, 1],
                                              [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11, 7, 8, 9, 10, 11, 6, 12, 12, 12, 12, 13, 13, 13, 13, 10, 7, 13, 13, 13, 12, 12, 13, 13, 9, 9, 6, 6]])
@@ -71,6 +68,7 @@ class Hexagonal_Truss(Geometry_Definition):
         self.X_coords = unique_nodes.T[0,:]
         self.Y_coords = unique_nodes.T[1,:]
         self.Z_coords = unique_nodes.T[2,:]
+        self.unique_indices = unique_indices
         super().__init__()
 
         self.plot_structure(show=True)
@@ -145,8 +143,32 @@ class Hexagonal_Truss(Geometry_Definition):
         all_hex_connectivity += connectivity_transforms[:,np.newaxis, np.newaxis]
         return all_hex_coords, all_hex_connectivity
 
+    def find_front_midpoint_indices(self, tolerance=0.01):
+        '''
+        :param tolerance: floating point comparison tolerance
+        :return: indices of unique nodes lying at hexagon centers, front side
+        '''
+        xs = self.hex_positions[:,0]
+        zs = self.hex_positions[:, 1]
+        ys = np.ones_like(xs) * np.min(self.Y_coords)
+        coordinates = np.vstack((xs, ys, zs))
 
-    def plot_circles(self, positions, width, height, title):
+        coordinate_norms = np.linalg.norm(coordinates, axis=0)
+        global_norms = np.linalg.norm(self.get_XYZ_coords(), axis=0)
+        c_indices = np.where(np.abs(global_norms[:, np.newaxis] - coordinate_norms) < tolerance)[0]
+        return np.array(c_indices)
+
+    def find_bottom_indices(self, tolerance=0.01):
+        '''
+        :param tolerance: floating point comparison tolerance
+        :return: indices of unique nodes lying at hexagon centers, front side
+        '''
+
+        z = np.min(self.Z_coords)
+        c_indices = np.where(np.abs(self.Z_coords - z) < tolerance)[0]
+        return np.array(c_indices)
+
+    def plot_circles(self, positions, width, height, title)->None:
         fig, ax = plt.subplots()
         ax.set_xlim(0, width)
         ax.set_ylim(0, height)
@@ -161,7 +183,7 @@ class Hexagonal_Truss(Geometry_Definition):
         ax.set_ylabel("Height [m]")
         plt.show()
 
-    def plot_structure(self, show: bool = True):
+    def plot_structure(self, show: bool = True)->None:
         '3d plot of nodes and members'
         fig = plt.figure(figsize=(13,9), layout='constrained')
         ax = fig.add_subplot(projection='3d')
@@ -174,6 +196,10 @@ class Hexagonal_Truss(Geometry_Definition):
             ax.text(X[idx], Y[idx], Z[idx], f'{idx}', size=8, zorder=1, color='black')
 
         ax.scatter(X, Y, Z, color='k', s=10)
+        bc_indices = self.get_bc_indices()
+        mask = np.isin(self.unique_indices, bc_indices)
+        ax.scatter(X[mask], Y[mask], Z[mask], color='green', marker='<', s=75, label='Constrained BCs')
+
         for i in range(self.n_unique_edges):
             member_ends = self.total_edge_con[:, i]
             Xs = X[member_ends]
@@ -187,10 +213,11 @@ class Hexagonal_Truss(Geometry_Definition):
         ax.set_ylim([avgy-diff/2, avgy+diff/2])
         ax.set_xlim([avgx-diff/2, avgx+diff/2])
         ax.set_zlim([0, diff])
-        ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors}', fontsize=15)
-        for xz in self.hex_positions:
-            ax.scatter(xz[0], avgy, xz[1], color='red')
+
+        ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
+        ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
         if show:
+            ax.legend()
             plt.show()
 
     def get_XYZ_coords(self):
@@ -204,18 +231,18 @@ class Hexagonal_Truss(Geometry_Definition):
         return np.ones(self.n_unique_edges, dtype=int)
 
     def get_bc_indices(self):
-        return np.array([4, 8, 20, 24], dtype=int)
+        return self.find_bottom_indices() #np.array([4, 8, 20, 24], dtype=int)
 
     def get_bc_constraints(self):
-        return np.ones((3, 4))
+        return np.ones((3, self.find_bottom_indices().size))
 
     def get_load_indices(self):
-        return np.array([14, 18, 15])
+        return np.array([15, 19, 10, 2])
 
     def get_applied_loads(self):
-        return 0*np.array([[-5e5*0, -5e5*0, 0],
-                         [1e4, 1e5, 0],
-                         [0*1e6, 0*1e6, 1e6]])
+        return np.array([[-5e5,-5e5,0, 0],
+                         [0,0,0, 0],
+                         [0,0,0, 0]])
 
     def get_material_indices(self):
         return np.ones(self.n_unique_edges, dtype=int)
@@ -223,7 +250,6 @@ class Hexagonal_Truss(Geometry_Definition):
     def function(self):
         return (self.XYZ_array, self.member_indices, self.section_indices, self.material_indices,
                 self.bc_indices, self.bc_constraints, self.load_indices, self.applied_loads)
-
 
 
 def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth = 25, spacing_factor=1, verbose: bool = True):
@@ -238,8 +264,11 @@ def sizing_truss(n_rotors: int = 33, r_per_rotor = 40.1079757687/2*1.05, depth =
     return truss
 
 
+
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=8, r_per_rotor=40.1079757687/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687/2*1.05, depth=35)
     print(truss)
+    truss.find_front_midpoint_indices()
+    truss.find_bottom_indices()
     #truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=12.5)
     #sizing_truss()

@@ -6,13 +6,15 @@ from matplotlib.ticker import FormatStrFormatter
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import TwoSlopeNorm
 from helper_functions import custom_map
+from typing import Tuple, Union
 np.set_printoptions(linewidth=7000)
 '''
 NOTES + ASSUMPTIONS:
--  be careful with scaling factor (fix!)
-- finalize material library
-- organise validation cases
-- DO MORE V&V
+-  be careful with scaling factor (!) set equal to 1 
+-  DO MORE V&V (!)
+-  bar masses concentrated at nodes
+-  no thermal loads (?)
+-  repeated load or bc indices? lowest indices will be overwritten 
 '''
 
 
@@ -44,6 +46,21 @@ class Section:
         :return: cs area, thin walled approx. [m^2]
         '''
         return 2*np.pi*self.R*self.t
+
+
+class Library:
+    def __init__(self, elements: Tuple[Union[Material, Section], ...]):
+        self.elements = elements
+
+    def add_element(self, element: Union[Material, Section]):
+        self.elements += (element,)
+
+    def __iter__(self):
+        return iter(self.elements)
+
+    def get_attributes(self, indices: np.array, attribute: str) -> np.array:
+        return np.array([getattr(self.elements[i], attribute) for i in indices])
+
 
 
 class Mesh:
@@ -91,7 +108,7 @@ class Mesh:
         self.dof_indices = np.linspace(0, N_dof*self.N_nodes-1, N_dof*self.N_nodes, dtype=int)
 
 
-    def calc_element_lengths(self):
+    def calc_element_lengths(self)->np.array:
         '''
         :return: (N_elems, ) Length of each element
         '''
@@ -102,7 +119,7 @@ class Mesh:
         lengths = np.linalg.norm(differences, axis=0)
         return lengths
 
-    def transfer_matrix(self):
+    def transfer_matrix(self)->np.array:
         '''
         :return: (2,n_dof) Transfer matrix T from global to local coordinates
         '''
@@ -121,7 +138,7 @@ class Mesh:
         Ts = np.array(Ts)
         return Ts
 
-    def element_stiffness(self):
+    def element_stiffness(self)->np.array:
         '''
         :return: (N_elems, 2*n_dof, 2*n_dof) multidimensional array containing each local element stiffness
                                                 matrix, indexed by the order of self.element_indices
@@ -131,7 +148,7 @@ class Mesh:
         ks = np.einsum('ijk, i->ijk', all_elements_top, self.element_Es*self.element_As/self.element_lengths)
         return ks
 
-    def element_lumped_mass(self):
+    def element_lumped_mass(self)->np.array:
         '''
         :return: lumped (2x2) mass matrix, source: [https://www.ce.memphis.edu/7117/notes/presentations/chapter_16.pdf]
         '''
@@ -140,14 +157,14 @@ class Mesh:
         ms = np.einsum('ijk, i->ijk', m_all, self.element_rhos * self.element_As *self.element_lengths/2)
         return ms
 
-    def transform_stiffness_to_global(self, local_matrix):
+    def transform_stiffness_to_global(self, local_matrix)->np.array:
         '''
         :return: Transformation: local --> global, using tensor product over T
         '''
         Ks = np.einsum('ikj, ikl, ilm -> ijm', self.element_Ts, local_matrix, self.element_Ts)
         return Ks
 
-    def plot_structure(self, show: bool = True):
+    def plot_structure(self, show: bool = True)->None:
         '3d plot of nodes and members'
         fig = plt.figure(figsize=(8,7))
         ax = fig.add_subplot(projection='3d')
@@ -171,7 +188,7 @@ class Mesh:
 
 
 class FEM_Solve:
-    def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array):
+    def __init__(self, mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array, g_dir: str = 'z'):
         '''
         :param mesh: Instance of Mesh class defining geometry
         :param bc_indices: node indices on which bcs are applied
@@ -193,7 +210,10 @@ class FEM_Solve:
         self.active_dofs = mesh.dof_indices[global_constraints==0]
         self.constr_dofs = mesh.dof_indices[global_constraints==1]
 
-    def get_start_end_indices(self):
+        dir_dict = {'x':0, 'y': 1, 'z': 2}
+        self.dir = dir_dict[g_dir]
+
+    def get_start_end_indices(self) -> tuple[np.array, np.array]:
         '''
         :return: (3 x n_elems) start and end dof indices of each element (3 at start, 3 at end)
         '''
@@ -208,7 +228,7 @@ class FEM_Solve:
 
         return start_dof_idxs, end_dof_idxs
 
-    def assemble_global_stiffness(self):
+    def assemble_global_stiffness(self) -> np.array:
         '''
         :return: (n_active_dof, n_active_dof) global stiffness matrix
         '''
@@ -230,7 +250,7 @@ class FEM_Solve:
             S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
         return S
 
-    def assemble_global_mass(self):
+    def assemble_global_mass(self)-> np.array:
         '''
         :return: (n_active_dof, n_active_dof) global stiffness matrix
         '''
@@ -252,7 +272,7 @@ class FEM_Solve:
             M[np.ix_(M_mask, M_mask)] += Ms[i][np.ix_(mask, mask)]
         return M
 
-    def assemble_loading_vector(self):
+    def assemble_loading_vector(self)-> np.array:
         '''
         :return: (n_active_nof) Global loading vector sampled over the active indices
         '''
@@ -262,12 +282,11 @@ class FEM_Solve:
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
         return global_loading_vector[self.active_dofs]
 
-    def assemble_self_loading(self):
+    def assemble_self_loading(self)->np.array:
         '''
         :return: Assemble self-loading (weight) over the active DOFs
         '''
 
-        'assumes gravity acts in z'
         mesh = self.mesh
         global_SL = np.zeros(mesh.N_nodes*self.n_dof)
 
@@ -280,11 +299,11 @@ class FEM_Solve:
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
 
-            mask = np.isin(mesh.dof_indices[2::3], elem_dofs)
-            global_SL[2::3][mask] -= collapsed[i] * 9.80665
+            mask = np.isin(mesh.dof_indices[self.dir::3], elem_dofs)
+            global_SL[self.dir::3][mask] -= collapsed[i] * 9.80665
         return global_SL[np.isin(mesh.dof_indices, self.active_dofs)]
 
-    def solve_system(self, factor = 1, include_self_load: bool = False, plot: bool = True,):
+    def solve_system(self, factor = 1, include_self_load: bool = False, plot: bool = True,)->tuple[np.array, ...]:
         '''
         :param factor: scaling factor to visualise displacements
         :param plot: bool, plot results
@@ -308,21 +327,19 @@ class FEM_Solve:
         X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
         global_coords = np.vstack((X,Y,Z))
 
-        element_Qs, element_sigmas = self.get_internal_loading(global_ds=global_displacements, global_coords=global_coords)
+        element_Qs, element_sigmas = self.get_internal_loading(global_coords=global_coords)
 
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X,Y,Z,element_sigmas/factor)
         return d, element_Qs, element_sigmas
 
-    def get_internal_loading(self, global_ds, global_coords):
+    def get_internal_loading(self, global_coords):
         '''
-        :param global_ds: global displacement vector
+        :param global_coords: updated global coordinate matrix
         :return: internal forces, internal axial stresses
         '''
         mesh=self.mesh
-        #start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
-
         start_points = global_coords[:, mesh.element_indices[0, :]]
         end_points = global_coords[:, mesh.element_indices[1, :]]
 
@@ -330,36 +347,24 @@ class FEM_Solve:
         new_lengths = np.linalg.norm(differences, axis=0)
 
         delta_length = new_lengths - mesh.element_lengths
-        Qs = delta_length * mesh.element_Es * mesh.element_As / mesh.element_lengths
-        '''
-        #for i in range(mesh.N_elems):
-        #    elem_start_dofs = start_dof_idxs[:, i]
-        #    elem_end_dofs = end_dof_idxs[:, i]
-          #  elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+        #Qs = delta_length * mesh.element_Es * mesh.element_As / mesh.element_lengths
+        #sigmas = Qs / mesh.element_As
 
-            #v = global_ds[np.isin(mesh.dof_indices, elem_dofs)]
-            #T = mesh.element_Ts[i]
-            #u = T @ v
-            #k =mesh.element_ks[i]
-            #Q = k @ u
-            #Qs.append(-1*Q[1])
-
-         #   delta_length = new_lengths[i] - mesh.element_lengths[i]
-         #   Q_new = delta_length * mesh.element_Es[i]*mesh.element_As[i] / mesh.element_lengths[i]
-         #   Qs.append(Q_new)
-        '''
-        Qs = np.array(Qs)
-        sigmas = Qs / mesh.element_As
+        sigmas = delta_length * mesh.element_Es / mesh.element_lengths
+        Qs = sigmas*mesh.element_As
         return Qs, sigmas
 
     def get_natural_frequencies(self):
+        '''
+        :return: array on natural frequencies (n_active_dofs)
+        '''
         M = self.assemble_global_mass()
         K = self.assemble_global_stiffness()
         Minv = np.linalg.inv(M)
-        eigenfreqs = np.sqrt(np.abs(np.linalg.eig(-Minv @ K)[0]))
-        return np.sort(eigenfreqs)
+        eigen_freqs = np.sqrt(np.abs(np.linalg.eig(-Minv @ K)[0]))
+        return np.sort(eigen_freqs)
 
-    def plot_displacements(self, Xp, Yp, Zp):
+    def plot_displacements(self, Xp, Yp, Zp)->None:
         '''
         :param Xp: displaced X coordinates
         :param Yp: displaced Y coordinates
@@ -387,11 +392,11 @@ class FEM_Solve:
             Yps = Yp[member_ends]
             Zps = Zp[member_ends]
 
-            plt.plot(Xs, Ys, Zs, color='k', linestyle='-', linewidth=.85)
-            plt.plot(Xps, Yps, Zps, color='red', linestyle='-', linewidth=.85)
+            plt.plot(Xs, Ys, Zs, color='k', linestyle='-', linewidth=.85, )
+            plt.plot(Xps, Yps, Zps, color='red', linestyle='-', linewidth=.85,)
         plt.show()
 
-    def plot_stresses(self, Xp, Yp, Zp, sigmas):
+    def plot_stresses(self, Xp, Yp, Zp, sigmas)->None:
         '''
         :param sigmas: axial stresses
         '''
@@ -447,6 +452,10 @@ class FEM_Solve:
 
 
 if __name__ == '__main__':
+    matLib = Library((Material(), Material(rho=6000, E=90e9)))
+    secLib = Library((Section(radius=1, thickness=.1), Section(radius=.5, thickness=.01)))
+    print(matLib.get_attributes(indices=[0,0,1], attribute='E'))
+
     'Geometry definitions'
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = verif_geom_3()
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = tb_val()
@@ -479,11 +488,11 @@ if __name__ == '__main__':
     MESH.plot_structure()
 
     'initialise solver'
-    SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads)
+    SOLVER = FEM_Solve(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads, g_dir='z')
     S = SOLVER.assemble_global_stiffness()
 
     'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100, include_self_load=False)
+    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100, include_self_load=False,)
 
     print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
     print(f'      displacement [mm] = {d*1000}')
