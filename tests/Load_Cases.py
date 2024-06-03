@@ -73,15 +73,15 @@ class MRS(FEM_Solve):
         '''
         global_SL = np.zeros(self.mesh.N_nodes * self.n_dof)
         diams = self.mesh.elem_Ds
-        elem_drags = self.drag_calc.placeholder(d=diams)
 
+        'drags only calculated for frontal plane members (which are equal in length)'
+        elem_drags = self.drag_calc.placeholder(d=diams)
         elem_nodal_drag = np.array([1/2,1/2])[np.newaxis, :]
         all_nodal_drags = np.repeat(elem_nodal_drag, self.mesh.N_elems, axis=0)
         drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
 
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
         front_indices = self.get_xz_plane_indices(y=np.min(self.mesh.Y_coords))
-
         for i in range(self.mesh.N_elems):
             if np.any(np.isin(self.mesh.element_indices[:,i], front_indices)==False):
                 pass
@@ -122,9 +122,9 @@ class MRS(FEM_Solve):
             current_wing_distr_force = np.array([[0], [current_drag], [current_lift]])
             current_loads = np.repeat(current_wing_distr_force, temp_indices.size, axis=1)
             loads.append(current_loads)
+
         indices = np.concatenate(indices)
         loads = np.hstack(loads)
-
         loading_vector = self.arbitrary_loading_vector(indices, loads)
         return loading_vector
 
