@@ -412,3 +412,37 @@ reynolds_mid = Reynoldsnumber(root_boundary_R,mid_boundary_R)
 reynolds_tip = Reynoldsnumber(mid_boundary_R, 1)
 print(f'{reynolds_root=}, {reynolds_mid=}, {reynolds_tip=}')
     
+# def BEMsolver_mark(Uinf):
+#     radius = Radius
+#     omega = Omega
+#     pitch_ale = pitch
+    
+#     twist_distribution = root_twist*(1-r_R)+pitch_ale # degrees
+#     results =np.zeros([len(r_R)-1,6]) 
+
+#     for i in range(len(r_R)-1):
+#         r_avg = (r_R[i] + r_R[i+1]) / 2  # Midpoint of the radial segment
+        
+#         # Interpolate chord and twist distribution
+#         chord = np.interp(r_avg, r_R, chord_distribution)
+#         twist = np.interp(r_avg, r_R, twist_distribution)
+
+#         # Select appropriate airfoil data based on radial position
+#         if r_avg <= root_boundary_R:
+#             polar_alpha = polar_alpha_root
+#             polar_cl = polar_cl_root
+#             polar_cd = polar_cd_root
+#         elif root_boundary_R < r_avg <= mid_boundary_R:
+#             polar_alpha = polar_alpha_mid
+#             polar_cl = polar_cl_mid
+#             polar_cd = polar_cd_mid
+#         else:
+#             polar_alpha = polar_alpha_tip
+#             polar_cl = polar_cl_tip
+#             polar_cd = polar_cd_tip
+
+#         # Call the solveStreamtube function with the selected airfoil data
+#         results[i, :] = solveStreamtube(Uinf, r_R[i], r_R[i+1], RootLocation_R, TipLocation_R, omega, radius, NBlades, chord, twist, polar_alpha, polar_cl, polar_cd)
+#         dr_mark = (r_R[1:]-r_R[:-1])*Radius
+#         CT_mark = np.sum(dr_mark*results[:,3]*NBlades/(0.5*Uinf**2*np.pi*Radius**2))
+#     return CT_mark
