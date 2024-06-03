@@ -4,7 +4,7 @@ Improved way of power curve
 
 import numpy as np
 from matplotlib import pyplot as plt
-import simpleBEMmodel as BEM
+import rewrittensimpleBEMmodel as BEM
 import inputs_BEM_powerCurve as inps
 # +----------------------------+
 # |          Inputs            |

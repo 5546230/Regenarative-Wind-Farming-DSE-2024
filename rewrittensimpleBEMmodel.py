@@ -260,7 +260,7 @@ print(Radius)
 if inps.optimize:
     bladeoptimizer = BladeOptimizer(root_chord, tip_chord, root_twist, pitch)
     root_chord, tip_chord, root_twist, pitch = bladeoptimizer.optimize()
-    print(root_chord, tip_chord, root_twist, pitch)
+    #print(root_chord, tip_chord, root_twist, pitch)
     blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade.getChordTwist()
 Omega = Uinf*TSR/Radius
@@ -271,6 +271,12 @@ Omega = Uinf*TSR/Radius
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
 print(f'{CT=},{CP=}')
+
+a_total = BEM.ainduction(CT)
+Prandtl_1, Prandtltip_1, Prandtlroot_1 = BEM.PrandtlTipRootCorrection(0.6, a_total)
+if (Prandtl_1 < 0.0001): 
+    Prandtl_1 = 0.0001 # avoid divide by zero
+a_total= a_total/Prandtl_1 # correct estimate of axial induction
 
 def BEMsolver_ale(pitch):
     blade_ale = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
@@ -286,7 +292,7 @@ if inps.ale_shit_2:
         CT_ales.append(BEMsolver_ale(pitch_ales[i]))
 
     CT_ales = np.array(CT_ales)
-    print(CT_ales)
+    #print(CT_ales)
     plt.plot(pitch_ales, CT_ales)
     plt.show()
     from scipy.interpolate import interp1d
