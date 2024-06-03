@@ -173,7 +173,7 @@ class WindSystem:
         self.horseshoes = horseshoes
 
     @property
-    def horseshoes(self) -> Iterable[Horseshoe]:
+    def horseshoes(self) -> VORTEX_ELEMENT_DTYPE:
         return self._horseshoes
 
     @horseshoes.setter
