@@ -1,0 +1,195 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def create_parallelogram(vertices):
+    """
+    Create the vertices of a parallelogram based on given dimensions.
+
+    Parameters:
+    vertices (list of tuples): List of vertices (x, y)
+
+    Returns:
+    np.array: Vertices of the parallelogram
+    """
+    return np.array(vertices)
+
+def is_point_in_parallelogram(point, parallelogram):
+    """
+    Check if a given point is inside or on the border of the parallelogram.
+
+    Parameters:
+    point (tuple): Point to check (x, y)
+    parallelogram (np.array): Vertices of the parallelogram
+
+    Returns:
+    bool: True if the point is inside or on the border of the parallelogram, False otherwise
+    """
+    from matplotlib.path import Path
+    path = Path(parallelogram)
+    return path.contains_point(point) or path.contains_point(point, radius=-1e-9)
+
+def distance_point_to_line(point, line_start, line_end):
+    """
+    Calculate the perpendicular distance from a point to a line defined by two points.
+
+    Parameters:
+    point (tuple): Coordinates of the point (x, y)
+    line_start (tuple): Coordinates of the start point of the line (x, y)
+    line_end (tuple): Coordinates of the end point of the line (x, y)
+
+    Returns:
+    float: Perpendicular distance from the point to the line
+    """
+    px, py = point
+    x1, y1 = line_start
+    x2, y2 = line_end
+    num = abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1)
+    den = np.sqrt((y2 - y1)**2 + (x2 - x1)**2)
+    return num / den
+
+def generate_points(parallelogram, t_dist):
+    """
+    Generate points within the parallelogram.
+
+    Parameters:
+    parallelogram (np.array): Vertices of the parallelogram
+    t_dist (float): Distance used to divide edges to determine number of points
+
+    Returns:
+    tuple: x coordinates of the points, y coordinates of the points, FirstColPoints, FirstRowPoints
+    """
+    x_coords = []
+    y_coords = []
+
+    A, B, C, D = parallelogram
+
+    # Calculate FirstColPoints
+    distance_AB = np.linalg.norm(B - A)
+    FirstColPoints = int(distance_AB // t_dist)
+
+    # Calculate FirstRowPoints
+    distance_AD = np.linalg.norm(D - A)
+    FirstRowPoints = int(distance_AD // t_dist)
+
+    # Generate points along the line A-B
+    for i in range(FirstColPoints):
+        t = i / (FirstColPoints - 1)
+        x = (1 - t) * A[0] + t * B[0]
+        y = (1 - t) * A[1] + t * B[1]
+        x_coords.append(x)
+        y_coords.append(y)
+
+    # Generate points for the next columns
+    ChangeinY = np.tan(np.radians(-19)) * t_dist
+    NumberToNew = -int(t_dist // ChangeinY) + 1
+
+    counter = 1 # Counting number of points in column
+    next = 0 # Switch to decrease number of points
+    for j in range(2,FirstRowPoints+1):
+        print("Calculating col. ", j)
+        # Testing if we decrease the amount of points in the column
+        if j % NumberToNew == 0:
+            # WE DECREASE ON THE NEXT
+            
+            next = 1
+            
+            # Calculate the distance from the first point of the column to the line B-C
+            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            distance_to_BC = distance_point_to_line(first_point_column, B, C)
+            for i in range(FirstColPoints - counter):
+                t = i / (FirstColPoints - 1)
+                x = x_coords[i] + (j-1) * t_dist
+
+                y_spacing = distance_to_BC/(FirstRowPoints - (j-1))
+                y =  A[1] + (i) * y_spacing 
+
+                if is_point_in_parallelogram((x, y), parallelogram):
+                    x_coords.append(x)
+                    y_coords.append(y)
+
+        elif next == 1:
+            # WE DECREASE NOW
+
+            # Calculate the distance from the first point of the column to the line B-C
+            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            distance_to_BC = distance_point_to_line(first_point_column, B, C)
+            for i in range(FirstColPoints  - counter ):
+                t = i / (FirstColPoints - 1)
+                x = x_coords[i] + (j-1) * t_dist
+
+                y_spacing = distance_to_BC/(FirstRowPoints - (j-1))
+                y =  A[1] + (i) * y_spacing 
+
+                if is_point_in_parallelogram((x, y), parallelogram):
+                    x_coords.append(x)
+                    y_coords.append(y)
+
+            counter += 1 # Decrease the number of points by one for the next column
+            next = 0 # Reset back to first column after decrease in points
+            
+        else: 
+            
+            # Calculate the distance from the first point of the column to the line B-C
+            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            distance_to_BC = distance_point_to_line(first_point_column, B, C)
+            for i in range(FirstColPoints  - counter ):
+                t = i / (FirstColPoints - 1)
+                x = x_coords[i] + (j-1) * t_dist
+
+                y_spacing = distance_to_BC/(FirstRowPoints - (j-1))
+                y =  A[1] + (i) * y_spacing 
+                
+                if is_point_in_parallelogram((x, y), parallelogram):
+                    x_coords.append(x)
+                    y_coords.append(y)
+
+
+
+
+    return x_coords, y_coords, FirstColPoints, FirstRowPoints, distance_to_BC
+
+def plot_parallelogram_and_points(parallelogram, x_coords, y_coords):
+    """
+    Plot the parallelogram and the points within it.
+
+    Parameters:
+    parallelogram (np.array): Vertices of the parallelogram
+    x_coords (list): x coordinates of the points
+    y_coords (list): y coordinates of the points
+    """
+    # Plot the parallelogram
+    plt.figure(figsize=(10, 6))
+    parallelogram_path = np.vstack([parallelogram, parallelogram[0]])  # Close the loop
+    plt.fill(parallelogram_path[:, 0], parallelogram_path[:, 1], 'b', alpha=0.5)
+    
+    # Plot the points
+    plt.scatter(x_coords, y_coords, c='red', marker='o')
+    plt.title("Cartesian Coordinates Plot within Parallelogram")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.grid(True)
+    plt.axhline(0, color='black', linewidth=0.5)
+    plt.axvline(0, color='black', linewidth=0.5)
+    plt.show()
+
+# Define the vertices of the parallelogram based on given dimensions and angles
+A = np.array([0, 0])
+B = np.array([27.5 * np.cos(np.radians(65.3)), 27.5 * np.sin(np.radians(65.3))])
+C = np.array([B[0] + 43.9 * np.cos(np.radians(-19)), B[1] + 43.9 * np.sin(np.radians(-19))])
+D = np.array([A[0] + 46.7, A[1]])
+parallelogram = create_parallelogram([A, B, C, D])
+
+# Input function for t_dist
+t_dist = float(input("Enter the value for t_dist: "))
+
+# Generate points
+x_coords, y_coords, FirstColPoints, FirstRowPoints, distance_to_BC = generate_points(parallelogram, t_dist)
+
+# Print the number of points
+print(f"FirstColPoints: {FirstColPoints}")
+print(f"FirstRowPoints: {FirstRowPoints}")
+print(f"Distance from the first point of the second column to the line B-C: {distance_to_BC}")
+
+# Plot the parallelogram and the points within it
+plot_parallelogram_and_points(parallelogram, x_coords, y_coords)
+
