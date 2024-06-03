@@ -27,7 +27,6 @@ class Drag():
         self.kappa4 = 0.93     
 
 
-
     def compute_Reynolds(self, V, rho, mu):
 
         return self.D * V * rho/mu
@@ -44,17 +43,13 @@ class Drag():
 
 
 
+if __name__ == "__main__":
+    drag = Drag()
+    mu = 1.8e-5
+    rho = 1.225
+    Re = drag.compute_Reynolds(12.5, rho, mu)
 
+    D_element = drag.compute_CD(60, 1.225)
+    print(D_element)
 
-
-
-
-drag = Drag()
-mu = 1.8e-5
-rho = 1.225
-Re = drag.compute_Reynolds(10, rho, mu)
-
-D_element = drag.compute_CD(60, 1.225)
-print(D_element)
-
-print(Re)
+    print(Re)

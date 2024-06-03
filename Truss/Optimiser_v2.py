@@ -3,6 +3,7 @@ from Truss.Truss_Analysis import Mesh, FEM_Solve, Material, Section
 from Truss.helper_functions import CsvOutput
 import numpy as np
 
+'NEW OPTIMISER CLASS: constant diameter, variable thickness'
 
 class Optimizer:
     def __init__(self, mesh: Mesh, solver: FEM_Solve, minimum_D = 0.1, r_t = 1/120, plot_output: bool = False, verbose: bool = False):

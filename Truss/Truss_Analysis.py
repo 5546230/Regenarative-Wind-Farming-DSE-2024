@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
+from Truss.Structure_Defs import verif_geom_1, tb_val, verif_geom_3, Verif_1, verif_geom_4, hexagon_geom_25
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import TwoSlopeNorm
-from helper_functions import custom_map
+from Truss.helper_functions import custom_map
 from typing import Tuple, Union
 np.set_printoptions(linewidth=7000)
 '''
