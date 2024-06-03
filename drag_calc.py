@@ -8,52 +8,56 @@
 '''
 
 class Drag():
-    def __init__(self):
+    def __init__(self, V, rho, D_truss):
 
-        self.L1 = 35.88
-        self.L2 = 28.32
-        self.L3 = 26.7
-        self.L4 = 44
-        self.D = 0.5
+        self.L1 = 24.34
+        self.n1 = 324
+        self.L2 = 42.12
+        self.n2 = 33
+        self.D = D_truss
         self.A1 = self.L1/self.D
         self.A2 = self.L2/self.D
-        self.A3 = self.L3/self.D
-        self.A4 = self.L4/self.D   
+        self.V = V
+        self.rho = rho
+     
 
         self.CD_inf = 0.4
-        self.kappa1 = 0.9
-        self.kappa2 = 0.88
-        self.kappa3 = 0.87
-        self.kappa4 = 0.93     
+        self.kappa1 = 0.78
+        self.kappa2 = 0.85
+  
 
 
-    def compute_Reynolds(self, V, rho, mu):
+    def compute_Reynolds(self, mu):
 
-        return self.D * V * rho/mu
+        return self.D * self.V * self.rho/mu
     
-    def compute_CD(self, V, rho):
+    def compute_CD(self):
 
         CD1 = self.kappa1 * self.CD_inf
         CD2 = self.kappa2 * self.CD_inf
-        CD3 = self.kappa3 * self.CD_inf
-        CD4 = self.kappa4 * self.CD_inf
+        
 
-        D = 0.5 * rho* (V**2)* (CD1*self.L1*self.D + CD2*self.L2*self.D + CD3 * self.L3*self.D + CD4 * self.L4*self.D)
-        return D
+        D = 0.5 * self.rho* (self.V**2)* self.D * (self.n1*self.L1*CD1+self.n2*self.L2*CD2)
+        D_c = D/self.D
+        return D, D_c
 
-    def placeholder(self, L, D):
-        D = L/L * D/D
+    def placeholder(self, d):
+        _, D_c = self.compute_CD()
+        D_c = D_c - 0.5 * self.rho* (self.V**2)*self.n2*self.L2*self.kappa2 * self.CD_inf
+        D = D_c*d/self.n1
         return D
 
 
 
 if __name__ == "__main__":
-    drag = Drag()
+    drag = Drag(35, 1.225, 1)
     mu = 1.8e-5
     rho = 1.225
-    Re = drag.compute_Reynolds(12.5, rho, mu)
+    Re = drag.compute_Reynolds(mu)
+    d = drag.placeholder(1)
+    print(d)
 
-    D_element = drag.compute_CD(60, 1.225)
-    print(D_element)
+    D_grid, _ = drag.compute_CD()
+    print(D_grid)
 
     print(Re)

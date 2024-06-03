@@ -1,18 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from wavemodel import Wave
-from drag_calc import D_element
+from drag_calc import Drag
 
 class Loads():
 
-    def __init__(self, tower_mass, truss_mass, nacelle_mass, truss_h, truss_depth, w_clearance, w_depth, M_base):
+    def __init__(self, tower_mass, truss_mass, nacelle_mass, truss_h, truss_depth, w_clearance, w_depth, M_base, D_grid):
 
         self.M_wave = M_base
         self.tower_mass = tower_mass
         self.truss_mass = truss_mass
         self.n_mass = nacelle_mass
         self.T_rated = 3.945e6
-        self.D_truss = D_element*33
+        self.D_truss = D_grid
         self.L_afc = 5e6
         self.D_afc = 5e5
         self.h = truss_h/2+w_clearance+w_depth
@@ -69,7 +69,9 @@ class Tower():
 if __name__ == "__main__":
 
     wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.3e-3)
-
+    drag = Drag(V =13.5, rho=1.225, D_truss=1)
+    D_grid, _ = drag.compute_CD()
+    print(D_grid)
     z = np.arange(-wave.water_depth, 0, 0.1)
     t = np.arange(0, 1000, 5)
     F_dist=[]
@@ -91,7 +93,7 @@ if __name__ == "__main__":
     M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
 
     
-    load = Loads(tower_mass= 2235959.595, truss_mass=5000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base)
+    load = Loads(tower_mass= 2235959.595, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base, D_grid=D_grid)
     
     M_afc, M_truss, M_thrust = load.moments()
 
@@ -132,13 +134,13 @@ if __name__ == "__main__":
 
         M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
         #t_it += 0.001
-        load1 = Loads(tower_mass= mass, truss_mass=5000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base)
+        load1 = Loads(tower_mass= mass, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base, D_grid=D_grid)
     
         M_afc, M_truss, M_thrust = load1.moments()
 
         F_comp = load1.comp_force()
 
-        tower_it = Tower(D=D_it1, t = t_it, w_clearance=25, M_applied=M_base+M_afc+M_thrust+M_truss, F_applied=F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+        tower_it = Tower(D=D_it1, t = t_it, w_clearance=25, M_applied=1.4*(M_base+M_afc+M_thrust+M_truss), F_applied=1.4*(F_comp), w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
         tower_stress = tower_it.calc_comp_stress()
         buckling = tower_it.comp_buckling_stress()
         mass = tower_it.calc_mass()
