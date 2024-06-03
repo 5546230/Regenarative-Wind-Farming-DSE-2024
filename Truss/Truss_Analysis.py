@@ -59,6 +59,11 @@ class Library:
         return iter(self.elements)
 
     def get_attributes(self, indices: np.array, attribute: str) -> np.array:
+        '''
+        :param indices: mapping from library to mesh
+        :param attribute: attribute (str) of Section or Material instance
+        :return:
+        '''
         return np.array([getattr(self.elements[i], attribute) for i in indices])
 
 
