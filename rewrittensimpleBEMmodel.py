@@ -212,8 +212,8 @@ class BladeOptimizer:
         root_chord, tip_chord, root_twist, pitch = inputs
         blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
         chord_distribution, twist_distribution = blade.getChordTwist()
-        BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
-        CP_o, CT_o = BEM.CPCT()
+        BEM_bladeoptimizer = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+        CP_o, CT_o = BEM_bladeoptimizer.CPCT()
         return -CP_o
     def optimize(self):
         initial_guess = np.array([self.init_root_chord, self.init_tip_chord, self.init_root_twist, self.init_pitch])
@@ -239,6 +239,8 @@ Uinf = inps.V_RATED # unperturbed wind speed in m/s
 TSR = inps.TSR # tip speed ratio
 Radius = inps.init_Radius
 Omega = Uinf*TSR/Radius
+
+
 #blade geometry
 delta_r_R = .01
 r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
@@ -251,12 +253,15 @@ NBlades = 3
 TipLocation_R =  1
 RootLocation_R =  0.2
 
-#initial conditions
 
+
+#optimizing the radius
 if inps.iteration:
     Optimize = RadiusOptimizer(Radius, 1000)
     Radius = Optimize.optimizer()
 print(Radius)
+
+#optimizing blade geometry
 if inps.optimize:
     bladeoptimizer = BladeOptimizer(root_chord, tip_chord, root_twist, pitch)
     root_chord, tip_chord, root_twist, pitch = bladeoptimizer.optimize()
@@ -267,22 +272,24 @@ Omega = Uinf*TSR/Radius
 
 
 
-
+#solving the BEM
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
 print(f'{CT=},{CP=}')
-
 a_total = BEM.ainduction(CT)
 Prandtl_1, Prandtltip_1, Prandtlroot_1 = BEM.PrandtlTipRootCorrection(0.6, a_total)
 if (Prandtl_1 < 0.0001): 
     Prandtl_1 = 0.0001 # avoid divide by zero
 a_total= a_total/Prandtl_1 # correct estimate of axial induction
+print(f'{a_total=}')
 
+
+#function for alessandro.
 def BEMsolver_ale(pitch):
     blade_ale = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade_ale.getChordTwist()
-    BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
-    CP,CT = BEM.CPCT()
+    BEM_ale = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+    CP,CT = BEM_ale.CPCT()
     return CT
 
 if inps.ale_shit_2:
