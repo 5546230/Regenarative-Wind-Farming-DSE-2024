@@ -344,8 +344,8 @@ def main_1() -> None:
 
 def main_2() -> None:
     # TODO: Check numbers (height, span, heights, V)
-    heights = np.array([279, 237, 195, 153.7, 25])
-    span = np.array([253, 211, 253, 211, 253])
+    heights = np.array([279, 237, 195, 25])
+    span = np.array([253, 211, 253, 253])
     height = 300
     V = 9.29
 
