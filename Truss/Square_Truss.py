@@ -9,18 +9,14 @@ class Square_Truss(Geometry_Definition):
     def __init__(self):
         super().__init__()
 
-
     def get_XYZ_coords(self):
         return
-
 
     def get_member_indices(self):
         return
 
-
     def get_section_indices(self):
         return
-
 
     def get_material_indices(self):
         return
@@ -36,7 +32,6 @@ class Square_Truss(Geometry_Definition):
 
     def get_applied_loads(self):
         return
-
 
 
 if __name__ == "__main__":
