@@ -159,8 +159,6 @@ class MRS(FEM_Solve):
         '''
         S = self.assemble_global_stiffness()
         P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
-            #  + self.get_inertial_loading()
-        self.calc_moment_of_inertia_Z()
         if include_self_load:
             P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
@@ -185,11 +183,9 @@ class MRS(FEM_Solve):
         return d, element_Qs, element_sigmas
 
     def calc_moment_of_inertia_Z(self):
-        Izz=0
         mesh = self.mesh
-
         rotational_axis = np.array((np.average(mesh.X_coords),np.average(mesh.Y_coords)))[:, None]
-        #print(rotational_axis.shape)
+
         collapsed_ms = np.einsum('ijj->ij', mesh.element_lumped_ms)
         node_indices = np.arange(mesh.N_nodes, dtype=int)
         global_point_inertias = np.zeros_like(node_indices, dtype=float)
@@ -200,17 +196,9 @@ class MRS(FEM_Solve):
             mask = np.isin(node_indices, elem_boundaries)
 
             coords = np.vstack((Xs[mask], Ys[mask]))
-
-            rs = np.linalg.norm(coords-rotational_axis, axis=1)
-            #print(coords)
-            #print()
-            #print(rotational_axis)
-            #print()
-            #print(coords-rotational_axis)
-            #print()
-            #print(rs)
+            rs = np.linalg.norm(coords-rotational_axis, axis=0)
             global_point_inertias[mask] += collapsed_ms[i] * rs**2
-        print(sum(global_point_inertias)/1e10)
+        Izz = np.sum(global_point_inertias)
         return Izz
 
 
@@ -234,7 +222,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=5, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
+    hex = Hexagonal_Truss(n_rotors=3, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -247,7 +235,7 @@ if __name__ == "__main__":
     SOLVER = MRS(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
                        applied_loads=applied_loads, truss_config=config,)
 
-    SOLVER.calc_moment_of_inertia_Z()
+    print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
     'Initialise optimiser'
     file_number = 2
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
