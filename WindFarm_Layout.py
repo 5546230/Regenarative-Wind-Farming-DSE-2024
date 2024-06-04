@@ -92,9 +92,12 @@ def generate_points(parallelogram, t_dist):
     distance_AB = np.linalg.norm(B - A)
     FirstColPoints = int(distance_AB // t_dist)
 
+
     # Calculate FirstRowPoints
     distance_AD = np.linalg.norm(D - A)
     FirstRowPoints = int(distance_AD // t_dist)
+    x_spacing = distance_AD/(FirstRowPoints+1)
+
 
     # Generate points along the line A-B
     for i in range(FirstColPoints +1):
@@ -132,6 +135,7 @@ def generate_points(parallelogram, t_dist):
                 # y =  A[1] + (i) * y_spacing 
 
                 if i == 0: # Defining first point of each col
+                    
                     x = A[0] + (j-1) * t_dist
                     y = A[1]
 
@@ -211,7 +215,7 @@ def generate_points(parallelogram, t_dist):
     distance_CD = np.linalg.norm(C - D)
     LastColPoints = int(distance_CD // t_dist)
 
-    # Generate points along the line A-B
+    # Generate points along the line C-D
     for i in range(LastColPoints):
         t = i / (LastColPoints - 1)
         x = (1 - t) * C[0] + t * D[0]
@@ -298,10 +302,12 @@ def filter_points(x_coords, y_coords, t_dist):
 
     for i in range(0, len(x_coords)):
         point = np.array([x_coords[i],y_coords[i]])   
-        coords[(cdist(coords[:,:],point[None]) > t_dist).ravel()]
+        # coords[(cdist(coords[:,:],point[None]) > t_dist).ravel()]
+        coords[np.linalg.norm(coords[:,:] - point, axis=1) < t_dist]
     
     filtered_x_coords = coords[:, 0]
     filtered_y_coords = coords[:, 1]
+
     return filtered_x_coords, filtered_y_coords
 
 
@@ -311,6 +317,16 @@ B = np.array([27.5 * np.cos(np.radians(65.3)), 27.5 * np.sin(np.radians(65.3))])
 C = np.array([B[0] + 43.9 * np.cos(np.radians(-19)), B[1] + 43.9 * np.sin(np.radians(-19))])
 D = np.array([A[0] + 46.7, A[1]])
 parallelogram = create_parallelogram([A, B, C, D])
+
+def calculate_parallelogram_area(A,B,C,D):
+    first_triangle = np.abs(1/2*B[0]*B[1])
+    second_triangle = np.abs(1/2*(C[0]-B[0])*(C[1]-B[1]))
+    third_triangle = np.abs(1/2*(D[0]-C[0])*(D[1]-C[1]))
+    square = np.abs(C[1]*(D[0]-B[0]))
+
+    area = first_triangle + second_triangle + third_triangle + square
+
+    return area
 
 # Input function for t_dist
 t_dist = float(input("Enter the value for t_dist: "))
@@ -322,14 +338,15 @@ x_coords, y_coords, FirstColPoints, FirstRowPoints, distance_to_BC, NbrPoints = 
 # Filter points based on the distance
 filtered_x_coords, filtered_y_coords = filter_points(x_coords, y_coords, t_dist)
 
-
+area_parallelogram = calculate_parallelogram_area(A,B,C,D)
 # Print the number of points
 print(f"FirstColPoints: {FirstColPoints}")
 print(f"FirstRowPoints: {FirstRowPoints}")
-print(f"Distance from the first point of the second column to the line B-C: {distance_to_BC}")
+print("Total Area of Parellelogram: ", area_parallelogram)
+print("Energy Density: ", NbrPoints*30/area_parallelogram)
 
 # Plot the parallelogram and the points within it
-# plot_parallelogram_and_points(parallelogram, x_coords, y_coords)
+plot_parallelogram_and_points(parallelogram, x_coords, y_coords)
 
 # Plot the parallelogram and the points within it
-plot_parallelogram_and_points(parallelogram, filtered_x_coords, filtered_y_coords)
+# plot_parallelogram_and_points(parallelogram, filtered_x_coords, filtered_y_coords)
