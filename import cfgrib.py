@@ -24,7 +24,7 @@ def read_grib_file_cfgrib(filename):
     return V, u10, v10, time
 
 # Load file
-filename = 'C:/Users/Marcos/Desktop/TU Delft/BACHELOR - YEAR 3/DSE/WindDataDSEFinal.grib'
+filename = 'WindDataDSEFinal.grib'
 V, u10, v10, time = read_grib_file_cfgrib(filename)
 
 # Define heights from 10m to 400m
