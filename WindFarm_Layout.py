@@ -334,7 +334,7 @@ t_dist = float(input("Enter the value for t_dist: "))
 # Generate points
 x_coords, y_coords, FirstColPoints, FirstRowPoints, distance_to_BC, NbrPoints = generate_points(parallelogram, t_dist)
 
-
+print(x_coords, y_coords, len(x_coords), len(y_coords))
 # Filter points based on the distance
 filtered_x_coords, filtered_y_coords = filter_points(x_coords, y_coords, t_dist)
 
