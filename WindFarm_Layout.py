@@ -96,7 +96,7 @@ def generate_points(parallelogram, t_dist):
     # Calculate FirstRowPoints
     distance_AD = np.linalg.norm(D - A)
     FirstRowPoints = int(distance_AD // t_dist)
-    x_spacing = distance_AD/(FirstRowPoints+1)
+    x_spacing = distance_AD/(FirstRowPoints)
 
 
     # Generate points along the line A-B
@@ -125,7 +125,7 @@ def generate_points(parallelogram, t_dist):
             next = 1
             
             # Calculate the distance from the first point of the column to the line B-C
-            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            first_point_column = (A[0] + (j-1)*x_spacing, A[1])
             distance_to_BC = distance_point_to_line(first_point_column, B, C)
             for i in range(FirstColPoints - counter +1):
                 # t = i / (FirstColPoints - 1)
@@ -136,7 +136,7 @@ def generate_points(parallelogram, t_dist):
 
                 if i == 0: # Defining first point of each col
                     
-                    x = A[0] + (j-1) * t_dist
+                    x = A[0] + (j-1) * x_spacing
                     y = A[1]
 
                 else:
@@ -145,25 +145,26 @@ def generate_points(parallelogram, t_dist):
                     
                     y_spacing = distance_to_BC/(FirstColPoints - counter)
                     
-                    x = (j-1) * t_dist + i * np.cos(np.radians(65.3)) * (y_spacing)
+                    x = (j-1) * x_spacing + i * np.cos(np.radians(65.3)) * (y_spacing)
 
                     y =  np.sin(np.radians(65.3)) * (y_spacing * (i))
 
                 if is_point_in_parallelogram((x, y), parallelogram):
                     x_coords.append(x)
                     y_coords.append(y)
+                    NbrPoints += 1
 
         elif next == 1:
             # WE DECREASE NOW
 
             # Calculate the distance from the first point of the column to the line B-C
-            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            first_point_column = (A[0] + (j-1)*x_spacing, A[1])
             distance_to_BC = distance_point_to_line(first_point_column, B, C)
             for i in range(FirstColPoints  - counter + 1):
                 # t = i / (FirstColPoints - 1)
 
                 if i == 0: # Defining first point of each col
-                    x = (j-1) * t_dist
+                    x = (j-1) * x_spacing
                     y = 0
 
                 else:
@@ -172,13 +173,14 @@ def generate_points(parallelogram, t_dist):
                     
                     y_spacing = distance_to_BC/(FirstColPoints - counter)
 
-                    x = (j-1) * t_dist + i * np.cos(np.radians(65.3)) * (y_spacing)
+                    x = (j-1) * x_spacing + i * np.cos(np.radians(65.3)) * (y_spacing)
 
                     y =  np.sin(np.radians(65.3)) * (y_spacing * (i))
 
                 if is_point_in_parallelogram((x, y), parallelogram):
                     x_coords.append(x)
                     y_coords.append(y)
+                    NbrPoints += 1
 
             counter += 1 # Decrease the number of points by one for the next column
             next = 0 # Reset back to first column after decrease in points
@@ -186,13 +188,13 @@ def generate_points(parallelogram, t_dist):
         else: 
             
             # Calculate the distance from the first point of the column to the line B-C
-            first_point_column = (A[0] + (j-1)*t_dist, A[1])
+            first_point_column = (A[0] + (j-1)*x_spacing, A[1])
             distance_to_BC = distance_point_to_line(first_point_column, B, C)
             for i in range(FirstColPoints  - counter +1):
                 # t = i / (FirstColPoints - 1)
                 # x = x_coords[i] + (j-1) * t_dist
                 if i == 0: # Defining first point of each col
-                    x = (j-1) * t_dist
+                    x = (j-1) * x_spacing
                     y = 0
 
                 else:
@@ -201,7 +203,7 @@ def generate_points(parallelogram, t_dist):
                     
                     y_spacing = distance_to_BC/(FirstColPoints - counter)
                     
-                    x = (j-1) * t_dist + i * np.cos(np.radians(65.3)) * (y_spacing)
+                    x = (j-1) * x_spacing + i * np.cos(np.radians(65.3)) * (y_spacing)
 
                     y =  np.sin(np.radians(65.3)) * (y_spacing * (i))
 
@@ -209,7 +211,8 @@ def generate_points(parallelogram, t_dist):
                 if is_point_in_parallelogram((x, y), parallelogram):
                     x_coords.append(x)
                     y_coords.append(y)
-        NbrPoints = NbrPoints + i
+                    NbrPoints += 1
+        
 
     # Calculate FirstColPoints
     distance_CD = np.linalg.norm(C - D)
@@ -246,7 +249,7 @@ def plot_parallelogram_and_points(parallelogram, x_coords, y_coords):
     
     # Plot the points
     plt.scatter(x_coords, y_coords, c='red', marker='o')
-    plt.title("Cartesian Coordinates Plot within Parallelogram")
+    plt.title("Windfarm Optimised Layout - Lagelander")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.grid(True)
@@ -303,7 +306,7 @@ def filter_points(x_coords, y_coords, t_dist):
     for i in range(0, len(x_coords)):
         point = np.array([x_coords[i],y_coords[i]])   
         # coords[(cdist(coords[:,:],point[None]) > t_dist).ravel()]
-        coords[np.linalg.norm(coords[:,:] - point, axis=1) < t_dist]
+        coords = coords[np.linalg.norm(coords[:,:] - point, axis=1) > t_dist]
     
     filtered_x_coords = coords[:, 0]
     filtered_y_coords = coords[:, 1]
@@ -334,7 +337,7 @@ t_dist = float(input("Enter the value for t_dist: "))
 # Generate points
 x_coords, y_coords, FirstColPoints, FirstRowPoints, distance_to_BC, NbrPoints = generate_points(parallelogram, t_dist)
 
-print(x_coords, y_coords, len(x_coords), len(y_coords))
+# print(x_coords, y_coords, len(x_coords), len(y_coords))
 # Filter points based on the distance
 filtered_x_coords, filtered_y_coords = filter_points(x_coords, y_coords, t_dist)
 
