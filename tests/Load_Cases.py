@@ -188,22 +188,35 @@ class MRS(FEM_Solve):
         Izz=0
         mesh = self.mesh
 
+        rotational_axis = np.array((np.average(mesh.X_coords),np.average(mesh.Y_coords)))[:, None]
+        #print(rotational_axis.shape)
         collapsed_ms = np.einsum('ijj->ij', mesh.element_lumped_ms)
         node_indices = np.arange(mesh.N_nodes, dtype=int)
-        global_point_masses = np.zeros_like(node_indices, dtype=float)
+        global_point_inertias = np.zeros_like(node_indices, dtype=float)
         Xs, Ys = mesh.X_coords, mesh.Y_coords
 
         for i in range(mesh.N_elems):
             elem_boundaries = mesh.element_indices[:, i]
             mask = np.isin(node_indices, elem_boundaries)
-            global_point_masses[mask] += collapsed_ms[i]
 
+            coords = np.vstack((Xs[mask], Ys[mask]))
+
+            rs = np.linalg.norm(coords-rotational_axis, axis=1)
+            #print(coords)
+            #print()
+            #print(rotational_axis)
+            #print()
+            #print(coords-rotational_axis)
+            #print()
+            #print(rs)
+            global_point_inertias[mask] += collapsed_ms[i] * rs**2
+        print(sum(global_point_inertias)/1e10)
         return Izz
 
 
 
 if __name__ == "__main__":
-    config={'wing_layer_indices': [0,1],
+    config={'wing_layer_indices': [0,],
             'wing_lifts': [4e6, 4e6, 4e6,  4e6, 4e6, 4e6],
             'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
             'T_rated_per_rotor': 119e3,
@@ -221,7 +234,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
+    hex = Hexagonal_Truss(n_rotors=5, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
