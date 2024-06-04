@@ -82,7 +82,6 @@ Q_array[U_array > cut_off] = 0
 
 P_array /= 1e6
 Q_array /= 1e3
-
 fig, axs = plt.subplots(1, 2)
 fig.set_figheight(3)
 fig.set_figwidth(10)
