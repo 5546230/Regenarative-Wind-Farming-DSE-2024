@@ -265,7 +265,7 @@ print(Radius)
 if inps.optimize:
     bladeoptimizer = BladeOptimizer(root_chord, tip_chord, root_twist, pitch)
     root_chord, tip_chord, root_twist, pitch = bladeoptimizer.optimize()
-    #print(root_chord, tip_chord, root_twist, pitch)
+    print(root_chord, tip_chord, root_twist, pitch)
     blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade.getChordTwist()
 Omega = Uinf*TSR/Radius
