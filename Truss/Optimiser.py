@@ -136,11 +136,13 @@ class Optimizer:
                 'Ds [m]': D_output[1],
                 'ts [m]': t_output,
                 'Sigmas [MPa]': sigmas / 1e6,
+                'lengths [m]': s.mesh.element_lengths,
+                'areas [m^2]': s.mesh.element_As,
                 'N_0 [-]': s.mesh.element_indices[0],
                 'N_1 [-]': s.mesh.element_indices[1],
             }
             output.write(fem_output)
-        return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices
+        return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices, s
 
 
 def sort_bins(v: np.array, n_bins: int):
@@ -189,7 +191,7 @@ if __name__ == "__main__":
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
     OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    M_change, D_change, ts, sigs, elements = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    M_change, D_change, ts, sigs, elements, _ = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
 
     print('=========================================================================================================')
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')

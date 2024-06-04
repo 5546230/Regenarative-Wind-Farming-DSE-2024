@@ -17,14 +17,14 @@ class MRS(FEM_Solve):
         '''
         super().__init__(mesh=mesh, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads, g_dir=g_dir)
 
-        self.T_per_rotor = truss_config['T_rated_per_rotor']
+        self.T_per_rotor = truss_config['T_per_rotor'][0]
         self.truss = truss_config['truss']
         self.wing_layer_indices = np.array(truss_config['wing_layer_indices'])
         self.drag_per_wing = np.array(truss_config['wing_drags'])
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
         self.drag_calc = truss_config['drag_calculator']
         self.M_rna = truss_config['M_RNA']
-        self.alpha = truss_config['max_alpha']
+        self.alpha = truss_config['max_alpha_ccwp']
 
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
         c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
@@ -67,7 +67,7 @@ class MRS(FEM_Solve):
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  loads[:,i]
         return global_loading_vector[self.active_dofs]
 
-    def get_drag_loading(self):
+    def get_drag_loading(self, multiplier=1):
         '''
         :return: drag force loading vector
         '''
@@ -75,7 +75,7 @@ class MRS(FEM_Solve):
         diams = self.mesh.elem_Ds
 
         'drags only calculated for frontal plane members (which are equal in length)'
-        elem_drags = self.drag_calc.placeholder(d=diams)
+        elem_drags = self.drag_calc.placeholder(d=diams)*multiplier
         elem_nodal_drag = np.array([1/2,1/2])[np.newaxis, :]
         all_nodal_drags = np.repeat(elem_nodal_drag, self.mesh.N_elems, axis=0)
         drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
@@ -101,6 +101,7 @@ class MRS(FEM_Solve):
 
         min_z = np.min(mesh.Z_coords)
         base_apl_z = mesh.Z_coords[np.where(mesh.Z_coords > min_z)][0]
+
         r_rot = self.truss.r_rot
         next_z_diff = 1.5*r_rot/ np.cos(np.pi/6)
         wing_zs = base_apl_z +  self.wing_layer_indices * next_z_diff
@@ -149,6 +150,8 @@ class MRS(FEM_Solve):
         T_forces = np.hstack((front_T_forces, back_T_forces))
         T_indices = np.concatenate((self.get_midpoint_indices(side='front'), self.get_midpoint_indices(side='back')))
         loading_vector = self.arbitrary_loading_vector(indices=T_indices, loads=T_forces)
+
+
         return loading_vector
 
     def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = True, ) -> tuple[np.array, ...]:
@@ -176,7 +179,6 @@ class MRS(FEM_Solve):
         global_coords = np.vstack((X, Y, Z))
 
         element_Qs, element_sigmas = self.get_internal_loading(global_coords=global_coords)
-
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X, Y, Z, element_sigmas / factor)
@@ -204,13 +206,13 @@ class MRS(FEM_Solve):
 
 
 if __name__ == "__main__":
-    config={'wing_layer_indices': [0,],
-            'wing_lifts': [4e6, 4e6, 4e6,  4e6, 4e6, 4e6],
-            'wing_drags': [1e5, 1e5, 1e5, 1e5, 1e5, 1e5],
-            'T_rated_per_rotor': 119e3,
+    config={'wing_layer_indices': [0,1,],
+            'wing_lifts': [.5e6, .5e6, 4e6,  .5e6, .5e6, .5e6],
+            'wing_drags': [.2e5, .2e5, .2e5, .2e5, .2e5, .2e5],
+            'T_per_rotor': [119e3, 119e3],
             'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
             'M_RNA': 10310.8,
-            'max_alpha': 0.,
+            'max_alpha_ccwp': 0.,
             }
 
     'material and section definitions'
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=3, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
+    hex = Hexagonal_Truss(n_rotors=33, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -241,7 +243,8 @@ if __name__ == "__main__":
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
     OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    M_change, D_change, ts, sigs, elements = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    M_change, D_change, ts, sigs, elements, solver = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
 
     print('=========================================================================================================')
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')
