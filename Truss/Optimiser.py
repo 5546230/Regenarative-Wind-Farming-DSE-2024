@@ -95,7 +95,7 @@ class Optimizer:
         lengths = m.element_lengths
 
         'solve'
-        d, Q, sigma = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
+        d, Q, sigma, _ = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
 
         D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
         D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
@@ -113,7 +113,7 @@ class Optimizer:
                     print(f'Sigma_max = {(np.max(np.abs(sigma) / 1e6)):.3f}, max_diff={np.max(Ds_sizing - Ds):.3e},')
                 Ds = Ds_sizing
                 s.mesh = self.update_mesh(mesh=m, diameters=Ds)
-                d, Q, sigma = s.solve_system(plot=False, factor=1, include_self_load=True)
+                d, Q, sigma,_ = s.solve_system(plot=False, factor=1, include_self_load=True)
 
                 D_i_yield = self.calc_yield_diameter(F_bar_i=Q, sigy_i=sigys, )
                 D_i_buckling = self.calc_buckling_diameter(l_i=lengths, E_i=Es, F_bar_i=Q, )
@@ -127,7 +127,7 @@ class Optimizer:
         Ds = Ds_sizing
         s.mesh =  self.update_mesh(mesh=m, diameters=Ds)
 
-        _,_,sigmas = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
+        _,_,sigmas, Rs = s.solve_system(plot=self.plot_output, factor=1, include_self_load=True)
         t_output = Ds*self.r_t
 
         if output is not None:
@@ -142,7 +142,7 @@ class Optimizer:
                 'N_1 [-]': s.mesh.element_indices[1],
             }
             output.write(fem_output)
-        return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices, s
+        return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices, s, Rs
 
 
 def sort_bins(v: np.array, n_bins: int):
@@ -191,9 +191,10 @@ if __name__ == "__main__":
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
     OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    M_change, D_change, ts, sigs, elements, _ = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    M_change, D_change, ts, sigs, elements, _, Rs = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
 
     print('=========================================================================================================')
+    print(Rs.shape, np.sum(Rs[::3]), np.sum(Rs[1::3]), np.sum(Rs[2::3]))
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')
     print(D_change)
     print(ts*1000)

@@ -22,6 +22,7 @@ class MRS(FEM_Solve):
         self.wing_layer_indices = np.array(truss_config['wing_layer_indices'])
         self.drag_per_wing = np.array(truss_config['wing_drags'])
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
+        self.moment_per_wing = np.array(truss_config['wing_moments'])
         self.drag_calc = truss_config['drag_calculator']
         self.M_rna = truss_config['M_RNA']
         self.alpha = truss_config['max_alpha_ccwp']
@@ -105,24 +106,37 @@ class MRS(FEM_Solve):
         r_rot = self.truss.r_rot
         next_z_diff = 1.5*r_rot/ np.cos(np.pi/6)
         wing_zs = base_apl_z +  self.wing_layer_indices * next_z_diff
-        apl_y = np.max(mesh.Y_coords)
+        apl_yL = np.max(mesh.Y_coords)
+        apl_yM = np.min(mesh.Y_coords)
 
         indices = []
         loads = []
         for i, z in enumerate(wing_zs):
-            y_ids = self.get_xz_plane_indices(y=apl_y)
+            'LIFT and DRAG FORCE'
+            y_idsL = self.get_xz_plane_indices(y=apl_yL)
             z_ids = self.get_xy_plane_indices(z=z)
-            bool_mask = np.isin(y_ids, z_ids)
+            bool_mask_L = np.isin(y_idsL, z_ids)
 
-            temp_indices = y_ids[bool_mask]
+            temp_indices = y_idsL[bool_mask_L]
             indices.append(temp_indices)
 
             current_lift = -1*self.lift_per_wing[i]/temp_indices.size
             current_drag = self.drag_per_wing[i]/temp_indices.size
 
             current_wing_distr_force = np.array([[0], [current_drag], [current_lift]])
-            current_loads = np.repeat(current_wing_distr_force, temp_indices.size, axis=1)
-            loads.append(current_loads)
+            current_loads_LD = np.repeat(current_wing_distr_force, temp_indices.size, axis=1)
+            loads.append(current_loads_LD)
+
+            'AERODYNAMIC MOMENT'
+            current_M_force = self.moment_per_wing[i]/(apl_yL-apl_yM)/temp_indices.size
+            y_idsM = self.get_xz_plane_indices(y=apl_yM)
+            bool_mask_M = np.isin(y_idsM, z_ids)
+            temp_indices = y_idsL[bool_mask_M]
+            indices.append(temp_indices)
+
+            current_wing_distr_force = np.array([[0], [0], [current_M_force]])
+            current_loads_M = np.repeat(current_wing_distr_force, temp_indices.size, axis=1)
+            loads.append(current_loads_M)
 
         indices = np.concatenate(indices)
         loads = np.hstack(loads)
@@ -153,8 +167,6 @@ class MRS(FEM_Solve):
 
         'z +ve upwards: alpha>0-->ccw, alpha<0-->cw'
         if self.alpha>0:
-            reduced_indices = 0
-        else:
             pass
         return loading_vector
 
@@ -182,11 +194,11 @@ class MRS(FEM_Solve):
         X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
         global_coords = np.vstack((X, Y, Z))
 
-        element_Qs, element_sigmas = self.get_internal_loading(global_coords=global_coords)
+        element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X, Y, Z, element_sigmas / factor)
-        return d, element_Qs, element_sigmas
+        return d, element_Qs, element_sigmas, reactions
 
     def calc_moment_of_inertia_Z(self):
         mesh = self.mesh
@@ -212,6 +224,7 @@ class MRS(FEM_Solve):
 if __name__ == "__main__":
     config={'wing_layer_indices': [0,1,],
             'wing_lifts': [.5e6, .5e6, 4e6,  .5e6, .5e6, .5e6],
+            'wing_moments': [1e6, 1e6, 1e6, 1e6, 1e6, 1e6],
             'wing_drags': [.2e5, .2e5, .2e5, .2e5, .2e5, .2e5],
             'T_per_rotor': [119e3, 119e3],
             'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
@@ -228,7 +241,7 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=33, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
     'initialise mesh'
@@ -247,10 +260,8 @@ if __name__ == "__main__":
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
     OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
-    M_change, D_change, ts, sigs, elements, solver = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    M_change, D_change, ts, sigs, elements, solver, _ = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
     print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
 
     print('=========================================================================================================')
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')
-    print(D_change)
-    print(ts*1000)

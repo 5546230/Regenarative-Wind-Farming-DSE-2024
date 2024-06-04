@@ -242,19 +242,25 @@ class FEM_Solve:
         Ks = mesh.element_Ks
 
         N_active = self.active_dofs.size
-        S = np.zeros((N_active, N_active))
-        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        N_constr = self.constr_dofs.size
 
+        Sr = np.zeros((N_active, N_active))
+        Sc = np.zeros((N_constr, N_active))
+
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
         for i in range(mesh.N_elems):
             elem_start_dofs = start_dof_idxs[:,i]
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
 
-            mask = np.isin(elem_dofs, self.active_dofs)
-            S_mask = np.isin(self.active_dofs, elem_dofs)
+            rmask = np.isin(elem_dofs, self.active_dofs)
+            cmask = np.isin(elem_dofs, self.constr_dofs)
+            Sr_mask = np.isin(self.active_dofs, elem_dofs)
+            Sc_mask = np.isin(self.constr_dofs, elem_dofs)
 
-            S[np.ix_(S_mask, S_mask)] += Ks[i][np.ix_(mask, mask)]
-        return S
+            Sr[np.ix_(Sr_mask, Sr_mask)] += Ks[i][np.ix_(rmask, rmask)]
+            Sc[np.ix_(Sc_mask, Sr_mask)] += Ks[i][np.ix_(cmask, rmask)]
+        return Sr#, Sc
 
     def assemble_global_mass(self)-> np.array:
         '''
@@ -274,7 +280,6 @@ class FEM_Solve:
 
             mask = np.isin(elem_dofs, self.active_dofs)
             M_mask = np.isin(self.active_dofs, elem_dofs)
-
             M[np.ix_(M_mask, M_mask)] += Ms[i][np.ix_(mask, mask)]
         return M
 
@@ -286,7 +291,7 @@ class FEM_Solve:
         global_loading_vector = np.zeros(mesh.N_nodes * self.n_dof)
         for i, idx in enumerate(self.load_indices):
             global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  self.applied_loads[:,i]
-        return global_loading_vector[self.active_dofs]
+        return global_loading_vector[self.active_dofs] #, global_loading_vector[self.constr_dofs]
 
     def assemble_self_loading(self)->np.array:
         '''
@@ -315,11 +320,11 @@ class FEM_Solve:
         :param plot: bool, plot results
         :return: [-]
         '''
-        S = self.assemble_global_stiffness()
+        Sr = self.assemble_global_stiffness()
         P = self.assemble_loading_vector()
         if include_self_load:
             P += self.assemble_self_loading()
-        d = np.linalg.solve(S, P)
+        d = np.linalg.solve(Sr, P)
 
         m = self.mesh
         stacked_coords = np.column_stack((m.X_coords, m.Y_coords, m.Z_coords))
@@ -333,12 +338,12 @@ class FEM_Solve:
         X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
         global_coords = np.vstack((X,Y,Z))
 
-        element_Qs, element_sigmas = self.get_internal_loading(global_coords=global_coords)
+        element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
 
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X,Y,Z,element_sigmas/factor)
-        return d, element_Qs, element_sigmas
+        return d, element_Qs, element_sigmas, reactions
 
     def get_internal_loading(self, global_coords):
         '''
@@ -358,7 +363,17 @@ class FEM_Solve:
 
         sigmas = delta_length * mesh.element_Es / mesh.element_lengths
         Qs = sigmas*mesh.element_As
-        return Qs, sigmas
+
+        # get reaction forces:
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        elem_dofs = np.hstack((start_dof_idxs.T, end_dof_idxs.T))
+        Q_vectors = np.vstack((-1*Qs, Qs))
+        Fs = np.einsum('ijk, ji->ik', mesh.element_Ts, Q_vectors)
+        R = np.zeros(self.constr_dofs.size)
+        for idx,dof_idx in enumerate(self.constr_dofs):
+            mask = np.where(elem_dofs==dof_idx)
+            R[idx] += np.sum(Fs[mask])
+        return Qs, sigmas, R
 
     def get_natural_frequencies(self):
         '''
@@ -503,7 +518,7 @@ if __name__ == '__main__':
     S = SOLVER.assemble_global_stiffness()
 
     'solve'
-    d, Q, sigma = SOLVER.solve_system(plot=True, factor=100, include_self_load=False,)
+    d, Q, sigma, _ = SOLVER.solve_system(plot=True, factor=1, include_self_load=False,)
 
     print(f'        omega_f [rad/s] = {SOLVER.get_natural_frequencies()}')
     print(f'      displacement [mm] = {d*1000}')
