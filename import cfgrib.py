@@ -3,6 +3,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pickle
 
 def read_grib_file_cfgrib(filename):
     # Open the GRIB file as an xarray dataset
@@ -44,6 +45,37 @@ for t in range(V.shape[0]):
 
 # Calculate the average wind speed at each height over the entire dataset
 V_height_avg = np.mean(matrix, axis=(0, 1, 2))
+
+'''45.8845
+82.05752
+118.2305
+154.4035
+190.5766
+226.7496'''
+
+# Example arrays
+array46 = matrix[:,:,:,36]
+array82 = matrix[:,:,:,72]
+array118 = matrix[:,:,:,108]
+array154 = matrix[:,:,:,144]
+array191 = matrix[:,:,:,181]
+array227 = matrix[:,:,:,217]
+
+print(array46)
+print(np.shape(array46))
+
+# List of arrays
+arrays = [array46, array82, array118, array154, array191, array227]
+
+# Save the arrays to a file
+with open('arrays.pkl', 'wb') as f:
+    pickle.dump(arrays, f)
+
+print("Arrays saved successfully!")
+"""
+
+
+
 
 # Plotting the average wind speed at different heights
 plt.figure(figsize=(12, 6))
@@ -113,3 +145,4 @@ ax.set_theta_direction(-1)  # Clockwise
 ax.set_title('Wind Frequency Rose (Wind Coming From)')
 
 plt.show()
+"""
