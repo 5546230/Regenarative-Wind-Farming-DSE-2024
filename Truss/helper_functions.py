@@ -14,7 +14,7 @@ def custom_map():
     return cmap
 
 
-def calculate_hexagonal_positions(n, r, x):
+def calculate_hexagonal_positions(n, r, x, column_alignment: str ='horizontal'):
     """Calculate positions for circles arranged hexagonally."""
     positions = []
     row_count = 0
@@ -27,7 +27,10 @@ def calculate_hexagonal_positions(n, r, x):
             row_length = n - num_circles_placed
         offset = 0 if row_count % 2 == 0 else r
         for i in range(row_length):
-            positions.append([dx * i + offset + r, dy * row_count + r])
+            if column_alignment == 'horizontal':
+                positions.append([dx * i + offset + r, dy * row_count + r])
+            elif column_alignment == 'vertical':
+                positions.append([dy * row_count + r, dx * i + offset + r])
         num_circles_placed += row_length
         row_count += 1
     width = max(pos[0] for pos in positions) + r

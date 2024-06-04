@@ -7,7 +7,7 @@ import numpy as np
 
 
 
-class MRS(FEM_Solve):
+class MRShex(FEM_Solve):
     def __init__(self, truss_config: dict,
                  mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array, g_dir: str = 'z'):
         '''
@@ -45,8 +45,8 @@ class MRS(FEM_Solve):
         :return: indices of unique nodes lying at hexagon centers, front side
         '''
         truss = self.truss
-        xs = truss.hex_positions[:,0]
-        zs = truss.hex_positions[:, 1]
+        xs = truss.half_hex_positions[:, 0]
+        zs = truss.half_hex_positions[:, 1]
         ys = np.ones_like(xs) * np.min(self.mesh.Y_coords)
         if side == 'back':
             ys += truss.depth
@@ -221,6 +221,148 @@ class MRS(FEM_Solve):
 
 
 
+class mrsSquare(FEM_Solve):
+    def __init__(self, truss_config: dict,
+                 mesh: Mesh, bc_indices: np.array, bc_constraints: np.array, load_indices: np.array, applied_loads: np.array, g_dir: str = 'z'):
+        '''
+        :param truss_config: dict specifying the MRS and loading configuration
+        NOTES:
+            - extension of FEM_Solve class to include load cases specific to the MRS
+        '''
+        super().__init__(mesh=mesh, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices, applied_loads=applied_loads, g_dir=g_dir)
+
+        self.T_per_rotor = truss_config['T_per_rotor'][0]
+        self.truss = truss_config['truss']
+        self.wing_layer_indices = np.array(truss_config['wing_layer_indices'])
+        self.drag_per_wing = np.array(truss_config['wing_drags'])
+        self.lift_per_wing = np.array(truss_config['wing_lifts'])
+        self.moment_per_wing = np.array(truss_config['wing_moments'])
+        self.drag_calc = truss_config['drag_calculator']
+        self.M_rna = truss_config['M_RNA']
+        self.alpha = truss_config['max_alpha_ccwp']
+
+    def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
+        c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
+        return c_indices
+
+    def get_xy_plane_indices(self, z: float = 0, tolerance = 0.01):
+        c_indices = np.where(np.abs(self.mesh.Z_coords - z) < tolerance)[0]
+        return c_indices
+
+    def get_yz_plane_indices(self, x: float = 0, tolerance = 0.01):
+        c_indices = np.where(np.abs(self.mesh.X_coords - x) < tolerance)[0]
+        return c_indices
+
+    def arbitrary_loading_vector(self, indices, loads)-> np.array:
+        '''
+        :return: (n_active_nof) Global loading vector sampled over the active indices
+        , arbitrary loads
+        '''
+        mesh = self.mesh
+        global_loading_vector = np.zeros(mesh.N_nodes * self.n_dof)
+        for i, idx in enumerate(indices):
+            global_loading_vector[idx*self.n_dof:(idx+1)*self.n_dof] =  loads[:,i]
+        return global_loading_vector[self.active_dofs]
+
+    def get_drag_loading(self, multiplier=1):
+        '''
+        :return: drag force loading vector
+        '''
+        global_SL = np.zeros(self.mesh.N_nodes * self.n_dof)
+        diams = self.mesh.elem_Ds
+
+        'drags only calculated for frontal plane members (which are equal in length)'
+        elem_drags = self.drag_calc.placeholder(d=diams)*multiplier
+        elem_nodal_drag = np.array([1/2,1/2])[np.newaxis, :]
+        all_nodal_drags = np.repeat(elem_nodal_drag, self.mesh.N_elems, axis=0)
+        drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
+
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        front_indices = self.get_xz_plane_indices(y=np.min(self.mesh.Y_coords))
+        for i in range(self.mesh.N_elems):
+            if np.any(np.isin(self.mesh.element_indices[:,i], front_indices)==False):
+                pass
+            elem_start_dofs = start_dof_idxs[:, i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            mask = np.isin(self.mesh.dof_indices[1::3], elem_dofs)
+            global_SL[1::3][mask] += drags[i]
+        return global_SL[np.isin(self.mesh.dof_indices, self.active_dofs)]
+
+    def get_AFC_loading(self):
+        '''
+        :return: AFC force loading vector
+        '''
+
+        return
+
+    def get_inertial_loading(self):
+        '''
+        :return: inertial loading vector
+        '''
+        return
+
+    def get_rotor_loading(self):
+        '''
+        :return: thrust loading due to each rotor
+        '''
+        T_rated_per_rot = self.T_per_rotor
+
+        return
+
+    def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = True, ) -> tuple[np.array, ...]:
+        '''
+        :param factor: scaling factor to visualise displacements
+        :param plot: bool, plot results
+        :return: [-]
+        '''
+        S = self.assemble_global_stiffness()
+        P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
+        if include_self_load:
+            P += self.assemble_self_loading()
+        d = np.linalg.solve(S, P)
+
+        m = self.mesh
+        stacked_coords = np.column_stack((m.X_coords, m.Y_coords, m.Z_coords))
+        flattened_coords = stacked_coords.ravel()
+        global_displacements = np.zeros_like(flattened_coords)
+
+        flattened_coords[np.isin(m.dof_indices, self.active_dofs)] += d * factor
+        global_displacements[np.isin(m.dof_indices, self.active_dofs)] += d * factor
+
+        reshaped_array = flattened_coords.reshape(-1, 3)
+        X, Y, Z = reshaped_array[:, 0], reshaped_array[:, 1], reshaped_array[:, 2]
+        global_coords = np.vstack((X, Y, Z))
+
+        element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
+        if plot:
+            self.plot_displacements(X, Y, Z)
+            self.plot_stresses(X, Y, Z, element_sigmas / factor)
+        return d, element_Qs, element_sigmas, reactions
+
+    def calc_moment_of_inertia_Z(self):
+        mesh = self.mesh
+        rotational_axis = np.array((np.average(mesh.X_coords),np.average(mesh.Y_coords)))[:, None]
+
+        collapsed_ms = np.einsum('ijj->ij', mesh.element_lumped_ms)
+        node_indices = np.arange(mesh.N_nodes, dtype=int)
+        global_point_inertias = np.zeros_like(node_indices, dtype=float)
+        Xs, Ys = mesh.X_coords, mesh.Y_coords
+
+        for i in range(mesh.N_elems):
+            elem_boundaries = mesh.element_indices[:, i]
+            mask = np.isin(node_indices, elem_boundaries)
+
+            coords = np.vstack((Xs[mask], Ys[mask]))
+            rs = np.linalg.norm(coords-rotational_axis, axis=0)
+            global_point_inertias[mask] += collapsed_ms[i] * rs**2
+        Izz = np.sum(global_point_inertias)
+        return Izz
+
+
+
+
 if __name__ == "__main__":
     config={'wing_layer_indices': [0,1,],
             'wing_lifts': [.5e6, .5e6, 4e6,  .5e6, .5e6, .5e6],
@@ -251,7 +393,7 @@ if __name__ == "__main__":
     'initialise solver'
     config['truss'] = hex
 
-    SOLVER = MRS(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
+    SOLVER = MRShex(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
                        applied_loads=applied_loads, truss_config=config,)
 
     print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
