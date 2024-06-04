@@ -52,7 +52,7 @@ class Hexagonal_Truss(Geometry_Definition):
 
         z1 = 12.5/np.cos(np.pi/6) #14.434
         z2 = 12.5*np.tan(np.pi/6) #7
-        print(z1, z2)
+
         self.Z_single_hex = np.array([-z1, -z2, z2, z1, z2, -z2, -z1, -z2, z2, z1, z2, -z2, 0, 0, ], dtype=float) * r_per_rotor / 12.5
 
         self.single_hex_mem_idxs = np.array([[0, 1, 2, 3, 4, 5, 0, 1, 2, 3,  4,  5, 6, 7, 8,  9, 10, 11,  1,  2,  4,  5,   7, 8,  10, 11,  4, 2, 12,  2, 4,   0,  3,  9, 2, 4, 0, 0, ],
@@ -263,7 +263,7 @@ class Hexagonal_Truss(Geometry_Definition):
 
 
 if __name__ == "__main__":
-    truss = Hexagonal_Truss(n_rotors=1, r_per_rotor=39.69/2*1.05, depth=35)
+    truss = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69/2*1.05, depth=35)
     print(truss)
     #truss.find_front_midpoint_indices()
     #truss.find_bottom_indices()
