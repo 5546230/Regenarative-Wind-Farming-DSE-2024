@@ -6,14 +6,14 @@ np.set_printoptions(linewidth=7000)
 
 
 class Square_Truss(Geometry_Definition):
-    def __init__(self, n_rotors: int = 33, r_per_rotor = 12.5, depth = 12.5, verbose: bool = True):
+    def __init__(self, n_rotors: int = 36, r_per_rotor = 12.5, depth = 12.5, verbose: bool = True):
         super().__init__()
         self.n_rotors = n_rotors
         self.depth = depth
         self.r_rot = r_per_rotor
         self.r_hex = self.r_rot
 
-        x = int(np.ceil(np.sqrt(self.n_rotors)))
+        x = 4   #int(np.ceil(np.sqrt(self.n_rotors)))
         hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x)
         self.hex_positions = np.array(hex_positions)
 
