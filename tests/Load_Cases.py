@@ -151,7 +151,11 @@ class MRS(FEM_Solve):
         T_indices = np.concatenate((self.get_midpoint_indices(side='front'), self.get_midpoint_indices(side='back')))
         loading_vector = self.arbitrary_loading_vector(indices=T_indices, loads=T_forces)
 
-
+        'z +ve upwards: alpha>0-->ccw, alpha<0-->cw'
+        if self.alpha>0:
+            reduced_indices = 0
+        else:
+            pass
         return loading_vector
 
     def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = True, ) -> tuple[np.array, ...]:
