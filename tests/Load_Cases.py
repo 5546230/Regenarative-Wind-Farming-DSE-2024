@@ -278,7 +278,7 @@ class mrsSquare(FEM_Solve):
         drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
 
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
-        front_indices = self.get_xz_plane_indices(y=np.min(self.mesh.Y_coords))
+        front_indices = self.get_yz_plane_indices(x=np.max(self.mesh.X_coords))
         for i in range(self.mesh.N_elems):
             if np.any(np.isin(self.mesh.element_indices[:,i], front_indices)==False):
                 pass
@@ -286,8 +286,8 @@ class mrsSquare(FEM_Solve):
             elem_end_dofs = end_dof_idxs[:, i]
             elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
 
-            mask = np.isin(self.mesh.dof_indices[1::3], elem_dofs)
-            global_SL[1::3][mask] += drags[i]
+            mask = np.isin(self.mesh.dof_indices[0::3], elem_dofs)
+            global_SL[0::3][mask] += drags[i]
         return global_SL[np.isin(self.mesh.dof_indices, self.active_dofs)]
 
     def get_AFC_loading(self):

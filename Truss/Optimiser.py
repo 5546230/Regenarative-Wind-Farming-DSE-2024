@@ -1,4 +1,5 @@
 from Truss.Honeycomb_Truss import Hexagonal_Truss
+from Truss.Square_Truss import Square_Truss
 from Truss.Truss_Analysis import Mesh, FEM_Solve, Material, Section
 from Truss.helper_functions import CsvOutput
 import numpy as np
@@ -169,7 +170,7 @@ def sort_bins(v: np.array, n_bins: int):
 
 if __name__ == "__main__":
     'material and section definitions'
-    steel = Material(sig_y=50e6, rho=8000)
+    steel = Material(sig_y=250e6, rho=8000)
     standard_section = Section(radius=.005, thickness=0.001)
 
     'create libraries'
@@ -177,8 +178,10 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     #hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
+    #hex = Hexagonal_Truss(n_rotors=3, r_per_rotor=40.1079757687 / 2 * 1.05, spacing_factor=1, verbose=False, depth=25)
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
+    sq = Square_Truss()
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = sq.function()
 
     'initialise mesh'
     MESH = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices, material_ids=material_indices, materials=material_library, sections=section_library)
