@@ -63,7 +63,7 @@ class Hexagonal_Truss(Geometry_Definition):
         'Transform single hex to packing of n_rotors'
         all_hex_XYZ, all_hex_connect = self.transform_coordinates()
         node_indices = np.arange(all_hex_XYZ[:,0].ravel().size, dtype=int)
-
+        print('---', all_hex_connect.shape)
         'Re-map overlapping mesh to unique coordinates'
         unique_nodes, unique_indices, unique_edges = self.get_unique_mesh(all_hex_XYZ, all_hex_connect, node_indices)
 

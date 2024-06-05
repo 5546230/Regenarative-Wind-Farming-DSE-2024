@@ -5,25 +5,130 @@ import matplotlib.pyplot as plt
 np.set_printoptions(linewidth=7000)
 
 
+def cartesin_product(x, y):
+    return np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
+
+
 class Square_Truss(Geometry_Definition):
-    def __init__(self, n_rotors: int = 17, r_per_rotor = 30.38, depth = 12.5, verbose: bool = True):
-        super().__init__()
+    def __init__(self, n_rotors: int = 17, r_per_rotor = 30.38, depth = 50, verbose: bool = True):
         self.n_rotors = n_rotors
         self.depth = depth
         self.r_rot = r_per_rotor
         self.r_hex = self.r_rot
 
-        x = 6   #int(np.ceil(np.sqrt(self.n_rotors)))
-        half_hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x, column_alignment='vertical')
+        x_cols = 6
+        half_hex_positions, self.hex_width, self.hex_height, self.hex_area = calculate_hexagonal_positions(n_rotors, self.r_hex, x_cols, column_alignment='vertical')
         self.half_hex_positions = np.array(half_hex_positions)
 
+
+        self.X_single_colbox = np.array([depth/2, depth/2, depth/2, depth/2, -depth/2, -depth/2, -depth/2, -depth/2], dtype=float)
+        self.Y_single_colbox = np.array([0, 6, 6, 0,  0,  6,  6,  0], dtype=float)#-27.38
+        self.Z_single_colbox = np.array([00.00, 00.00, 30.38, 30.38,  00.00,  00.00,  30.38,  30.38], dtype=float)
+
+        self.single_colbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6,0,2,1],
+                                                [1, 2, 3, 0, 4,5,6,7,5,7,6,5,7,7,6]])
+
+        self.X_single_fillbox = np.array([depth/2, depth/2, depth/2, depth/2, -depth/2, -depth/2, -depth/2, -depth/2], dtype=float)
+        self.Y_single_fillbox = np.array([0, 23.31, 23.31,0,  0,  23.31,  23.31,  0], dtype=float)
+        self.Z_single_fillbox = np.array([00.00, 00.00, 30.38, 30.38,  00.00,  00.00,  30.38,  30.38], dtype=float)
+
+        self.single_fillbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6,0, 1, 4, 5, 2, 3],
+                                                 [1, 2, 3, 0, 4,5,6,7,5,7,6,5,2, 3, 6, 7, 7, 6]])
+
+        width_colbox = 6.#abs(np.max(self.Y_single_colbox) - np.min(self.Y_single_colbox))
+        height_colbox = 30.38#abs(np.max(self.Z_single_colbox) - np.min(self.Z_single_colbox))
+        width_fillbox = 23.31#abs(np.max(self.Y_single_fillbox) - np.min(self.Y_single_fillbox))
+
+        tower_width= 45.5
+        left_width = 3 * width_colbox + 4 * width_fillbox + tower_width
+        print(width_fillbox, width_colbox)
+
+        'LEFT COLBOXES'
+        n_layers = 1
+        n_left_colboxes = 3*n_layers
+
+        left_colbox_transforms_Y = np.array([0, 2*width_fillbox+width_colbox, 4*width_fillbox+2*width_colbox])
+        left_colbox_transforms_Z = np.arange(n_layers, dtype=int) * height_colbox
+        left_colbox_trans = cartesin_product(left_colbox_transforms_Y, left_colbox_transforms_Z)
+
+        single_colbox_XYZ = np.vstack((self.X_single_colbox, self.Y_single_colbox, self.Z_single_colbox))
+        left_colboxes_XYZ = np.repeat(single_colbox_XYZ[np.newaxis, :,:], n_left_colboxes, axis=0)
+
+        left_colboxes_XYZ[:,1:] += left_colbox_trans[:,:, np.newaxis]
+        left_colboxes_connectivity = np.repeat(self.single_colbox_mem_idxs[np.newaxis, :, :], n_left_colboxes, axis=0)
+        connectivity_transforms = np.linspace(0, (n_left_colboxes - 1) * self.X_single_colbox.size,  n_left_colboxes, dtype=int)
+        left_colboxes_connectivity += connectivity_transforms[:, np.newaxis, np.newaxis]
+
+        node_indices_col = np.arange(left_colboxes_XYZ[:, 0].ravel().size, dtype=int)
+
+        'LEFT FILLBOXES'
+        n_left_fillboxes = 4*n_layers
+
+        left_fillbox_transforms_Y = np.array([width_colbox, width_fillbox + width_colbox, 2*width_fillbox + 2*width_colbox, 3*width_fillbox + 2*width_colbox])
+        left_fillbox_trans = cartesin_product(left_fillbox_transforms_Y, left_colbox_transforms_Z)
+        single_fillbox_XYZ = np.vstack((self.X_single_fillbox, self.Y_single_fillbox, self.Z_single_fillbox))
+        left_fillboxes_XYZ = np.repeat(single_fillbox_XYZ[np.newaxis, :, :], n_left_fillboxes, axis=0)
+
+        left_fillboxes_XYZ[:, 1:] += left_fillbox_trans[:, :, np.newaxis]
+        left_fillboxes_connectivity = np.repeat(self.single_fillbox_mem_idxs[np.newaxis, :, :], n_left_fillboxes, axis=0)
+        connectivity_transforms = np.linspace(0, (n_left_fillboxes - 1) * self.X_single_fillbox.size, n_left_fillboxes, dtype=int)
+        left_fillboxes_connectivity += connectivity_transforms[:, np.newaxis, np.newaxis]
+        node_indices_fill = np.arange(left_fillboxes_XYZ[:, 0].ravel().size, dtype=int)
+
+
+        'COMBINING LEFT FILL AND COL BOXES'
+        'COL --> FILL'
+        node_indices_fill += node_indices_col.size
+        node_indices_left = np.concatenate((node_indices_col, node_indices_fill))
+
+        left_fillboxes_connectivity += node_indices_col.size
+        left_connectivity = np.hstack((np.hstack(left_colboxes_connectivity), np.hstack(left_fillboxes_connectivity)))
+
+        left_XYZ = np.concatenate((left_colboxes_XYZ, left_fillboxes_XYZ), axis=0)
+        left_XYZ = np.hstack(left_XYZ)
+
+
+        'COMBINING LEFT AND RIGHT'
+        node_indices_right = node_indices_left + node_indices_left.size
+        right_connectivity = left_connectivity + node_indices_left.size
+        right_XYZ = left_XYZ.copy()
+        right_XYZ[1,:] += left_width
+
+        XYZ = np.hstack((left_XYZ, right_XYZ))
+        node_indices = np.concatenate((node_indices_left, node_indices_right))
+        connectivity = np.hstack((left_connectivity, right_connectivity))
+
+        'Re-map overlapping mesh to unique coordinates'
+        unique_nodes, unique_indices, unique_edges = self.get_unique_mesh(XYZ, connectivity, node_indices)
+
+
+        if verbose:
+            print(f'Unique indices: {unique_indices}')
+            print(f'number of nodes before = {node_indices_left.shape[0]}')
+            print(f'number of edges before = {(left_connectivity).shape[1]}')
+            print('----------------------------------------------------------')
+            print(f'\nnumber of nodes after = {unique_nodes.shape[0]}')
+            print(f'number of edges after = {unique_edges.shape[1]}')
+
+
+        self.total_edge_con = unique_edges
+        self.n_unique_nodes = unique_indices.size
+        self.n_unique_edges = unique_edges[0, :].size
+
+        self.X_coords = unique_nodes.T[0, :]
+        self.Y_coords = unique_nodes.T[1, :]
+        self.Z_coords = unique_nodes.T[2, :]
+        self.unique_indices = unique_indices
+
+        self.plot_structure(show=True)
+        super().__init__()
         for i in range(n_rotors):
             plt.plot(self.half_hex_positions[i][0], self.half_hex_positions[i][1], marker='o', color='red')
         plt.show()
         self.plot_circles(positions=self.half_hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
 
     def __str__(self):
-        return f'Square Truss: N_rotors={self.n_rotors}, r_rotor={self.r_rot:.3f} [m], depth={self.depth:.3f} [m]'
+        return f'Square Truss: N_rotors={self.n_rotors*2}, r_rotor={self.r_rot:.3f} [m], depth={self.depth:.3f} [m]'
 
     def get_XYZ_coords(self):
         return
@@ -68,9 +173,9 @@ class Square_Truss(Geometry_Definition):
         :return:
         '''
 
-        stacked_coordinates = np.hstack(all_XYZ)
+        stacked_coordinates = all_XYZ #np.hstack(all_XYZ)
         rounded_stacked_coordinates = np.round(stacked_coordinates, decimals=1)
-        stacked_connections = np.hstack(all_connect)
+        stacked_connections = all_connect #np.hstack(all_connect)
         rounded_unique_nodes, unique_indices = np.unique(rounded_stacked_coordinates.T, axis=0, return_index=True)
         unique_nodes = stacked_coordinates[:, unique_indices].T
 
@@ -124,7 +229,7 @@ class Square_Truss(Geometry_Definition):
         ax.set_xlim([avgx-diff/2, avgx+diff/2])
         ax.set_zlim([0, diff])
 
-        ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
+        #ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
         ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
         if show:
             ax.legend()
