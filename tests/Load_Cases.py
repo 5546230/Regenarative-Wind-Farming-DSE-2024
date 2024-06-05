@@ -1,11 +1,13 @@
 from Truss.Honeycomb_Truss import Hexagonal_Truss
+from Truss.Square_Truss import Square_Truss
 from Truss.Truss_Analysis import FEM_Solve, Mesh, Material, Section, Library
 from drag_calc import Drag
 from Truss.Optimiser import Optimizer
 from Truss.helper_functions import CsvOutput
 import numpy as np
 
-
+def cartesian_product(x, y):
+    return np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
 
 class MRShex(FEM_Solve):
     def __init__(self, truss_config: dict,
@@ -241,6 +243,9 @@ class mrsSquare(FEM_Solve):
         self.M_rna = truss_config['M_RNA']
         self.alpha = truss_config['max_alpha_ccwp']
 
+        self.n_per_col = 13
+        self.n_per_row = 17
+
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
         c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
         return c_indices
@@ -294,8 +299,34 @@ class mrsSquare(FEM_Solve):
         '''
         :return: AFC force loading vector
         '''
+        # TODO
+        #bottom_indices = self.truss.find_bottom_indices()
+        #afs_layers = [4, 8, 12]
 
-        return
+        AFC_top_back = np.array(range(12, 221, 13))
+        AFC_top_front = np.array(range(233, 442, 13))
+        #print(AFC_top_back.shape)
+        total_top_indices = np.concatenate((AFC_top_back, AFC_top_front))
+        #print(total_top_indices.shape)
+        top_front_load = np.array([[-self.drag_per_wing[2]],[0],[-self.lift_per_wing[2]]])*np.ones((3,AFC_top_front.size))
+        top_back_load = top_front_load
+
+        AFC_middle_back = np.array(range(8, 217, 13))
+        AFC_middle_front = np.array(range(229, 438, 13))
+        total_middle_indices = np.concatenate((AFC_middle_back, AFC_middle_front))
+        middle_front_load = np.array([[-self.drag_per_wing[1]], [0], [-self.lift_per_wing[1]]])*np.ones((3,AFC_top_front.size))
+        middle_back_load = middle_front_load
+
+        AFC_bottom_back = np.array(range(4, 221, 13))
+        AFC_bottom_front = np.array(range(225, 434, 13))
+        total_bottom_indices = np.concatenate((AFC_bottom_back, AFC_bottom_front))
+        bottom_front_load = np.array([[-self.drag_per_wing[0]], [0], [-self.lift_per_wing[0]]])*np.ones((3,AFC_top_front.size))
+        bottom_back_load = bottom_front_load
+
+        indices = np.concatenate((total_top_indices, total_middle_indices, total_bottom_indices))
+        loads = np.hstack((top_back_load, top_front_load, middle_back_load, middle_front_load, bottom_back_load, bottom_front_load))
+        lv = self.arbitrary_loading_vector(indices, loads)
+        return lv
 
     def get_inertial_loading(self):
         '''
@@ -307,9 +338,48 @@ class mrsSquare(FEM_Solve):
         '''
         :return: thrust loading due to each rotor
         '''
-        T_rated_per_rot = self.T_per_rotor
+        W_per_rotor = self.M_rna*9.80665
+        nodal_load = np.array([[-self.T_per_rotor], [0], [-W_per_rotor]])
 
-        return
+        'first rotor staggering:'
+        first_idxs = np.array([1,14,222,255])
+        first_col_skip = np.array([0, 6, 5, 6])
+        first_row_skip = 2*np.arange(6)
+
+        idxs = []
+        loads = []
+        for i, row_skip in enumerate(first_row_skip):
+            #print(first_idxs[np.newaxis,:].shape, np.repeat(first_idxs[np.newaxis,:], first_col_skip.size, axis=0).shape, first_col_skip[:,np.newaxis].shape)
+            indices = np.repeat(first_idxs[np.newaxis,:], first_col_skip.size, axis=0)+first_col_skip[:,np.newaxis]*self.n_per_col+row_skip
+            indices = np.hstack(indices)
+
+            idxs.append(indices)
+            current_loads = np.ones((3, indices.size))*nodal_load
+            loads.append(current_loads)
+        first_loads = np.hstack(loads)
+        first_indices = np.hstack(idxs)
+
+        'second rotor staggering:'
+        second_idxs = np.array([41, 54, 262, 275])
+        second_col_skip = np.array([11, ])
+        second_row_skip = 2*np.arange(5)
+
+        idxs = []
+        loads = []
+        for i, row_skip in enumerate(second_row_skip):
+            indices = np.repeat(second_idxs[np.newaxis, :], second_col_skip.size, axis=0) + second_col_skip[:, np.newaxis] * self.n_per_col + row_skip
+            indices = np.hstack(indices)
+
+            idxs.append(indices)
+            current_loads = np.ones((3, indices.size)) * nodal_load
+            loads.append(current_loads)
+        second_loads = np.hstack(loads)
+        second_indices = np.hstack(idxs)
+
+        indices = np.concatenate((first_indices, second_indices))
+        loads = np.hstack((first_loads, second_loads))
+        lv = self.arbitrary_loading_vector(indices=indices, loads=loads)
+        return lv
 
     def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = True, ) -> tuple[np.array, ...]:
         '''
@@ -364,6 +434,7 @@ class mrsSquare(FEM_Solve):
 
 
 if __name__ == "__main__":
+    '''
     config={'wing_layer_indices': [0,1,],
             'wing_lifts': [.5e6, .5e6, 4e6,  .5e6, .5e6, .5e6],
             'wing_moments': [1e6, 1e6, 1e6, 1e6, 1e6, 1e6],
@@ -373,6 +444,17 @@ if __name__ == "__main__":
             'M_RNA': 10310.8,
             'max_alpha_ccwp': 0.,
             }
+    '''
+    # Cm = 0.486
+    config = {'wing_layer_indices': [4, 8, 12],
+              'wing_lifts': [1.37e6, 1.42e6, 3.7e6],
+              'wing_moments': [0,0,0],
+              'wing_drags': [.1*1.37e6, .1*1.42e6, .1*3.7e6],
+              'T_per_rotor': [150e3, 150e3],
+              'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
+              'M_RNA': 10310.8,
+              'max_alpha_ccwp': 0.,
+              }
 
     'material and section definitions'
     steel = Material()
@@ -383,8 +465,11 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
-    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
+    #hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
+
+    sq = Square_Truss(depth=55)
+    XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = sq.function()
 
     'initialise mesh'
     MESH = Mesh(XYZ_coords=XYZ_coords, member_indices=member_indices, section_ids=section_indices,
@@ -393,8 +478,8 @@ if __name__ == "__main__":
     'initialise solver'
     config['truss'] = hex
 
-    SOLVER = MRShex(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
-                       applied_loads=applied_loads, truss_config=config,)
+    SOLVER = mrsSquare(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
+                       applied_loads=applied_loads, truss_config=config, )
 
     print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
     'Initialise optimiser'

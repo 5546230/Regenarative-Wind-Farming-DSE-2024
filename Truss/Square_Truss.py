@@ -285,3 +285,4 @@ class Square_Truss(Geometry_Definition):
 
 if __name__ == "__main__":
     truss = Square_Truss(n_layers=12)
+    print(truss.find_bottom_indices())
