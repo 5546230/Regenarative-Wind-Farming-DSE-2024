@@ -247,8 +247,15 @@ def plot_parallelogram_and_points(parallelogram, x_coords, y_coords):
     parallelogram_path = np.vstack([parallelogram, parallelogram[0]])  # Close the loop
     plt.fill(parallelogram_path[:, 0], parallelogram_path[:, 1], 'b', alpha=0.5)
     
+
     # Plot the points
     plt.scatter(x_coords, y_coords, c='red', marker='o')
+
+    # Add North reference
+    plt.annotate('N', xy=(2, 25), xytext=(2, 23),
+                 arrowprops=dict(facecolor='black', shrink=0.05, width=0.5, headwidth=4, headlength=6),
+                 fontsize=12, ha='center', va='bottom')
+    
     plt.title("Windfarm Optimised Layout - Lagelander")
     plt.xlabel("x")
     plt.ylabel("y")
