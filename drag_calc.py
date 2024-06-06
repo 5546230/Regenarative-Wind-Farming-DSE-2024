@@ -71,7 +71,7 @@ class Drag():
     def placeholder(self, l, d):
         _, D_c = self.compute_CD_front()
         
-        D = D_c/(self.n_diag1+self.n_diag2+self.n_hor1+self.n_hor2+self.n_hor3+self.n_vert)/np.average(self.L_diag1+self.L_diag2+self.L_hor1+self.L_hor2+self.L_hor3+self.L_vert)
+        D = D_c/(self.n_diag1+self.n_diag2+self.n_hor1+self.n_hor2+self.n_hor3+self.n_vert)/np.average(self.L_diag1+self.L_diag2+self.L_hor1+self.L_hor2+self.L_hor3+self.L_vert)*l*d
         return D
 
 
