@@ -47,8 +47,8 @@ class MRShex(FEM_Solve):
         :return: indices of unique nodes lying at hexagon centers, front side
         '''
         truss = self.truss
-        xs = truss.half_hex_positions[:, 0]
-        zs = truss.half_hex_positions[:, 1]
+        xs = truss.hex_positions[:, 0]
+        zs = truss.hex_positions[:, 1]
         ys = np.ones_like(xs) * np.min(self.mesh.Y_coords)
         if side == 'back':
             ys += truss.depth
@@ -246,6 +246,9 @@ class mrsSquare(FEM_Solve):
         self.n_per_col = 13
         self.n_per_row = 17
 
+        self.rotor_loading = self.get_rotor_loading()
+        self.afc_loading = self.get_AFC_loading()
+
     def get_xz_plane_indices(self, y: float = 0, tolerance = 0.01):
         c_indices = np.where(np.abs(self.mesh.Y_coords - y) < tolerance)[0]
         return c_indices
@@ -299,28 +302,29 @@ class mrsSquare(FEM_Solve):
         '''
         :return: AFC force loading vector
         '''
-        # TODO
-        #bottom_indices = self.truss.find_bottom_indices()
-        #afs_layers = [4, 8, 12]
 
         AFC_top_back = np.array(range(12, 221, 13))
         AFC_top_front = np.array(range(233, 442, 13))
-        #print(AFC_top_back.shape)
         total_top_indices = np.concatenate((AFC_top_back, AFC_top_front))
-        #print(total_top_indices.shape)
-        top_front_load = np.array([[-self.drag_per_wing[2]],[0],[-self.lift_per_wing[2]]])*np.ones((3,AFC_top_front.size))
+        top_front_load = np.array([[-self.drag_per_wing[2]/total_top_indices.size],
+                                   [0],
+                                   [-self.lift_per_wing[2]/total_top_indices.size]])*np.ones((3,AFC_top_front.size))
         top_back_load = top_front_load
 
         AFC_middle_back = np.array(range(8, 217, 13))
         AFC_middle_front = np.array(range(229, 438, 13))
         total_middle_indices = np.concatenate((AFC_middle_back, AFC_middle_front))
-        middle_front_load = np.array([[-self.drag_per_wing[1]], [0], [-self.lift_per_wing[1]]])*np.ones((3,AFC_top_front.size))
+        middle_front_load = np.array([[-self.drag_per_wing[1]/total_middle_indices.size],
+                                      [0],
+                                      [-self.lift_per_wing[1]/total_middle_indices.size]])*np.ones((3,AFC_top_front.size))
         middle_back_load = middle_front_load
 
         AFC_bottom_back = np.array(range(4, 221, 13))
         AFC_bottom_front = np.array(range(225, 434, 13))
         total_bottom_indices = np.concatenate((AFC_bottom_back, AFC_bottom_front))
-        bottom_front_load = np.array([[-self.drag_per_wing[0]], [0], [-self.lift_per_wing[0]]])*np.ones((3,AFC_top_front.size))
+        bottom_front_load = np.array([[-self.drag_per_wing[0]/total_bottom_indices.size],
+                                      [0],
+                                      [-self.lift_per_wing[0]/total_bottom_indices.size]])*np.ones((3,AFC_top_front.size))
         bottom_back_load = bottom_front_load
 
         indices = np.concatenate((total_top_indices, total_middle_indices, total_bottom_indices))
@@ -342,8 +346,8 @@ class mrsSquare(FEM_Solve):
         nodal_load = np.array([[-self.T_per_rotor], [0], [-W_per_rotor]])
 
         'first rotor staggering:'
-        first_idxs = np.array([1,14,222,255])
-        first_col_skip = np.array([0, 6, 5, 6])
+        first_idxs = np.array([1,14,222,235])
+        first_col_skip = np.array([0, 6, 9, 15])
         first_row_skip = 2*np.arange(6)
 
         idxs = []
@@ -361,7 +365,7 @@ class mrsSquare(FEM_Solve):
 
         'second rotor staggering:'
         second_idxs = np.array([41, 54, 262, 275])
-        second_col_skip = np.array([11, ])
+        second_col_skip = np.array([0,9, ])
         second_row_skip = 2*np.arange(5)
 
         idxs = []
@@ -381,14 +385,15 @@ class mrsSquare(FEM_Solve):
         lv = self.arbitrary_loading_vector(indices=indices, loads=loads)
         return lv
 
-    def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = True, ) -> tuple[np.array, ...]:
+    def solve_system(self, factor=1, include_self_load: bool = False, plot: bool = False, ) -> tuple[np.array, ...]:
         '''
         :param factor: scaling factor to visualise displacements
         :param plot: bool, plot results
         :return: [-]
         '''
         S = self.assemble_global_stiffness()
-        P = self.assemble_loading_vector() + self.get_rotor_loading() + self.get_drag_loading() + self.get_AFC_loading()
+        P = self.assemble_loading_vector()  + self.get_drag_loading() +self.afc_loading+self.rotor_loading
+        #+ self.get_AFC_loading()+ self.get_rotor_loading()
         if include_self_load:
             P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
@@ -408,7 +413,7 @@ class mrsSquare(FEM_Solve):
         element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
         if plot:
             self.plot_displacements(X, Y, Z)
-            self.plot_stresses(X, Y, Z, element_sigmas / factor)
+            #self.plot_stresses(X, Y, Z, element_sigmas / factor)
         return d, element_Qs, element_sigmas, reactions
 
     def calc_moment_of_inertia_Z(self):
@@ -465,10 +470,10 @@ if __name__ == "__main__":
     section_library = [standard_section, standard_section, standard_section, standard_section]
 
     # hex = sizing_truss(Hexagonal_Truss(n_rotors = 3, r_per_rotor = 40.1079757687/2*1.05, spacing_factor=1, verbose=False, depth=25))
-    #hex = Hexagonal_Truss(n_rotors=8, r_per_rotor=39.69 / 2 * 1.05, spacing_factor=1, verbose=False, depth=35)
+    #hex = Hexagonal_Truss(n_rotors=33, r_per_rotor=30.38 * 1.05, spacing_factor=1, verbose=False, depth=35)
     #XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = hex.function()
 
-    sq = Square_Truss(depth=55)
+    sq = Square_Truss(depth=50, verbose=False)
     XYZ_coords, member_indices, section_indices, material_indices, bc_indices, bc_constraints, load_indices, applied_loads = sq.function()
 
     'initialise mesh'
@@ -476,7 +481,7 @@ if __name__ == "__main__":
                 material_ids=material_indices, materials=material_library, sections=section_library)
 
     'initialise solver'
-    config['truss'] = hex
+    config['truss'] = sq
 
     SOLVER = mrsSquare(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
                        applied_loads=applied_loads, truss_config=config, )

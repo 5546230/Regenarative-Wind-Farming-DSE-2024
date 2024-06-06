@@ -86,7 +86,7 @@ class Optimizer:
         'initialise mesh'
         m = self.mesh
         s = self.solver
-        m.plot_structure()
+        #m.plot_structure()
 
         'collect element properties'
         Es = m.element_Es

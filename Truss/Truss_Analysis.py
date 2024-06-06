@@ -420,6 +420,7 @@ class FEM_Solve:
             Y = Yp[self.load_indices[i]]
             Z = Zp[self.load_indices[i]]
             ax.quiver(X, Y, Z, [F[0]/5e4, 0, 0], [0, F[1]/5e4, 0], [0, 0, F[2]/5e4],)
+        ax.set_aspect('equal')
         plt.show()
 
     def plot_stresses(self, Xp, Yp, Zp, sigmas)->None:

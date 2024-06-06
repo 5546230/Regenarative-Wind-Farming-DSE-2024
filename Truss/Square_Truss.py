@@ -129,8 +129,8 @@ class Square_Truss(Geometry_Definition):
 
         if verbose:
             print(f'Unique indices: {unique_indices}')
-            print(f'number of nodes before = {node_indices_left.shape[0]}')
-            print(f'number of edges before = {(left_connectivity).shape[1]}')
+            print(f'number of nodes before = {node_indices.shape[0]}')
+            print(f'number of edges before = {connectivity.shape[1]}')
             print('----------------------------------------------------------')
             print(f'\nnumber of nodes after = {unique_nodes.shape[0]}')
             print(f'number of edges after = {unique_edges.shape[1]}')
@@ -147,10 +147,11 @@ class Square_Truss(Geometry_Definition):
 
         self.plot_structure(show=True)
         super().__init__()
-        for i in range(n_rotors):
-            plt.plot(self.half_hex_positions[i][0], self.half_hex_positions[i][1], marker='o', color='red')
-        plt.show()
-        self.plot_circles(positions=self.half_hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
+        if verbose:
+            for i in range(n_rotors):
+                plt.plot(self.half_hex_positions[i][0], self.half_hex_positions[i][1], marker='o', color='red')
+            plt.show()
+            self.plot_circles(positions=self.half_hex_positions, width=self.hex_width, height=self.hex_height, title="Hexagonal Layout")
 
     def __str__(self):
         return f'Square Truss: N_rotors={self.n_rotors*2}, r_rotor={self.r_rot:.3f} [m], depth={self.depth:.3f} [m]'
@@ -228,7 +229,7 @@ class Square_Truss(Geometry_Definition):
 
     def plot_structure(self, show: bool = True)->None:
         '3d plot of nodes and members'
-        fig = plt.figure(figsize=(20,20), layout='constrained')
+        fig = plt.figure(figsize=(8,8), layout='constrained')
         ax = fig.add_subplot(projection='3d')
         ax.set_xlabel('X [m]')
         ax.set_ylabel('Y [m]')
@@ -250,13 +251,13 @@ class Square_Truss(Geometry_Definition):
             Zs = Z[member_ends]
             plt.plot(Xs, Ys, Zs, color='k', linewidth=.5)
 
-        avgy = np.average(Y)
-        avgx = np.average(X)
-        diff = np.max([np.max(X)-np.min(X), np.max(Y)-np.min(Y), np.max(Z)-np.min(Z)])
-        ax.set_ylim([avgy-diff/2, avgy+diff/2])
-        ax.set_xlim([avgx-diff/2, avgx+diff/2])
-        ax.set_zlim([0, diff])
-
+        #avgy = np.average(Y)
+        #avgx = np.average(X)
+        #diff = np.max([np.max(X)-np.min(X), np.max(Y)-np.min(Y), np.max(Z)-np.min(Z)])
+        #ax.set_ylim([avgy-diff/2, avgy+diff/2])
+        #ax.set_xlim([avgx-diff/2, avgx+diff/2])
+        #ax.set_zlim([0, diff])
+        ax.set_aspect('equal')
         #ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
         ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
         if show:
