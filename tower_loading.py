@@ -5,9 +5,9 @@ from drag_calc import Drag
 
 class Loads():
 
-    def __init__(self, tower_mass, truss_mass, nacelle_mass, truss_h, truss_depth, w_clearance, w_depth, M_base, D_grid):
+    def __init__(self, tower_mass, truss_mass, nacelle_mass, truss_h, truss_depth, w_clearance, D_grid):
 
-        self.M_wave = M_base
+        
         self.tower_mass = tower_mass
         self.truss_mass = truss_mass
         self.n_mass = nacelle_mass
@@ -31,9 +31,9 @@ class Loads():
     
 class Tower():
 
-    def __init__(self, D, t, w_clearance, M_applied, F_applied, w_depth, mat_E, mat_yield):
+    def __init__(self, t, w_clearance, M_applied, F_applied, w_depth, mat_E, mat_yield):
 
-        self.D = D
+        
         self.t = t
         self.rho  = 7850
         self.L = w_clearance+w_depth
@@ -42,27 +42,27 @@ class Tower():
         self.E = mat_E
         self.sy = mat_yield
 
-    def calc_area(self):
+    def calc_area(self, D):
 
-        return np.pi*self.D*self.t
+        return np.pi*D*self.t
     
-    def calc_mass(self):
-        return self.calc_area()*self.L*self.rho
+    def calc_mass(self, D):
+        return self.calc_area(D)*0.1*self.rho
     
-    def calc_Ixx(self):
-        return np.pi*((self.D/2)**3)*self.t
+    def calc_Ixx(self, D):
+        return np.pi*((D/2)**3)*self.t
     
-    def calc_comp_stress_bending(self):
-        return self.M*(self.D/2)/self.calc_Ixx()
+    def calc_comp_stress_bending(self, D):
+        return self.M*(D/2)/self.calc_Ixx(D)
     
-    def calc_comp_stress_f(self):
-        return self.F/self.calc_area()
+    def calc_comp_stress_f(self, D):
+        return self.F/self.calc_area(D)
     
-    def calc_comp_stress(self):
-        return self.calc_comp_stress_bending()+self.calc_comp_stress_f()
+    def calc_comp_stress(self, D):
+        return self.calc_comp_stress_bending(D)+self.calc_comp_stress_f(D)
     
-    def comp_buckling_stress(self):
-        return 0.25*self.E*self.calc_Ixx()*(np.pi**2)/(self.L**2)/self.calc_area()
+    def comp_buckling_stress(self,D):
+        return 0.25*self.E*self.calc_Ixx(D)*(np.pi**2)/(0.1**2)/self.calc_area(D)
     
 class Internal_loads():
     def __init__(self, F_wave, D_truss, F_comp, M_truss, M_thrust, M_afc, thrust, water_depth, z):
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
 
     
-    load = Loads(tower_mass= 2235959.595, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base, D_grid=D_grid)
+    load = Loads(tower_mass= 2235959.595, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, D_grid=D_grid)
     
     M_afc, M_truss, M_thrust = load.moments()
 
@@ -131,70 +131,109 @@ if __name__ == "__main__":
     print(M_base+M_afc+M_thrust+M_truss)
     print(F_comp*1e-6)
     
-    int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc, thrust = 3.945e6, water_depth= 25, z = z)
+    int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc+67e6, thrust = 3.945e6, water_depth= 25, z = z)
     Vy = int_loads.int_shear()
     Mx = int_loads.int_moment()
-    tower = Tower(D=8.5, t = 0.05, w_clearance=25, M_applied=Mx[0], F_applied=F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
-    #plt.plot(Vy, z)
-    plt.plot(Mx, z)
-    plt.show()
-    print(Mx[0])
     
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    ax1.plot(Vy, z)
+    ax1.set_title("Internal Shear Force [N]")
+    ax1.set_xlabel(r'Shear Force $V_y$ [N]')
+    ax1.set_ylabel(r'Position along the tower [m]')
+    ax2.plot(Mx, z)
+    ax2.set_title("Internal Bending Moment [Nm]")
+    ax2.set_xlabel(r'Bending Moment $M_x$ [Nm]')
+    ax2.set_ylabel(r'Position along the tower [m]')
+    plt.show()  
 
-
-
-    tower_stress = tower.calc_comp_stress()
-    buckling = tower.comp_buckling_stress()
-    D_it = 8.5
+    tower = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[0], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+    D_dist  = np.ones(len(z))*8
+    
     t_it = 0.05
-    mass = tower.calc_mass()
+    mass = np.sum(tower.calc_mass(D_dist))
     print(f'Original mass: {mass}')
-    while tower_stress > np.minimum(buckling, tower.sy):
-        D_it1 = D_it+0.001
 
-        wave1 = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = D_it1, CM = 1.7, CD= 0.6, mu = 1.3e-3)
+    for i in range(len(D_dist)):
+        D_it1 = D_dist[i]
+        tower_it = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[i], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+        tower_stress = tower_it.calc_comp_stress(D=D_dist[i])
+        buckling = tower_it.comp_buckling_stress(D=D_dist[i])
+        mass = np.sum(tower_it.calc_mass(D_dist[i]))
 
-        z = np.arange(-wave1.water_depth, 0, 0.1)
-        t = np.arange(0, 1000, 5)
-        F_dist=[]
-        avg=0
-        avg_lst=[]
-        for i in t:
-
-            F = wave1.compute_Morison(z, i)
-            F_dist.append(F)
-            avg = np.average(F)
-            avg_lst.append(avg)
-
-        F_dist = np.array(F_dist)
-        avg = np.array(avg_lst)
-        max_idx = np.argmax(avg)
-
-        F_dist_max = F_dist[max_idx]
-
-        M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
-        #t_it += 0.001
-        load1 = Loads(tower_mass= mass, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, w_depth=wave.water_depth, M_base=M_base, D_grid=D_grid)
-    
-        M_afc, M_truss, M_thrust = load1.moments()
-
-        F_comp = load1.comp_force()
-
-        tower_it = Tower(D=D_it1, t = t_it, w_clearance=25, M_applied=1.4*(M_base+M_afc+M_thrust+M_truss), F_applied=1.4*(F_comp), w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
-        tower_stress = tower_it.calc_comp_stress()
-        buckling = tower_it.comp_buckling_stress()
-        mass = tower_it.calc_mass()
-        D_it = D_it1
-
-        
-
-        
+        print(i/len(D_dist))
+        while tower_stress > np.minimum(buckling, tower_it.sy):
             
-        
-    print(f'Final mass:{mass}')
-    print(f'Final Diameter: {D_it}')
-    print(f'thickness: {t_it}')
+            D_it1 += 0.01
+            tower_stress = tower_it.calc_comp_stress(D_it1)
+            
+            #buckling = tower_it.comp_buckling_stress(D_it1)
+            
+            '''wave1 = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = D_it1, CM = 1.7, CD= 0.6, mu = 1.3e-3)
 
+            z = np.arange(-wave1.water_depth, 0, 0.1)
+            t = np.arange(0, 1000, 5)
+            F_dist=[]
+            avg=0
+            avg_lst=[]
+            for j in t:
+
+                F = wave1.compute_Morison(z, j)
+                F_dist.append(F)
+                avg = np.average(F)
+                avg_lst.append(avg)
+
+            F_dist = np.array(F_dist)
+            avg = np.array(avg_lst)
+            max_idx = np.argmax(avg)
+
+            F_dist_max = F_dist[max_idx]
+
+            
+            #t_it += 0.001'''
+           
+            
+
+
+            
+            
+        D_dist[i] = D_it1
+
+    coef = np.polyfit(D_dist/2, z, deg = 3)
+    z_fit1 = np.poly1d(coef)
+    z_fitted1 = z_fit1(D_dist/2)
+
+    coef2 = np.polyfit(-D_dist/2, z, deg = 3)
+    z_fit2 = np.poly1d(coef2)
+    z_fitted2 = z_fit2(-D_dist/2)
+        
+    #plt.plot(-D_dist/2, z, color = 'b')
+    #plt.plot(D_dist/2, z, color = 'b')
+    plt.plot(D_dist/2, z_fitted1, color = 'g')
+    plt.plot(-D_dist/2, z_fitted2, color = 'g')
+    plt.title("Monopile Sizing, thickness 5mm")
+    plt.xlabel(r"Monopile Diameter [m] ")
+    plt.ylabel(r'Position along the monopile [m]')
+
+
+    
+    plt.axis('equal')
+    plt.show()
+
+    mass = np.sum(tower.calc_mass(D_dist))
+    mass_inop = tower.calc_mass(D_dist[0])*len(D_dist)
+    print(f'Optimised mass: {mass}')
+    print(f'Unoptimised mass: {mass_inop}')
+    print(f'Mass savings: {mass_inop-mass}')
+    print(D_dist[0])
+    print(D_dist[-1])
+
+            
+
+            
+                
+            
+    
 
     
 
