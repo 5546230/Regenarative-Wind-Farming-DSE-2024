@@ -6,7 +6,7 @@
 2 cylinders length: 26.7m, diameter: 1m
 2 cylinders projected length: 44m, diameter: 1m
 '''
-
+import numpy as np
 class Drag():
     def __init__(self, V, rho, D_truss):
 
@@ -26,6 +26,12 @@ class Drag():
         self.n_diag1 = 12*4*8
         self.L_diag2 = 20.449 
         self.n_diag2 = 12*4*2
+
+
+
+        self.L_side1 = 50
+        self.L_side2 = 30.38
+        self.L_side3 = np.sqrt(self.L_side1**2+self.L_side2**2)
         self.D = D_truss
         self.A1 = self.L1/self.D
         self.A2 = self.L2/self.D
@@ -45,7 +51,7 @@ class Drag():
 
         return self.D * self.V * self.rho/mu
     
-    def compute_CD(self):
+    def compute_CD_front(self):
 
         CD1 = self.kappa1 * self.CD_inf
         CD2 = self.kappa2 * self.CD_inf
@@ -57,9 +63,13 @@ class Drag():
                                                    (self.n_hor2*self.L_hor2)*CD3)
         D_c = D/self.D
         return D, D_c
+    
+    def compute_D_side(self):
+        D = 0.5 * self.rho* (self.V**2)* self.D * (0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*self.n_vert*self.L_vert)
+        return D
 
     def placeholder(self, d):
-        _, D_c = self.compute_CD()
+        _, D_c = self.compute_CD_front()
         
         D = D_c*d
         return D
@@ -71,10 +81,11 @@ if __name__ == "__main__":
     mu = 1.8e-5
     rho = 1.225
     Re = drag.compute_Reynolds(mu)
-    d = drag.placeholder(1)qw
+    d = drag.placeholder(1)
     print(d)
 
-    D_grid, _ = drag.compute_CD()
+    D_grid, _ = drag.compute_CD_front()
     print(D_grid)
+    print(drag.compute_D_side())
 
     print(Re)
