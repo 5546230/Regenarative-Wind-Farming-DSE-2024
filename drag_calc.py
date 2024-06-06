@@ -68,20 +68,20 @@ class Drag():
         D = 0.5 * self.rho* (self.V**2)* self.D * (0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*self.n_vert*self.L_vert)
         return D
 
-    def placeholder(self, d):
+    def placeholder(self, l, d):
         _, D_c = self.compute_CD_front()
         
-        D = D_c*d
+        D = D_c/(self.n_diag1+self.n_diag2+self.n_hor1+self.n_hor2+self.n_hor3+self.n_vert)/np.average(self.L_diag1+self.L_diag2+self.L_hor1+self.L_hor2+self.L_hor3+self.L_vert)
         return D
 
 
 
 if __name__ == "__main__":
-    drag = Drag(66, 1.225, 1)
+    drag = Drag(10.59, 1.225, 1)
     mu = 1.8e-5
     rho = 1.225
     Re = drag.compute_Reynolds(mu)
-    d = drag.placeholder(1)
+    d = drag.placeholder(1,1)
     print(d)
 
     D_grid, _ = drag.compute_CD_front()
