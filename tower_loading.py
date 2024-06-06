@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.3e-3)
     drag = Drag(V =13.5, rho=1.225, D_truss=1)
-    D_grid, _ = drag.compute_CD()
+    D_grid, _ = drag.compute_CD_front()
     print(D_grid)
     z = np.arange(-wave.water_depth, 0, 0.1)
     t = np.arange(0, 1000, 5)

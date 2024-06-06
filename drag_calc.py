@@ -65,7 +65,7 @@ class Drag():
         return D, D_c
     
     def compute_D_side(self):
-        D_d = 0.5 * self.rho* (self.V**2)*  (0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*self.n_vert*self.L_vert)
+        D_d = 0.5 * self.rho* (self.V**2)*  (0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*24*self.L_vert)
         return D_d
 
     def placeholder(self, l, d, type: str):
@@ -74,7 +74,7 @@ class Drag():
             D = D_c/(self.n_diag1+self.n_diag2+self.n_hor1+self.n_hor2+self.n_hor3+self.n_vert)/np.average(self.L_diag1+self.L_diag2+self.L_hor1+self.L_hor2+self.L_hor3+self.L_vert)*l*d
 
         else:
-            _, D_c = self.compute_CD_side()
+            D_c = self.compute_CD_side()
             D = D_c/(2*12+13+12)/np.average(self.L_side1+self.L_side2+self.L_side3)*l*d
 
         return D
