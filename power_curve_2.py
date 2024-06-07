@@ -69,16 +69,22 @@ U_array = np.linspace(0, 27, 350)
 # Calculate Power and Torque
 P_array = 0.5 * rho * CP * U_array ** 3 * np.pi * radius ** 2 * n_rotors
 Q_array = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (U_array * TSR / radius) ** 2
+CP_array = np.ones(len(U_array))*CP
 # T_array = 0.5*rho*CT*U_array**2*np.pi * radius**2*n_rotors
 # Apply cut-in, rated and cut-off constraints
 P_array[U_array < cut_in] = 0
 Q_array[U_array < cut_in] = 0
+CP_array[U_array<cut_in] = 0
 # T_array[U_array<cut_in] = 0
 Q_array[P_array > P_RATED] = Q_array[P_array > P_RATED][0]
+CP_array[P_array>P_RATED] = P_RATED/(0.5*rho*U_array[P_array>P_RATED]**3*np.pi*radius**2*n_rotors)
+CP1_array = CP_array
 # T_array[P_array > P_RATED] = P_RATED / U_array
 P_array[P_array > P_RATED] = P_RATED
 P_array[U_array > cut_off] = 0
 Q_array[U_array > cut_off] = 0
+CP_array[U_array > cut_off] = 0
+
 
 P_array /= 1e6
 Q_array /= 1e3
@@ -102,6 +108,49 @@ plt.tight_layout()
 plt.savefig('power_torque_curves.svg', format='svg')
 plt.show()
 
+
+plt.plot(U_array, CP_array, label='CP with varying speeds', color='red')
+plt.legend()
+plt.xlabel('Uinf')
+plt.ylabel('CP')
+plt.title('CP with varying speeds')
+plt.show()
+import pickle
+with open('interpolated_function.pkl', 'rb') as f:
+    loaded_interp_function = pickle.load(f)
+
+CT_array = []
+# from scipy.optimize import fsolve
+# for ix in range(len(U_array)):
+#     desired_CP = CP_array[ix]
+#     def equation(x):
+#         return loaded_interp_function(x) - desired_CP
+#     # Use fsolve to find the root
+#     initial_guess = inps.pitch  # Initial guess for the root
+#     pitch_necessary = fsolve(equation, initial_guess)
+#     CP_graph, CT_graph = BEM.BEMsolver_ale(pitch_necessary)
+#     CT_array.append(CT_graph)
+
+# for ix in range(len(CP1_array)):
+#     x_data1 = np.arange(-10,25,1)
+#     # y_data = CTglauert*(1-a)
+#     y_data1 = loaded_interp_function(x_data1)
+#     y_targets1 = CP1_array[ix]
+
+#     crossings1 = find_all_x_crossings(x_data1, y_data1, y_targets1)
+#     print(crossings1)
+#     # estimated_pitch = np.min(crossings1[y_targets1[0]])
+#     estimated_pitch = crossings1[y_targets1[0]]
+#     print(estimated_pitch)
+#     CP_graph, CT_graph = BEM.BEMsolver_ale(estimated_pitch)
+#     CT_array.append(CT_graph)
+# CT_array = np.array(CT_array)
+# plt.plot(U_array, CT_array, label='CT with varying speeds', color='red')
+# plt.legend()
+# plt.xlabel('Uinf')
+# plt.ylabel('CT')
+# plt.title('CT with varying speeds')
+# plt.show()
 
 T_RATED = CT*0.5*rho*V_RATED**2*AREA
 Q_RATED_perrotor = 0.5 * rho * CP * np.pi * radius ** 5 /(TSR ** 3) * (V_RATED * TSR / radius) ** 2

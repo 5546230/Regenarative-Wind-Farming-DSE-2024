@@ -51,17 +51,23 @@ with open('arrays.pkl', 'rb') as f:
     arrays = pickle.load(f)
 
 # Access the arrays
-array1, array2, array3, array4, array5, array6 = arrays
+array1, array15,array2,array25, array3,array35, array4,array45, array5,array55, array6 = arrays
 
 print("Arrays loaded successfully!")
 
 # Calculate the average of each 2x3 matrix
 speeds_height_1 = np.mean(array1, axis=(1, 2))
+speeds_height_15 = np.mean(array15, axis=(1, 2))
 speeds_height_2 = np.mean(array2, axis=(1, 2))
+speeds_height_25 = np.mean(array25, axis=(1, 2))
 speeds_height_3 = np.mean(array3, axis=(1, 2))
+speeds_height_35 = np.mean(array35, axis=(1, 2))
 speeds_height_4 = np.mean(array4, axis=(1, 2))
+speeds_height_45 = np.mean(array45, axis=(1, 2))
 speeds_height_5 = np.mean(array5, axis=(1, 2))
+speeds_height_55 = np.mean(array55, axis=(1, 2))
 speeds_height_6 = np.mean(array6, axis=(1, 2))
+
 
 t = np.arange(0, 8760, 1)
 
@@ -102,14 +108,14 @@ power_curve_086[power_curve_086 > 0.86*10**6] = 0.86*10**6
 power_curve_086[P.U_array > P.cut_off] = 0
 power_curve_086[P.U_array < P.cut_in] = 0
 power_function_5 = interp1d(P.U_array, power_curve_086, kind='linear', fill_value="extrapolate")  #0.86
-plt.plot(P.U_array, power_curve_084)
-plt.show()
-plt.plot(P.U_array, power_curve_097)
-plt.show()
-plt.plot(P.U_array, power_curve_076)
-plt.show()
-plt.plot(P.U_array, power_curve_086)
-plt.show()
+# plt.plot(P.U_array, power_curve_084)
+# plt.show()
+# plt.plot(P.U_array, power_curve_097)
+# plt.show()
+# plt.plot(P.U_array, power_curve_076)
+# plt.show()
+# plt.plot(P.U_array, power_curve_086)
+# plt.show()
 energy_3 = np.sum(power_function_4(speeds_height_1)*currentlayout[0]) + np.sum(power_function_5(speeds_height_2)*currentlayout[1])+ np.sum(power_function_5(speeds_height_3)*currentlayout[2])+ np.sum(power_function_3(speeds_height_4)*currentlayout[3])+ np.sum(power_function_3(speeds_height_5)*currentlayout[4])+ np.sum(power_function_3(speeds_height_6)*currentlayout[5])  #1,2,3 config
 installedpower3 = np.max(power_function_4(U_interp)*6)+np.max(power_function_5(U_interp)*(5+6))+np.max(power_function_3(U_interp)*(5+6+5))
 
@@ -121,8 +127,8 @@ power_2=energy_2/8760
 power_3 = energy_3/8760
 print(f'{power_1=},{power_2=},{power_3=}') 
 
-plt.plot(P.U_array, power_curve)
-plt.show()
+# plt.plot(P.U_array, power_curve)
+# plt.show()
 print(f'{installedpower1=},{installedpower2=},{installedpower3=}') 
 
 normalisedpower1 = power_1/installedpower1
@@ -135,6 +141,48 @@ increase21 = normalisedpower2/normalisedpower1-1
 increase31 = normalisedpower3/normalisedpower1-1
 print(f'{increase21=}, {increase31=}')
 
-averagewindspeed1 = np.max([arrays])
+averagewindspeed1 = np.average([speeds_height_1])
+averagewindspeed15 = np.average([speeds_height_15])
+averagewindspeed2 = np.average([speeds_height_2])
+averagewindspeed25 = np.average([speeds_height_25])
+averagewindspeed3 = np.average([speeds_height_3])
+averagewindspeed35 = np.average([speeds_height_35])
+averagewindspeed4 = np.average([speeds_height_4])
+averagewindspeed45 = np.average([speeds_height_45])
+averagewindspeed5 = np.average([speeds_height_5])
+averagewindspeed55 = np.average([speeds_height_55])
+averagewindspeed6 = np.average([speeds_height_6])
 
-print(f'{averagewindspeed1=}')
+print(f'{averagewindspeed6=}')
+# arr = np.array([1, 3, 5, 7, 9])
+count = np.sum(speeds_height_6 > 12)
+count_percentage = count/8760
+print(f'{count_percentage=}')
+
+print(P.CT)
+AREA = P.AREA/P.n_rotors
+thrust1 = P.CT*0.5*P.rho*averagewindspeed1**2*AREA
+thrust15 = P.CT*0.5*P.rho*averagewindspeed15**2*AREA
+thrust2 = P.CT*0.5*P.rho*averagewindspeed2**2*AREA
+thrust25 = P.CT*0.5*P.rho*averagewindspeed25**2*AREA
+thrust3 = P.CT*0.5*P.rho*averagewindspeed3**2*AREA
+thrust35 = P.CT*0.5*P.rho*averagewindspeed35**2*AREA
+thrust4 = P.CT*0.5*P.rho*averagewindspeed4**2*AREA
+thrust45 = P.CT*0.5*P.rho*averagewindspeed45**2*AREA
+thrust5 = P.CT*0.5*P.rho*averagewindspeed5**2*AREA
+thrust55 = P.CT*0.5*P.rho*averagewindspeed55**2*AREA
+thrust6 = P.CT*0.5*P.rho*averagewindspeed6**2*AREA
+print(f'{thrust1=},{thrust15=},{thrust2=},{thrust25=},{thrust3=},{thrust35=},{thrust4=},{thrust45=},{thrust5=},{thrust55=},{thrust6=},')
+# CT_1 = P.BEM.BEMspeedpotter(speeds_height_1)
+# CT_15 = P.BEM.BEMspeedplotter(speeds_height_15)
+# CT_2 = P.BEM.BEMspeedplotter(speeds_height_2)
+# CT_25 = P.BEM.BEMspeedplotter(speeds_height_25)
+# CT_3 = P.BEM.BEMspeedplotter(speeds_height_3)
+# CT_35 = P.BEM.BEMspeedplotter(speeds_height_35)
+# CT_4 = P.BEM.BEMspeedplotter(speeds_height_4)
+# CT_45 = P.BEM.BEMspeedplotter(speeds_height_45)
+# CT_5 = P.BEM.BEMspeedplotter(speeds_height_5)
+# CT_55 = P.BEM.BEMspeedplotter(speeds_height_55)
+# CT_6 = P.BEM.BEMspeedplotter(speeds_height_6)
+
+# print(f'{speeds_height_1=},{speeds_height_15=},{speeds_height_2=},{speeds_height_25=},{speeds_height_3=},{speeds_height_35=},{speeds_height_4=},{speeds_height_45=},{speeds_height_5=},{speeds_height_55=},{speeds_height_6=},')

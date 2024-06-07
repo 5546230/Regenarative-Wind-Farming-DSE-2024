@@ -275,6 +275,25 @@ Omega = Uinf*TSR/Radius
 #solving the BEM
 BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
 CP,CT = BEM.CPCT()
+
+def BEMspeedplotter(Uinf):
+    BEM = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+    CP,CT = BEM.CPCT()
+    return CP, CT
+if inps.CT_plot:
+    Uinfinities = np.arange(25)
+    CT_list = []
+    for ix in range(len(Uinfinities)):
+        BEM_thrust_plot =  BEMsolver(Uinfinities[ix], Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
+        CP_t, CT_t = BEM_thrust_plot.CPCT()
+        CT_list.append(CT_t)
+    CT_list = np.array(CT_list)
+    plt.scatter(Uinfinities, CT_list, label='CT with varying speeds', color='red')
+    plt.legend()
+    plt.xlabel('Uinf')
+    plt.ylabel('CT')
+    plt.title('CT with varying speeds')
+    plt.show()
 print(f'{CT=},{CP=}')
 #estimating the total induction
 a_total = BEM.ainduction(CT)
@@ -291,14 +310,15 @@ def BEMsolver_ale(pitch):
     chord_distribution, twist_distribution = blade_ale.getChordTwist()
     BEM_ale = BEMsolver(Uinf, Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
     CP,CT = BEM_ale.CPCT()
-    return CT
+    return CP, CT
 
 #plots the above function
 if inps.ale_shit_2:
     pitch_ales = np.arange(-10,25,1)
     CT_ales = []
     for i in range(len(pitch_ales)):
-        CT_ales.append(BEMsolver_ale(pitch_ales[i]))
+        cpcp, ctct = BEMsolver_ale(pitch_ales[i])
+        CT_ales.append(ctct)
 
     CT_ales = np.array(CT_ales)
     #print(CT_ales)
@@ -340,4 +360,6 @@ if inps.printReynolds:
     reynolds_mid = Reynoldsnumber(root_boundary_R,mid_boundary_R)
     reynolds_tip = Reynoldsnumber(mid_boundary_R, 1)
     print(f'{reynolds_root=}, {reynolds_mid=}, {reynolds_tip=}')
-    
+
+
+
