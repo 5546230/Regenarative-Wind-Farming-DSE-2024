@@ -354,6 +354,7 @@ if inps.ale_shit_2:
     plt.xlabel('pitch')
     plt.ylabel('CT , CP')
     plt.title('Interpolation of CT and CP')
+    plt.grid()
     plt.show()
 
     import pickle

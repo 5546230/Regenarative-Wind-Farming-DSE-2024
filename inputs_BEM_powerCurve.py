@@ -17,7 +17,7 @@ root_twist = -8.379364994929379#-14
 optimize = False    #optimize blade geometry (pitch, twist, chords)
 assumed_CP = 0.47  
 ale_shit = False   #something bc alessandro wanted CT(TSR, pitch)
-ale_shit_2 = False
+ale_shit_2 = True
 printReynolds = False
 CT_plot = False
 
