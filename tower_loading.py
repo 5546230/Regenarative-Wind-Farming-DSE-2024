@@ -13,8 +13,8 @@ class Loads():
         self.n_mass = nacelle_mass
         self.T_rated = 3.945e6
         self.D_truss = D_grid
-        self.L_afc = 5e6
-        self.D_afc = 5e5
+        self.L_afc = 6.5e6
+        self.D_afc = 1.6e6
         self.h = truss_h/2+w_clearance
         self.d = truss_depth
         self.g = 9.80665
@@ -61,8 +61,14 @@ class Tower():
     def calc_comp_stress(self, D):
         return self.calc_comp_stress_bending(D)+self.calc_comp_stress_f(D)
     
-    def comp_buckling_stress(self,D):
-        return 0.25*self.E*self.calc_Ixx(D)*(np.pi**2)/(0.1**2)/self.calc_area(D)
+    def comp_local_buckling_stress(self,D):
+        return self.E*self.t/(0.5*D*np.sqrt(3*(1-0.3)))
+    
+    def comp_global_buckling_stress(self, D):
+        return 0.25*self.E*self.calc_Ixx(D)*(np.pi**2)/(self.L**2)/self.calc_area(D)
+    
+    def comp_eig_freq(self, D, m_truss, m_RNA, m_tower):
+        return 1/(2*np.pi)*np.sqrt((3*self.E*self.calc_Ixx(D))/((self.L**3)*(m_truss+m_RNA+33/144*m_tower)))
     
 class Internal_loads():
     def __init__(self, F_wave, D_truss, F_comp, M_truss, M_thrust, M_afc, thrust, water_depth, z):
@@ -97,8 +103,8 @@ class Internal_loads():
 
 if __name__ == "__main__":
 
-    wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.3e-3)
-    drag = Drag(V =13.5, rho=1.225, D_truss=1)
+    wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 16.76, CM = 1.7, CD= 0.6, mu = 1.3e-3)
+    drag = Drag(V =25, rho=1.225, D_truss=1)
     D_grid, _ = drag.compute_CD_front()
     print(D_grid)
     z = np.arange(-wave.water_depth, 0, 0.1)
@@ -119,19 +125,19 @@ if __name__ == "__main__":
 
     F_dist_max = F_dist[max_idx]
 
-    M_base= np.sum((wave.water_depth+z)*F_dist_max*0.2)
+ 
 
     
-    load = Loads(tower_mass= 2235959.595, truss_mass=7000000, nacelle_mass=2602578.544, truss_depth=25, truss_h= 215, w_clearance=25, D_grid=D_grid)
+    load = Loads(tower_mass= 282879.7624840617, truss_mass=6019e3, nacelle_mass=2602578.544, truss_depth=25, truss_h= 364.5, w_clearance=25, D_grid=D_grid)
     
     M_afc, M_truss, M_thrust = load.moments()
 
     F_comp = load.comp_force()
     
-    print(M_base+M_afc+M_thrust+M_truss)
+    print(M_afc+M_thrust+M_truss)
     print(F_comp*1e-6)
     
-    int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc+67e6, thrust = 3.945e6, water_depth= 25, z = z)
+    int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc+50e6, thrust = 4.8e6, water_depth= 25, z = z)
     Vy = int_loads.int_shear()
     Mx = int_loads.int_moment()
     
@@ -149,25 +155,30 @@ if __name__ == "__main__":
 
     tower = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[0], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
     D_dist  = np.ones(len(z))*8
-    
-    t_it = 0.05
+    t_dist = np.zeros(len(z))
+    print(Mx[0])
+    D_t = 120
     mass = np.sum(tower.calc_mass(D_dist))
     print(f'Original mass: {mass}')
+    sigma_crit = tower.comp_local_buckling_stress(D_dist)
 
+    sigma_internal = np.zeros(len(z))
     for i in range(len(D_dist)):
         D_it1 = D_dist[i]
-        tower_it = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[i], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+        tower_it = Tower(t = D_it1/D_t, w_clearance=25, M_applied=1.35*Mx[i], F_applied=1.35* F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
         tower_stress = tower_it.calc_comp_stress(D=D_dist[i])
-        buckling = tower_it.comp_buckling_stress(D=D_dist[i])
+        sigma_crit = tower_it.comp_local_buckling_stress(D_it1)
         mass = np.sum(tower_it.calc_mass(D_dist[i]))
+        
 
-        print(i/len(D_dist))
-        while tower_stress > np.minimum(buckling, tower_it.sy):
+        
+        while tower_stress > np.minimum(sigma_crit, tower_it.sy):
             
             D_it1 += 0.01
-            tower_stress = tower_it.calc_comp_stress(D_it1)
+            tower_it2 = Tower(t = D_it1/D_t, w_clearance=25, M_applied=1.35*Mx[i], F_applied=1.35* F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
+            tower_stress = tower_it2.calc_comp_stress(D_it1)
             
-            #buckling = tower_it.comp_buckling_stress(D_it1)
+            sigma_crit = tower_it2.comp_local_buckling_stress(D_it1)
             
             '''wave1 = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = D_it1, CM = 1.7, CD= 0.6, mu = 1.3e-3)
 
@@ -198,7 +209,11 @@ if __name__ == "__main__":
             
             
         D_dist[i] = D_it1
-
+        sigma_internal[i] = tower_stress
+        t_dist[i] = D_it1/D_t
+    print(f'local buckling: {np.min(tower.comp_local_buckling_stress(D_dist))*1e-6}')
+    print(f'global buckling: {tower.comp_global_buckling_stress(np.min(D_dist))*1e-6}')
+    print(f'max applied load: {np.max(sigma_internal)*1e-6}')
     coef = np.polyfit(D_dist/2, z, deg = 3)
     z_fit1 = np.poly1d(coef)
     z_fitted1 = z_fit1(D_dist/2)
@@ -209,16 +224,26 @@ if __name__ == "__main__":
         
     #plt.plot(-D_dist/2, z, color = 'b')
     #plt.plot(D_dist/2, z, color = 'b')
-    plt.plot(D_dist/2, z_fitted1, color = 'g')
-    plt.plot(-D_dist/2, z_fitted2, color = 'g')
-    plt.title("Monopile Sizing, thickness 5mm")
-    plt.xlabel(r"Monopile Diameter [m] ")
-    plt.ylabel(r'Position along the monopile [m]')
+    coef3 = np.polyfit(t_dist, z, deg = 3)
+    z_fit3 = np.poly1d(coef3)
+    z_fitted3 = z_fit3(t_dist)
+ 
+    fig, (ax3, ax4) = plt.subplots(1, 2)
+    ax3.plot(D_dist/2, z_fitted1, color = 'g')
+    ax3.plot(-D_dist/2, z_fitted2, color = 'g')
+    ax3.set_title("Diameter variation")
+    ax3.set_xlabel(r"Monopile Diameter [m] ")
+    ax3.set_ylabel(r'Position along the tower [m]')
+    ax3.set_aspect('equal')
+    ax4.plot(t_dist, z)
+    ax4.plot(t_dist, z_fitted3)
+    ax4.set_title("Thickness distribution")
+    ax4.set_xlabel(r'Monopile thickness[m]')
+    ax4.set_ylabel(r'Position along the tower [m]')
+    plt.show()
 
 
     
-    plt.axis('equal')
-    plt.show()
 
     mass = np.sum(tower.calc_mass(D_dist))
     mass_inop = tower.calc_mass(D_dist[0])*len(D_dist)
@@ -227,6 +252,10 @@ if __name__ == "__main__":
     print(f'Mass savings: {mass_inop-mass}')
     print(D_dist[0])
     print(D_dist[-1])
+    print(t_dist[0])
+    print(t_dist[-1])
+
+    print(f'First eigenfrequency: {tower.comp_eig_freq(np.average(D_dist), m_truss=6019e3, m_RNA=2602578.544, m_tower= mass)}')
 
             
 
