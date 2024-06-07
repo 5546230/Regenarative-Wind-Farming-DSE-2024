@@ -269,7 +269,8 @@ if inps.optimize:
     blade = Blade(delta_r_R, pitch, tip_chord, root_chord, root_twist)
     chord_distribution, twist_distribution = blade.getChordTwist()
 Omega = Uinf*TSR/Radius
-print(f'{Omega=}')
+OmegaRPM = Omega*60/(2*np.pi)
+print(f'{Omega=}, {OmegaRPM=}')
 
 
 
