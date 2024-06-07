@@ -128,7 +128,7 @@ if __name__ == "__main__":
  
 
     
-    load = Loads(tower_mass= 282879.7624840617, truss_mass=6019e3, nacelle_mass=2602578.544, truss_depth=25, truss_h= 364.5, w_clearance=25, D_grid=D_grid)
+    load = Loads(tower_mass= 282879.7624840617, truss_mass=6019e3, nacelle_mass=37127.73826*34, truss_depth=25, truss_h= 364.5, w_clearance=25, D_grid=D_grid)
     
     M_afc, M_truss, M_thrust = load.moments()
 

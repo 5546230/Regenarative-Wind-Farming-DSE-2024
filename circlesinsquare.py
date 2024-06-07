@@ -86,7 +86,7 @@ print(hex_width, hex_height)
 
 # The provided array
 data = hex_positions
-print(data)
+#print(data)
 '''
 # The name of the CSV file
 csv_file = 'hexpositions_data.csv'
@@ -99,3 +99,43 @@ with open(csv_file, mode='w', newline='') as file:
 
 #csv_file
 '''
+
+#===================ESTIMATE I_zz===========================
+
+I_zz_truss = 4.191e+10
+
+m_RNA_single = 37127.73826
+
+coordinates = np.array([[ 30.38 ,       30.38      ],
+ [ 30.38      ,  91.14      ],
+ [ 30.38      , 151.9       ],
+ [ 30.38      , 212.66      ],
+ [ 30.38      , 273.42      ],
+ [ 30.38      , 334.18      ],
+ [ 82.99970353,  60.76      ],
+ [ 82.99970353, 121.52      ],
+ [ 82.99970353, 182.28      ],
+ [ 82.99970353, 243.04      ],
+ [ 82.99970353, 303.8       ],
+ [135.61940707,  30.38      ],
+ [135.61940707,  91.14      ],
+ [135.61940707, 151.9       ],
+ [135.61940707, 212.66      ],
+ [135.61940707, 273.42      ],
+ [135.61940707, 334.18 ]])
+
+I_zz_RNA = np.sum(m_RNA_single*(coordinates[:, 0]**2))
+m_RNA_total = 34*m_RNA_single
+
+I_zz_AFC = 202e3/12*(277.24**2+50**2)
+m_AFC = 202e3
+
+m_tower = 9.49e5
+I_zz_tower = 2.893e+07
+I_zz_tot = I_zz_tower+I_zz_truss+I_zz_AFC+I_zz_RNA
+m_tot = m_RNA_total+7087.23e3+m_AFC+m_tower
+
+print(f'Total mass moment of inertia: {I_zz_tot}')
+print(f'Total mass: {m_tot}')
+
+
