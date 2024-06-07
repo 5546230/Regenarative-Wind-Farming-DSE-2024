@@ -322,30 +322,38 @@ def BEMsolver_ale(pitch):
 if inps.ale_shit_2:
     pitch_ales = np.arange(-10,25,1)
     CT_ales = []
+    CP_ales = []
     for i in range(len(pitch_ales)):
         cpcp, ctct = BEMsolver_ale(pitch_ales[i])
         CT_ales.append(ctct)
+        CP_ales.append(cpcp)
 
     CT_ales = np.array(CT_ales)
+    CP_ales = np.array(CP_ales)
     #print(CT_ales)
     plt.plot(pitch_ales, CT_ales)
+    plt.plot(pitch_ales, CP_ales)
     plt.show()
     from scipy.interpolate import interp1d
     mask = ~np.isnan(CT_ales)
     pitch_valid = pitch_ales[mask]
     CT_valid = CT_ales[mask]
+    CP_valid = CP_ales[mask]
     interp_function = interp1d(pitch_valid, CT_valid, kind='linear', fill_value="extrapolate")
-
+    interp_function2 = interp1d(pitch_valid, CP_valid, kind='linear', fill_value="extrapolate")
     # Interpolate missing values
     pitch_interp = np.linspace(min(pitch_ales), max(pitch_ales), num=50)  # Interpolated points
     CT_interp = interp_function(pitch_interp)
+    CP_interp = interp_function2(pitch_interp)
 
-    plt.scatter(pitch_ales, CT_ales, label='Original data with NaNs')
+    plt.scatter(pitch_ales, CT_ales, label='Original CT with NaNs')
+    plt.scatter(pitch_ales, CP_ales, label='Original CP with NaNs', color= 'black')
     plt.plot(pitch_interp, CT_interp, label='Interpolated data', color='red')
+    plt.plot(pitch_interp,CP_interp,label = 'Interpolated CP', color = 'green')
     plt.legend()
     plt.xlabel('pitch')
-    plt.ylabel('CT')
-    plt.title('Interpolation of CT')
+    plt.ylabel('CT , CP')
+    plt.title('Interpolation of CT and CP')
     plt.show()
 
     import pickle

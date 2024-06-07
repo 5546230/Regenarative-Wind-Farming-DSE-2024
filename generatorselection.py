@@ -152,13 +152,14 @@ averagewindspeed45 = np.average([speeds_height_45])
 averagewindspeed5 = np.average([speeds_height_5])
 averagewindspeed55 = np.average([speeds_height_55])
 averagewindspeed6 = np.average([speeds_height_6])
-
+AverageWindSpeed = np.average(arrays)
+print(f'{AverageWindSpeed=}')
 print(f'{averagewindspeed6=}')
 # arr = np.array([1, 3, 5, 7, 9])
 count = np.sum(speeds_height_6 > 12)
 count_percentage = count/8760
 print(f'{count_percentage=}')
-
+print(f'{averagewindspeed1=},{averagewindspeed15=},{averagewindspeed2=},{averagewindspeed25=},{averagewindspeed3=},{averagewindspeed35=},{averagewindspeed4=},{averagewindspeed45=},{averagewindspeed5=},{averagewindspeed55=},{averagewindspeed6=},')
 print(P.CT)
 AREA = P.AREA/P.n_rotors
 thrust1 = P.CT*0.5*P.rho*averagewindspeed1**2*AREA
