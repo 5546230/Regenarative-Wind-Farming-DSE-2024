@@ -283,16 +283,20 @@ def BEMspeedplotter(Uinf):
 if inps.CT_plot:
     Uinfinities = np.arange(25)
     CT_list = []
+    CP_list = []
     for ix in range(len(Uinfinities)):
         BEM_thrust_plot =  BEMsolver(Uinfinities[ix], Radius, NBlades, TSR, RootLocation_R, TipLocation_R, chord_distribution, twist_distribution, polar_alpha_root, polar_alpha_mid, polar_alpha_tip,polar_cl_root, polar_cl_mid, polar_cl_tip, polar_cd_root, polar_cd_mid, polar_cd_tip, root_boundary_R, mid_boundary_R)
         CP_t, CT_t = BEM_thrust_plot.CPCT()
         CT_list.append(CT_t)
+        CP_list.append(CP_t)
     CT_list = np.array(CT_list)
+    CP_list = np.array(CP_list)
     plt.scatter(Uinfinities, CT_list, label='CT with varying speeds', color='red')
+    plt.scatter(Uinfinities, CP_list, label='CP with varying speeds', color='blue')
     plt.legend()
     plt.xlabel('Uinf')
-    plt.ylabel('CT')
-    plt.title('CT with varying speeds')
+    plt.ylabel('CP, CT')
+    plt.title('CP, CT with varying speeds')
     plt.show()
 print(f'{CT=},{CP=}')
 #estimating the total induction
