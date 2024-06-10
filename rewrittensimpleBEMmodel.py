@@ -270,6 +270,11 @@ if inps.optimize:
     chord_distribution, twist_distribution = blade.getChordTwist()
 Omega = Uinf*TSR/Radius
 OmegaRPM = Omega*60/(2*np.pi)
+max_chord = np.max(chord_distribution)
+tip_chordo = chord_distribution[-1]
+root_twisto = twist_distribution[0]
+tip_twisto = twist_distribution[-1]
+print(f'{max_chord=}, {tip_chordo=}, {root_twisto=}, {tip_twisto=}')
 print(f'{Omega=}, {OmegaRPM=}')
 
 

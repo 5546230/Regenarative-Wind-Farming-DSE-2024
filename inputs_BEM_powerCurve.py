@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 V_RATED = 10.59  #13.6 is effectively the biggest for 33 rotors
 TSR = 8
@@ -15,9 +16,9 @@ tip_chord = 1.5876789017230943
 root_chord = 2.137209720548721#3
 root_twist = -8.379364994929379#-14
 optimize = False    #optimize blade geometry (pitch, twist, chords)
-assumed_CP = 0.47  
+assumed_CP = 0.46  
 ale_shit = False   #something bc alessandro wanted CT(TSR, pitch)
-ale_shit_2 = True
+ale_shit_2 = False
 printReynolds = False
 CT_plot = False
 
@@ -31,3 +32,12 @@ print(f'{Radiuss=}')
 if automatic_radius:
     init_Radius = Radiuss
 
+
+if __name__ == "__main__":
+    n_rotors = np.arange(0,100)
+    Radiusito = np.sqrt(AREA/(np.pi*n_rotors))
+    plt.plot(Radiusito)
+    plt.xlabel("Number of rotors")
+    plt.ylabel("Radius of each rotor")
+    plt.grid()
+    plt.show()
