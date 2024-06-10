@@ -32,7 +32,9 @@ class Optimizer:
         :param gamma_buckling: buckling safety factor
         :return: sizing diameter buckling
         '''
+
         D_i_buckling = (8 * np.abs(F_bar_i) * gamma_buckling * l_i ** 2 / (np.pi ** 3 * E_i * self.r_t)) ** (1 / 4)
+        D_i_buckling[np.where(F_bar_i>0)] = -1
         return D_i_buckling
 
     def calc_yield_diameter(self, F_bar_i: np.array, sigy_i: np.array, gamma_m=1.35):
@@ -121,6 +123,10 @@ class Optimizer:
                 Ds_sizing = np.max(np.vstack((D_i_yield, D_i_buckling)), axis=0)
                 Ds_sizing[np.where(Ds_sizing < self.minimum_D)] = self.minimum_D
 
+                #if (np.all(Ds[np.where(Ds > self.minimum_D)] > Ds_sizing[np.where(Ds > self.minimum_D)]-tolerance)
+                #        or np.all(Ds[np.where(Ds > self.minimum_D)] < Ds_sizing[np.where(Ds > self.minimum_D)]+tolerance)):
+                #   break
+
         print(f'\nFinal Sigma_max = {np.max(np.abs(sigma) / 1e6)}')
         D_output = np.vstack((D_output, Ds))
         M_output = [sum(m.elment_total_ms), np.sum(self.calc_bar_masses(A_i=m.element_As, l_i=lengths, rho_i=rhos))]
@@ -139,8 +145,15 @@ class Optimizer:
                 'Sigmas [MPa]': sigmas / 1e6,
                 'lengths [m]': s.mesh.element_lengths,
                 'areas [m^2]': s.mesh.element_As,
+                'masses [kg]': s.mesh.element_lengths*s.mesh.element_As*s.mesh.element_rhos,
                 'N_0 [-]': s.mesh.element_indices[0],
                 'N_1 [-]': s.mesh.element_indices[1],
+                'x_0': s.mesh.X_coords[s.mesh.element_indices[0]],
+                'y_0': s.mesh.Y_coords[s.mesh.element_indices[0]],
+                'z_0': s.mesh.Z_coords[s.mesh.element_indices[0]],
+                'x_1': s.mesh.X_coords[s.mesh.element_indices[1]],
+                'y_1': s.mesh.Y_coords[s.mesh.element_indices[1]],
+                'z_1': s.mesh.Z_coords[s.mesh.element_indices[1]],
             }
             output.write(fem_output)
         return np.array(M_output), D_output, t_output, sigmas, s.mesh.element_indices, s, Rs
@@ -193,7 +206,7 @@ if __name__ == "__main__":
     file_number = 1
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24, r_t=1/20) #r_t = 1/120 ==> minimum thickness = 2 mm
     M_change, D_change, ts, sigs, elements, _, Rs = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
 
     print('=========================================================================================================')

@@ -194,11 +194,11 @@ def tb_val():
 def verif_geom_3():
     'problem 8.5'
     XYZ_coords = np.array([[-4, 4, 4, -4, -2, 2, 2, -2],
-                           [0,  0, 0, 0,  10, 10, 10, 10],
-                           [4,  4,-4, -4, 2,  2, -2, -2]], dtype=float)
+                                  [0,  0, 0, 0,  10, 10, 10, 10],
+                                  [4,  4,-4, -4, 2,  2, -2, -2]], dtype=float)
 
-    member_indices = np.array([[0,1,2,3,0,1,2, 3, 4,5,6,7],
-                               [4,5,6,7,5,6,7, 4, 5,6,7,4]])
+    member_indices = np.array([[0,1,2,3,0,1,2, 3, 4,5,6,4],
+                               [4,5,6,7,5,6,7, 4, 5,6,7,7]])
 
     section_indices = np.ones(12, dtype=int)
     material_indices = np.ones(12, dtype=int)
