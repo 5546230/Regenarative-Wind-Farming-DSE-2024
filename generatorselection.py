@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 
 layoutreversed = np.array([5,6,5,6,5,6])
 currentlayout = np.array([6,5,6,5,6,5])
+currentlayout2 = np.array([4,2,4,2,4,2,4,2,4,2,4])
 
 height_array = np.array([45.8845, 82.05752, 118.2305, 154.4035, 190.5766, 226.7496])
 # power_curve = P.P_array/33
 
 power_curve = 0.5 * P.rho * P.CP * P.U_array ** 3 * np.pi * P.radius ** 2 
-power_curve[power_curve > 30/33*10**6] = 30/33*10**6
+power_curve[power_curve > 30/34*10**6] = 30/34*10**6
 power_curve[P.U_array < P.cut_in] = 0
 power_curve[P.U_array > P.cut_off] = 0
 
@@ -95,7 +96,12 @@ installedpower1 = np.max(power_function(U_interp)*33)
 energy_2 = np.sum(power_function_2(speeds_height_1)*currentlayout[0]) + np.sum(power_function_2(speeds_height_2)*currentlayout[1])+ np.sum(power_function_2(speeds_height_3)*currentlayout[2])+ np.sum(power_function_3(speeds_height_4)*currentlayout[3])+ np.sum(power_function_3(speeds_height_5)*currentlayout[4])+ np.sum(power_function_3(speeds_height_6)*currentlayout[5])  #3,3 config
 installedpower2 = np.max(power_function_2(U_interp)*(6+5+6))+np.max(power_function_3(U_interp)*(5+6+5))
 
-
+energy_final = np.sum(power_function(speeds_height_1)*currentlayout2[0]) + np.sum(power_function(speeds_height_15)*currentlayout2[1])+ np.sum(power_function(speeds_height_2)*currentlayout2[2])+ np.sum(power_function(speeds_height_25)*currentlayout2[3])+ np.sum(power_function(speeds_height_3)*currentlayout2[4])+ np.sum(power_function(speeds_height_35)*currentlayout2[5])+np.sum(power_function(speeds_height_4)*currentlayout2[6])+np.sum(power_function(speeds_height_45)*currentlayout2[7])+np.sum(power_function(speeds_height_5)*currentlayout2[8])+np.sum(power_function(speeds_height_55)*currentlayout2[9])+np.sum(power_function(speeds_height_6)*currentlayout2[10]) # one size fits all config
+print(f'{energy_final=}')
+energy_installed = 30*10**6*8760
+capacity_Factor = energy_final/energy_installed
+print(f'{capacity_Factor=}')
+print(np.max(power_function(U_interp)))
 
 power_curve_076 = 0.5 * P.rho * P.CP * P.U_array ** 3 * np.pi * P.radius ** 2 
 power_curve_076[power_curve_076 > 0.76*10**6] = 0.76*10**6
@@ -120,26 +126,26 @@ energy_3 = np.sum(power_function_4(speeds_height_1)*currentlayout[0]) + np.sum(p
 installedpower3 = np.max(power_function_4(U_interp)*6)+np.max(power_function_5(U_interp)*(5+6))+np.max(power_function_3(U_interp)*(5+6+5))
 
 
-print(f'{energy_1=},{energy_2=},{energy_3=}') 
+# print(f'{energy_1=},{energy_2=},{energy_3=}') 
 
 power_1 = energy_1/8760
 power_2=energy_2/8760
 power_3 = energy_3/8760
-print(f'{power_1=},{power_2=},{power_3=}') 
+# print(f'{power_1=},{power_2=},{power_3=}') 
 
 # plt.plot(P.U_array, power_curve)
 # plt.show()
-print(f'{installedpower1=},{installedpower2=},{installedpower3=}') 
+# print(f'{installedpower1=},{installedpower2=},{installedpower3=}') 
 
 normalisedpower1 = power_1/installedpower1
 normalisedpower2 = power_2/installedpower2
 normalisedpower3 = power_3/installedpower3
-print(f'{normalisedpower1=},{normalisedpower2=},{normalisedpower3=}') 
+# print(f'{normalisedpower1=},{normalisedpower2=},{normalisedpower3=}') 
 
 #data analysis now for frederico 
 increase21 = normalisedpower2/normalisedpower1-1
 increase31 = normalisedpower3/normalisedpower1-1
-print(f'{increase21=}, {increase31=}')
+# print(f'{increase21=}, {increase31=}')
 
 averagewindspeed1 = np.average([speeds_height_1])
 averagewindspeed15 = np.average([speeds_height_15])
@@ -154,13 +160,13 @@ averagewindspeed55 = np.average([speeds_height_55])
 averagewindspeed6 = np.average([speeds_height_6])
 AverageWindSpeed = np.average(arrays)
 print(f'{AverageWindSpeed=}')
-print(f'{averagewindspeed6=}')
+# print(f'{averagewindspeed6=}')
 # arr = np.array([1, 3, 5, 7, 9])
 count = np.sum(speeds_height_6 > 12)
 count_percentage = count/8760
-print(f'{count_percentage=}')
-print(f'{averagewindspeed1=},{averagewindspeed15=},{averagewindspeed2=},{averagewindspeed25=},{averagewindspeed3=},{averagewindspeed35=},{averagewindspeed4=},{averagewindspeed45=},{averagewindspeed5=},{averagewindspeed55=},{averagewindspeed6=},')
-print(P.CT)
+# print(f'{count_percentage=}')
+# print(f'{averagewindspeed1=},{averagewindspeed15=},{averagewindspeed2=},{averagewindspeed25=},{averagewindspeed3=},{averagewindspeed35=},{averagewindspeed4=},{averagewindspeed45=},{averagewindspeed5=},{averagewindspeed55=},{averagewindspeed6=},')
+# print(P.CT)
 AREA = P.AREA/P.n_rotors
 thrust1 = P.CT*0.5*P.rho*averagewindspeed1**2*AREA
 thrust15 = P.CT*0.5*P.rho*averagewindspeed15**2*AREA
@@ -173,7 +179,7 @@ thrust45 = P.CT*0.5*P.rho*averagewindspeed45**2*AREA
 thrust5 = P.CT*0.5*P.rho*averagewindspeed5**2*AREA
 thrust55 = P.CT*0.5*P.rho*averagewindspeed55**2*AREA
 thrust6 = P.CT*0.5*P.rho*averagewindspeed6**2*AREA
-print(f'{thrust1=},{thrust15=},{thrust2=},{thrust25=},{thrust3=},{thrust35=},{thrust4=},{thrust45=},{thrust5=},{thrust55=},{thrust6=},')
+# print(f'{thrust1=},{thrust15=},{thrust2=},{thrust25=},{thrust3=},{thrust35=},{thrust4=},{thrust45=},{thrust5=},{thrust55=},{thrust6=},')
 # CT_1 = P.BEM.BEMspeedpotter(speeds_height_1)
 # CT_15 = P.BEM.BEMspeedplotter(speeds_height_15)
 # CT_2 = P.BEM.BEMspeedplotter(speeds_height_2)
