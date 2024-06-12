@@ -20,7 +20,7 @@ class Loads():
         self.g = 9.80665
 
     def moments(self):
-        M_afc = self.L_afc*self.d + self.D_afc*self.h
+        M_afc = self.D_afc*self.h #+ self.L_afc*self.d  
         M_truss = self.D_truss * self.h
         M_thrust = self.T_rated * self.h
 
@@ -124,11 +124,12 @@ if __name__ == "__main__":
     max_idx = np.argmax(avg)
 
     F_dist_max = F_dist[max_idx]
+    print(f'wave: {np.sum(F_dist_max)}')
 
  
 
     
-    load = Loads(tower_mass= 282879.7624840617, truss_mass=6019e3, nacelle_mass=37127.73826*34, truss_depth=25, truss_h= 364.5, w_clearance=25, D_grid=D_grid)
+    load = Loads(tower_mass= 282879.7624840617, truss_mass=4355.091e3, nacelle_mass=37127.73826*34, truss_depth=25, truss_h= 364.5, w_clearance=25, D_grid=D_grid)
     
     M_afc, M_truss, M_thrust = load.moments()
 
@@ -146,11 +147,12 @@ if __name__ == "__main__":
     ax1.plot(Vy, z)
     ax1.set_title("Internal Shear Force [N]")
     ax1.set_xlabel(r'Shear Force $V_y$ [N]')
-    ax1.set_ylabel(r'Position along the tower [m]')
+    ax1.set_ylabel(r'Position along the monopile [m]')
     ax2.plot(Mx, z)
     ax2.set_title("Internal Bending Moment [Nm]")
     ax2.set_xlabel(r'Bending Moment $M_x$ [Nm]')
-    ax2.set_ylabel(r'Position along the tower [m]')
+    ax2.set_ylabel(r'Position along the monopile [m]')
+    plt.tight_layout()
     plt.show()  
 
     tower = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[0], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
@@ -233,13 +235,14 @@ if __name__ == "__main__":
     ax3.plot(-D_dist/2, z_fitted2, color = 'g')
     ax3.set_title("Diameter variation")
     ax3.set_xlabel(r"Monopile Diameter [m] ")
-    ax3.set_ylabel(r'Position along the tower [m]')
+    ax3.set_ylabel(r'Position along the monopile [m]')
     ax3.set_aspect('equal')
     ax4.plot(t_dist, z)
     ax4.plot(t_dist, z_fitted3)
     ax4.set_title("Thickness distribution")
     ax4.set_xlabel(r'Monopile thickness[m]')
-    ax4.set_ylabel(r'Position along the tower [m]')
+    ax4.set_ylabel(r'Position along the monopile [m]')
+    plt.tight_layout()
     plt.show()
 
 

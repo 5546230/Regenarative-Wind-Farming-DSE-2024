@@ -50,7 +50,7 @@ class Wave():
 if __name__ == "__main__":
     wave = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = 8.5, CM = 1.7, CD= 0.6, mu = 1.3e-3)
     z = np.arange(-wave.water_depth, 0, 0.1)
-    t = np.arange(0, 1000, 5)
+    t = np.arange(0, 100, 0.1)
     print(wave.compute_fluid_properties())
     Z, T = np.meshgrid(z,t)
     F_dist=[]
@@ -90,10 +90,10 @@ if __name__ == "__main__":
     ax.set_ylabel('Depth [m]')
     ax.set_zlabel('Force per unit length [N/m]')'''
     plt.plot(F_dist_max, z)
-    plt.vlines(np.average(F_dist_max), ymin = -wave.water_depth, ymax=0)
-    plt.hlines(Z_avg, xmin = np.min(F_dist_max), xmax = np.max(F_dist_max))
+    #plt.vlines(np.average(F_dist_max), ymin = -wave.water_depth, ymax=0)
+    #plt.hlines(Z_avg, xmin = np.min(F_dist_max), xmax = np.max(F_dist_max))
     plt.grid()
-    plt.xlabel('Force per unit length [N]')
+    plt.xlabel('Force per unit depth [N]')
     plt.ylabel('Depth [m]')
     # Show plot
     plt.show()
