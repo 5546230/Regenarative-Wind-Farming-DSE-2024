@@ -237,12 +237,12 @@ if __name__ == "__main__":
     ax3.set_xlabel(r"Monopile Diameter [m] ")
     ax3.set_ylabel(r'Position along the monopile [m]')
     ax3.set_aspect('equal')
-    ax4.plot(t_dist, z)
+    #ax4.plot(t_dist, z)
     ax4.plot(t_dist, z_fitted3)
     ax4.set_title("Thickness distribution")
     ax4.set_xlabel(r'Monopile thickness[m]')
     ax4.set_ylabel(r'Position along the monopile [m]')
-    plt.tight_layout()
+  
     plt.show()
 
 
@@ -250,9 +250,10 @@ if __name__ == "__main__":
 
     mass = np.sum(tower.calc_mass(D_dist))
     mass_inop = tower.calc_mass(D_dist[0])*len(D_dist)
-    print(f'Optimised mass: {mass}')
-    print(f'Unoptimised mass: {mass_inop}')
+    print(f'Optimised mass: {mass+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi}')
+    print(f'Unoptimised mass: {mass_inop+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi}')
     print(f'Mass savings: {mass_inop-mass}')
+    print(25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi)
     print(D_dist[0])
     print(D_dist[-1])
     print(t_dist[0])
