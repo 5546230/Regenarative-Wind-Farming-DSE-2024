@@ -56,7 +56,6 @@ class Drag():
         CD1 = self.kappa1 * self.CD_inf
         CD2 = self.kappa2 * self.CD_inf
         CD3 = self.kappa3 * self.CD_inf
-        
 
         D = 0.5 * self.rho* (self.V**2)* self.D * ((self.n_vert*self.L_vert+self.n_hor3*self.L_hor3)*CD1+
                                                    (self.n_hor1*self.L_hor1+self.L_diag1*self.n_diag1+self.L_diag2*self.n_diag2)*CD2+
@@ -64,33 +63,53 @@ class Drag():
         D_c = D/self.D
         return D, D_c
     
-    def compute_D_side(self):
+    def compute_CD_side(self):
         D_d = 0.5 * self.rho* (self.V**2)*  (0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*24*self.L_vert)
+        #print((0.87*self.CD_inf*(self.L_side3*12+self.L_side1*13)+self.kappa1*self.CD_inf*24*self.L_vert)/((self.L_side3*12+self.L_side1*13)+24*self.L_vert))
         return D_d
 
     def placeholder(self, l, d, type: str):
         if type == 'front':
             _, D_c = self.compute_CD_front()
-            D = D_c/(self.n_diag1+self.n_diag2+self.n_hor1+self.n_hor2+self.n_hor3+self.n_vert)/np.average(self.L_diag1+self.L_diag2+self.L_hor1+self.L_hor2+self.L_hor3+self.L_vert)*l*d
+            D = D_c/((self.n_vert*self.L_vert+self.n_hor3*self.L_hor3)+
+                                                   (self.n_hor1*self.L_hor1+self.L_diag1*self.n_diag1+self.L_diag2*self.n_diag2)+
+                                                   (self.n_hor2*self.L_hor2))*l*d
 
         else:
             D_c = self.compute_CD_side()
-            D = D_c/(2*12+13+12)/np.average(self.L_side1+self.L_side2+self.L_side3)*l*d
+            #print(D_c)
+            D = D_c/((self.L_side3*12+self.L_side1*13)+24*self.L_vert)*l*d
 
         return D
 
 
 
 if __name__ == "__main__":
-    drag = Drag(10.59, 1.225, 1)
+    drag = Drag(66, 1.225, 1)
     mu = 1.8e-5
     rho = 1.225
     Re = drag.compute_Reynolds(mu)
-    d = drag.placeholder(1,1, type = 'front')
+    d = drag.placeholder(50,1, type = 'front')
     print(d)
 
     D_grid, _ = drag.compute_CD_front()
-    print(D_grid)
-    print(drag.compute_D_side())
+    print(D_grid/1e6)
+    print(drag.compute_CD_side()/1e6)
 
     print(Re)
+
+    list1 = [1.74471963, 2.19432751, 4.74341976, 7.19306643, 7.21915895, 11.0942615, 12.58288062, 12.8819636,
+             14.75696466, 16.37598519, 17.98135056, 18.48982226, 20.18382826, 20.941846, 21.77765512]
+    list2 = [1.74471963, 2.19432751, 4.74341976, 7.19306643, 7.21915895, 11.0942615, 12.58288062, 12.8819636,
+             14.75696466, 16.37598519, 17.98135056, 18.48982226, 20.18382826, 20.941846, 21.77765512]
+    list3 = [1.95176644, 2.54304842, 5.70641323, 7.25471405, 8.43725354, 10.1102532, 11.63822605, 13.80115802,
+             14.0899469, 15.57333672, 17.31377282, 18.74229764, 19.16604916, 21.00590244, 22.94644883]
+
+    # Convert lists to numpy arrays
+    array1 = np.array(list1)
+    array2 = np.array(list2)
+    array3 = np.array(list3)
+
+    print(array1/(2*np.pi))
+    print(array2/(2*np.pi))
+    print(array3/(2*np.pi))

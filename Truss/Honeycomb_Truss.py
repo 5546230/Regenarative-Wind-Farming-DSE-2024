@@ -218,9 +218,10 @@ class Hexagonal_Truss(Geometry_Definition):
         avgy = np.average(Y)
         avgx = np.average(X)
         diff = np.max([np.max(X)-np.min(X), np.max(Y)-np.min(Y), np.max(Z)-np.min(Z)])
-        ax.set_ylim([avgy-diff/2, avgy+diff/2])
-        ax.set_xlim([avgx-diff/2, avgx+diff/2])
-        ax.set_zlim([0, diff])
+        #ax.set_ylim([avgy-diff/2, avgy+diff/2])
+        #ax.set_xlim([avgx-diff/2, avgx+diff/2])
+        #ax.set_zlim([0, diff])
+        ax.set_aspect('equal')
 
         ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
         ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
@@ -264,7 +265,7 @@ class Hexagonal_Truss(Geometry_Definition):
 
 if __name__ == "__main__":
     truss = Hexagonal_Truss(n_rotors=3, r_per_rotor=39.69/2*1.05, depth=35)
-    print(truss)
+    print(truss.total_edge_con)
     #truss.find_front_midpoint_indices()
     #truss.find_bottom_indices()
 

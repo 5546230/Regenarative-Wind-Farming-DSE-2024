@@ -2,6 +2,7 @@ from Truss.Structure_Defs import Geometry_Definition
 from Truss.helper_functions import calculate_hexagonal_positions
 import numpy as np
 import matplotlib.pyplot as plt
+import pyvista as pv
 np.set_printoptions(linewidth=7000)
 
 
@@ -25,16 +26,15 @@ class Square_Truss(Geometry_Definition):
         self.Y_single_colbox = np.array([0, 6, 6, 0,  0,  6,  6,  0], dtype=float)#-27.38
         self.Z_single_colbox = np.array([00.00, 00.00, 30.38, 30.38,  00.00,  00.00,  30.38,  30.38], dtype=float)
 
-        self.single_colbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6,0,2,1,4],
-                                                [1, 2, 3, 0, 4,5,6,7,5,7,6,5,7,7,6,6]])
+        self.single_colbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6,0,2,1,4,1,5,],
+                                                [1, 2, 3, 0, 4,5,6,7,5,7,6,5,7,7,6,6,4,7,]])
 
         self.X_single_fillbox = np.array([depth/2, depth/2, depth/2, depth/2, -depth/2, -depth/2, -depth/2, -depth/2], dtype=float)
         self.Y_single_fillbox = np.array([0, 23.31, 23.31,0,  0,  23.31,  23.31,  0], dtype=float)
         self.Z_single_fillbox = np.array([00.00, 00.00, 30.38, 30.38,  00.00,  00.00,  30.38,  30.38], dtype=float)
 
-        self.single_fillbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6,0, 1, 5, 2, 3,0,1, 5],
-                                                 [1, 2, 3, 0, 4,5,6,7,5,7,6,5,2, 3, 7, 7, 6,5,4, 7]])
-
+        self.single_fillbox_mem_idxs = np.array([[0, 1, 2, 3, 0,1,2,3,4,4,7,6, 1, 5, 2, 3,0,1, 5],
+                                                 [1, 2, 3, 0, 4,5,6,7,5,7,6,5, 3, 7, 7, 6,5,4, 7]])
 
         tower_width= 54.76
         self.X_single_tower = np.array([depth / 2, depth / 2, depth / 2, depth / 2, -depth / 2, -depth / 2, -depth / 2, -depth / 2], dtype=float)
@@ -47,7 +47,6 @@ class Square_Truss(Geometry_Definition):
         width_colbox = 6.#abs(np.max(self.Y_single_colbox) - np.min(self.Y_single_colbox))
         height_colbox = 30.38#abs(np.max(self.Z_single_colbox) - np.min(self.Z_single_colbox))
         width_fillbox = 23.31#abs(np.max(self.Y_single_fillbox) - np.min(self.Y_single_fillbox))
-
 
         left_width = 3 * width_colbox + 4 * width_fillbox
         print(width_fillbox, width_colbox)
@@ -83,7 +82,6 @@ class Square_Truss(Geometry_Definition):
         left_fillboxes_connectivity += connectivity_transforms[:, np.newaxis, np.newaxis]
         node_indices_fill = np.arange(left_fillboxes_XYZ[:, 0].ravel().size, dtype=int)
 
-
         'COMBINING LEFT FILL AND COL BOXES'
         'COL --> FILL'
         node_indices_fill += node_indices_col.size
@@ -95,13 +93,13 @@ class Square_Truss(Geometry_Definition):
         left_XYZ = np.concatenate((left_colboxes_XYZ, left_fillboxes_XYZ), axis=0)
         left_XYZ = np.hstack(left_XYZ)
 
-
         'COMBINING LEFT AND RIGHT AND TOWER'
         node_indices_right = node_indices_left + node_indices_left.size
         right_connectivity = left_connectivity + node_indices_left.size
         right_XYZ = left_XYZ.copy()
+        #right_XYZ[2,:] = -1*right_XYZ[2,:] + height_colbox*n_layers
+        right_XYZ[1, :] = -1 * right_XYZ[1, :] + left_width
         right_XYZ[1,:] += left_width + tower_width
-
 
         n_tower = 2*n_layers
         tower_transforms_Y = np.array([left_width, left_width+tower_width/2])
@@ -170,7 +168,7 @@ class Square_Truss(Geometry_Definition):
         return np.ones(self.n_unique_edges, dtype=int)
 
     def get_bc_indices(self):
-        return  [312, 325, 338, 91, 104, 117] # self.find_bottom_indices() #
+        return [312, 325, 338, 91, 104, 117, 118, 92, 339, 313, 299, 78, 351, 130]#,260, 390, 39, 169]# 0, 221, 429, 208] # self.find_bottom_indices() #
 
     def get_bc_constraints(self):
         return np.ones((3, self.find_bottom_indices().size))
@@ -179,7 +177,7 @@ class Square_Truss(Geometry_Definition):
         return np.array([15, 19, 30, 16, 2])
 
     def get_applied_loads(self):
-        return np.array([[-1e5,-1e5,0, 0,0],
+        return 0*np.array([[-1e5,-1e5,0, 0,0],
                          [0,0,2e4*0, 2e4*0,2e4*0],
                          [0,0,-3e5*0,-3e5*0,-3e5*0]])
 
@@ -259,10 +257,43 @@ class Square_Truss(Geometry_Definition):
         #ax.set_zlim([0, diff])
         ax.set_aspect('equal')
         #ax.scatter(self.hex_positions[:,0], avgy, self.hex_positions[:,1], color='red', label='Midpoints')
-        ax.set_title(r'$N_{rotors}=$'+f'{self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
+        ax.set_title(r'$N_{rotors}=$'+f'{2*self.n_rotors} '+r'$N_p = $'+f'{self.n_unique_nodes}'+r' $N_e = $'+f'{self.n_unique_edges}',fontsize=12)
         if show:
             ax.legend()
             plt.show()
+
+    def plot_structure_pv(self, show: bool = True) -> None:
+        '3d plot of nodes and members'
+
+        # Create a plotter object
+        plotter = pv.Plotter()
+
+        X, Y, Z = self.X_coords, self.Y_coords, self.Z_coords
+
+        # Plot nodes
+        points = np.column_stack((X, Y, Z))
+        plotter.add_points(points, color='black', point_size=5, render_points_as_spheres=True)
+
+        # Annotate nodes
+        for idx in range(len(X)):
+            plotter.add_point_labels(points[idx], [str(idx)], point_size=10, text_color='black', font_size=10)
+
+
+        # Plot members
+        for i in range(self.n_unique_edges):
+            member_ends = self.total_edge_con[:, i]
+            line_points = points[member_ends]
+            plotter.add_lines(line_points, color='black', width=1)
+
+        # Set plot title
+        title = f'$N_{{rotors}}=$ {2 * self.n_rotors} $N_p=$ {self.n_unique_nodes} $N_e=$ {self.n_unique_edges}'
+        plotter.add_text(title, position='upper_left', font_size=12, color='black')
+
+        # Show plot with legend
+        if show:
+            plotter.show_grid()
+            #plotter.add_legend()
+            plotter.show()
 
     def plot_circles(self, positions, width, height, title)->None:
         fig, ax = plt.subplots()
@@ -286,4 +317,4 @@ class Square_Truss(Geometry_Definition):
 
 if __name__ == "__main__":
     truss = Square_Truss(n_layers=12)
-    print(truss.find_bottom_indices())
+    print(truss.total_edge_con)

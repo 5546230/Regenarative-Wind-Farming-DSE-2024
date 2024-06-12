@@ -339,7 +339,33 @@ class FEM_Solve:
         global_coords = np.vstack((X,Y,Z))
 
         element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
+        print(element_Qs/1000)
 
+        '''
+        #############################################
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        Qs = []
+        for i in range(self.mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:, i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            v = global_displacements[np.isin(self.mesh.dof_indices, elem_dofs)]
+            T = self.mesh.element_Ts[i]
+
+            u = T @ v
+            k = self.mesh.element_ks[i]
+
+            Q = k @ u
+
+            Qs.append(Q[1])
+        print('\nTEST:', np.array(Qs)/1000-np.array([-93.531,	-151.99,	-93.531,	-35.074,	66.556,	0,	-66.556,	0,	-63	,-18,	-18,	-18]),)
+        print(np.array(Qs)/1000)
+        print([-93.531,	-151.99,	-93.531,	-35.074,	66.556,	0,	-66.556,	0,	-63	,-18,	-18,	-18])
+        #print()
+        element_Qs = np.array(Qs)
+        #############################################
+        '''
         if plot:
             self.plot_displacements(X, Y, Z)
             self.plot_stresses(X,Y,Z,element_sigmas/factor)

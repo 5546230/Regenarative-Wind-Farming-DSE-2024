@@ -239,7 +239,8 @@ class mrsSquare(FEM_Solve):
         self.drag_per_wing = np.array(truss_config['wing_drags'])
         self.lift_per_wing = np.array(truss_config['wing_lifts'])
         self.moment_per_wing = np.array(truss_config['wing_moments'])
-        self.drag_calc = truss_config['drag_calculator']
+        self.front_drag_calc = truss_config['front_drag_calculator']
+        self.side_drag_calc = truss_config['side_drag_calculator']
         self.M_rna = truss_config['M_RNA']
         self.alpha = truss_config['max_alpha_ccwp']
 
@@ -278,24 +279,52 @@ class mrsSquare(FEM_Solve):
         '''
         global_SL = np.zeros(self.mesh.N_nodes * self.n_dof)
         diams = self.mesh.elem_Ds
+        ls = self.mesh.element_lengths
+        front_drags, side_drags = None, None
 
-        'drags only calculated for frontal plane members (which are equal in length)'
-        elem_drags = self.drag_calc.placeholder(d=diams)*multiplier
-        elem_nodal_drag = np.array([1/2,1/2])[np.newaxis, :]
-        all_nodal_drags = np.repeat(elem_nodal_drag, self.mesh.N_elems, axis=0)
-        drags = np.einsum('ij, i->ij', all_nodal_drags, elem_drags)
+        if self.front_drag_calc is not None:
+            front_elem_drags = self.front_drag_calc.placeholder(d=diams, l=ls, type='front')*multiplier
+            front_elem_nodal_drag = np.array([1/2,1/2])[np.newaxis, :]
+            front_all_nodal_drags = np.repeat(front_elem_nodal_drag, self.mesh.N_elems, axis=0)
+            front_drags = np.einsum('ij, i->ij', front_all_nodal_drags, front_elem_drags)
+
+        if self.side_drag_calc is not None:
+            side_elem_drags = self.side_drag_calc.placeholder(d=diams, l=ls, type='side') * multiplier
+            side_elem_nodal_drag = np.array([1 / 2, 1 / 2])[np.newaxis, :]
+            side_all_nodal_drags = np.repeat(side_elem_nodal_drag, self.mesh.N_elems, axis=0)
+            side_drags = np.einsum('ij, i->ij', side_all_nodal_drags, side_elem_drags)
 
         start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
         front_indices = self.get_yz_plane_indices(x=np.max(self.mesh.X_coords))
-        for i in range(self.mesh.N_elems):
-            if np.any(np.isin(self.mesh.element_indices[:,i], front_indices)==False):
-                pass
-            elem_start_dofs = start_dof_idxs[:, i]
-            elem_end_dofs = end_dof_idxs[:, i]
-            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+        back_indices = self.get_yz_plane_indices(x=np.min(self.mesh.X_coords))
 
-            mask = np.isin(self.mesh.dof_indices[0::3], elem_dofs)
-            global_SL[0::3][mask] += drags[i]
+        side_indices = self.get_xz_plane_indices(y=np.min(self.mesh.Y_coords))
+
+        y_planes = np.unique(self.mesh.Y_coords)[1:]
+        for y in y_planes:
+            side_indices = np.concatenate((side_indices, self.get_xz_plane_indices(y=y)))
+
+        for i in range(self.mesh.N_elems):
+            if self.front_drag_calc is not None:
+                if np.all(np.isin(self.mesh.element_indices[:,i], front_indices)==True) or np.all(np.isin(self.mesh.element_indices[:,i], back_indices)==True):
+                    #print(self.mesh.element_indices[:, i])
+                    elem_start_dofs = start_dof_idxs[:, i]
+                    elem_end_dofs = end_dof_idxs[:, i]
+                    elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+                    mask = np.isin(self.mesh.dof_indices[0::3], elem_dofs)
+                    global_SL[0::3][mask] -= front_drags[i]
+
+
+            if self.side_drag_calc is not None:
+                if self.mesh.Y_coords[self.mesh.element_indices[:, i][0]]==self.mesh.Y_coords[self.mesh.element_indices[:, i][1]]: #np.all(np.isin(self.mesh.element_indices[:, i], side_indices) == True) and
+                    #print(self.mesh.Y_coords[self.mesh.element_indices[:, i][0]], self.mesh.Y_coords[self.mesh.element_indices[:, i][1]], self.mesh.element_indices[:, i])
+                    elem_start_dofs = start_dof_idxs[:, i]
+                    elem_end_dofs = end_dof_idxs[:, i]
+                    elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+                    mask = np.isin(self.mesh.dof_indices[1::3], elem_dofs)
+                    global_SL[1::3][mask] += side_drags[i]
         return global_SL[np.isin(self.mesh.dof_indices, self.active_dofs)]
 
     def get_AFC_loading(self):
@@ -329,6 +358,7 @@ class mrsSquare(FEM_Solve):
 
         indices = np.concatenate((total_top_indices, total_middle_indices, total_bottom_indices))
         loads = np.hstack((top_back_load, top_front_load, middle_back_load, middle_front_load, bottom_back_load, bottom_front_load))
+
         lv = self.arbitrary_loading_vector(indices, loads)
         return lv
 
@@ -343,7 +373,7 @@ class mrsSquare(FEM_Solve):
         :return: thrust loading due to each rotor
         '''
         W_per_rotor = self.M_rna*9.80665
-        nodal_load = np.array([[-self.T_per_rotor], [0], [-W_per_rotor]])
+        nodal_load = np.array([[-self.T_per_rotor/4], [0], [-W_per_rotor/4]])
 
         'first rotor staggering:'
         first_idxs = np.array([1,14,222,235])
@@ -353,10 +383,8 @@ class mrsSquare(FEM_Solve):
         idxs = []
         loads = []
         for i, row_skip in enumerate(first_row_skip):
-            #print(first_idxs[np.newaxis,:].shape, np.repeat(first_idxs[np.newaxis,:], first_col_skip.size, axis=0).shape, first_col_skip[:,np.newaxis].shape)
             indices = np.repeat(first_idxs[np.newaxis,:], first_col_skip.size, axis=0)+first_col_skip[:,np.newaxis]*self.n_per_col+row_skip
             indices = np.hstack(indices)
-
             idxs.append(indices)
             current_loads = np.ones((3, indices.size))*nodal_load
             loads.append(current_loads)
@@ -392,8 +420,8 @@ class mrsSquare(FEM_Solve):
         :return: [-]
         '''
         S = self.assemble_global_stiffness()
-        P = self.assemble_loading_vector()  + self.get_drag_loading() +self.afc_loading+self.rotor_loading
-        #+ self.get_AFC_loading()+ self.get_rotor_loading()
+        P = self.assemble_loading_vector()  + self.get_drag_loading() + self.afc_loading + self.rotor_loading
+
         if include_self_load:
             P += self.assemble_self_loading()
         d = np.linalg.solve(S, P)
@@ -411,6 +439,27 @@ class mrsSquare(FEM_Solve):
         global_coords = np.vstack((X, Y, Z))
 
         element_Qs, element_sigmas, reactions = self.get_internal_loading(global_coords=global_coords)
+        #'''
+        start_dof_idxs, end_dof_idxs = self.get_start_end_indices()
+        Qs = []
+        for i in range(self.mesh.N_elems):
+            elem_start_dofs = start_dof_idxs[:, i]
+            elem_end_dofs = end_dof_idxs[:, i]
+            elem_dofs = np.concatenate((elem_start_dofs, elem_end_dofs))
+
+            v = global_displacements[np.isin(self.mesh.dof_indices, elem_dofs)]
+            T = self.mesh.element_Ts[i]
+            u = T @ v
+            k = self.mesh.element_ks[i]
+            Q = k @ u
+            Qs.append(Q[1])
+        #print('TEST:', Qs)
+        print(np.array(Qs)[:50])
+        print(element_Qs[:50])
+        #print((np.sign(Qs)[:500]/np.sign(element_Qs)[:500]))
+        element_Qs = np.array(Qs)
+        element_sigmas = element_Qs / m.element_As
+        #'''
         if plot:
             self.plot_displacements(X, Y, Z)
             #self.plot_stresses(X, Y, Z, element_sigmas / factor)
@@ -451,13 +500,47 @@ if __name__ == "__main__":
             }
     '''
     # Cm = 0.486
-    config = {'wing_layer_indices': [4, 8, 12],
-              'wing_lifts': [1.37e6, 1.42e6, 3.7e6],
+    config_dlc_1 = {'wing_layer_indices': [4, 8, 12],
+              'wing_lifts': [1.37e6, 1.42e6, 3.7e6], #[11e6, 11e6, 11e6],#
               'wing_moments': [0,0,0],
-              'wing_drags': [.1*1.37e6, .1*1.42e6, .1*3.7e6],
+              'wing_drags': [.1*1.37e6, .1*1.42e6, .1*3.7e6], #[.66e6, .66e6, .66e6],#
               'T_per_rotor': [150e3, 150e3],
-              'drag_calculator': Drag(V=35, rho=1.225, D_truss=1),
-              'M_RNA': 10310.8,
+              'front_drag_calculator': Drag(V=10.59, rho=1.225, D_truss=1),
+              'side_drag_calculator': None, #,Drag(V=100, rho=1.225, D_truss=1),
+              'M_RNA': 37127.73826,
+              'max_alpha_ccwp': 0.,
+              }
+
+    config_dlc_2 = {'wing_layer_indices': [4, 8, 12],
+              'wing_lifts': [1.37e6, 1.42e6, 3.7e6], #[11e6, 11e6, 11e6],#
+              'wing_moments': [0,0,0],
+              'wing_drags': [.1*1.37e6, .1*1.42e6, .1*3.7e6], #[.66e6, .66e6, .66e6],#
+              'T_per_rotor': [150e3*10.59/25, 150e3*10.59/25],
+              'front_drag_calculator': Drag(V=25, rho=1.225, D_truss=1),
+              'side_drag_calculator': None, #,Drag(V=100, rho=1.225, D_truss=1),
+              'M_RNA': 37127.73826,
+              'max_alpha_ccwp': 0.,
+              }
+
+    config_dlc_3 = {'wing_layer_indices': [4, 8, 12],
+              'wing_lifts': [0.0001, 0.0001, 0.0001],#[1.37e6, 1.42e6, 3.7e6], #
+              'wing_moments': [0,0,0],
+              'wing_drags': [0, 0, 0],#[.1*1.37e6, .1*1.42e6, .1*3.7e6], #
+              'T_per_rotor': [0, 0],
+              'front_drag_calculator':  None,
+              'side_drag_calculator': Drag(V=66, rho=1.225, D_truss=1),
+              'M_RNA': 37127.73826,
+              'max_alpha_ccwp': 0.,
+              }
+
+    config_dlc_4 = {'wing_layer_indices': [4, 8, 12],
+              'wing_lifts': [11e6, 11e6, 11e6],#[1.37e6, 1.42e6, 3.7e6], #
+              'wing_moments': [0,0,0],
+              'wing_drags': [.66e6, .66e6, .66e6],#[.1*1.37e6, .1*1.42e6, .1*3.7e6], #
+              'T_per_rotor': [0, 0],
+              'front_drag_calculator': Drag(V=66, rho=1.225, D_truss=1),
+              'side_drag_calculator': None,
+              'M_RNA': 37127.73826,
               'max_alpha_ccwp': 0.,
               }
 
@@ -481,19 +564,24 @@ if __name__ == "__main__":
                 material_ids=material_indices, materials=material_library, sections=section_library)
 
     'initialise solver'
-    config['truss'] = sq
+    config_dlc_1['truss'] = sq
+    config_dlc_2['truss'] = sq
+    config_dlc_3['truss'] = sq
+    config_dlc_4['truss'] = sq
 
     SOLVER = mrsSquare(mesh=MESH, bc_indices=bc_indices, bc_constraints=bc_constraints, load_indices=load_indices,
-                       applied_loads=applied_loads, truss_config=config, )
+                       applied_loads=applied_loads, truss_config=config_dlc_3, )
 
     print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
     'Initialise optimiser'
-    file_number = 2
+    file_number = 'dlc3'
     csv_output = CsvOutput(f'fem_results_{file_number}.csv')
 
-    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.24) #r_t = 1/120 ==> minimum thickness = 2 mm
+    OPT = Optimizer(mesh=MESH, solver=SOLVER, plot_output=True, verbose=True, minimum_D=0.36, r_t=1/120) #r_t = 1/120 ==> minimum thickness = 2 mm
     M_change, D_change, ts, sigs, elements, solver, _ = OPT.run_optimisation(tolerance=1e-5, output=csv_output,)
+    print(f'D_max = {np.max(D_change[1])}')
     print(f'Izz = {SOLVER.calc_moment_of_inertia_Z():.3e}')
+    print(solver.get_natural_frequencies()[:15])
 
     print('=========================================================================================================')
     print(f'\nInitial Mass = {M_change[0]/1000:.2f} [t], Final Mass = {M_change[1]/1000:.2f} [t]')
