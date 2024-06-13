@@ -69,9 +69,7 @@ speeds_height_5 = np.mean(array5, axis=(1, 2))
 speeds_height_55 = np.mean(array55, axis=(1, 2))
 speeds_height_6 = np.mean(array6, axis=(1, 2))
 
-
 t = np.arange(0, 8760, 1)
-
 # print(speeds_height_1.shape)  # Should print (8760,)
 # print(speeds_height_1)
 # print(array1)
