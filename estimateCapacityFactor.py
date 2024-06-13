@@ -41,30 +41,97 @@ print(g.power_function(average_speeds[0])*34)
 rot_per_row = np.array([4,2,4,2,4,2,4,2,4,2,4])
 print(speeds[0].shape)
 
-g.power_function()
+# g.power_function()
 
-regeneration_factors = [assumed_regeneration_speed**(i) for i in range(16)]
+# regeneration_factors = [assumed_regeneration_speed**(i) for i in range(16)]
+# regeneration_factorss = []
+# for i in (number_turbines):
+#     regeneration_factorss.append(regeneration_factors[:i])
+# # print()
+
+# print(regeneration_factors)
+speeds_heights = [
+    g.speeds_height_1, g.speeds_height_15, g.speeds_height_2, g.speeds_height_25, 
+    g.speeds_height_3, g.speeds_height_35, g.speeds_height_4, g.speeds_height_45, 
+    g.speeds_height_5, g.speeds_height_55, g.speeds_height_6
+]
+speeds_heights = np.array(speeds_heights)  # Shape: (11, 8760)
+
+# Initialize total_energy
+total_energy = 0
+
+# Create an array of regeneration factors
+regeneration_factors = np.power(assumed_regeneration_speed, np.arange(max(number_turbines)))
+# regeneration_factorss=[]
+# rege
+# for i in (number_turbines):
+#     #  print(regeneration_factors[:i])
+#     #  np.hstack((regeneration_factorss, regeneration_factors[:i]))
+#     regeneration_factorss.append(regeneration_factors[:i])
+#     for ix in range(15-i):
+#         regeneration_factorss.append(0)
+regeneration_factorss = np.zeros((15,len(number_turbines)))
+for i in range(len(number_turbines)):
+    for ix in range(number_turbines[i]):
+        regeneration_factorss[ix,i] = regeneration_factors[ix]
 
 
-"""
-
-for x in range(len(average_speeds)):
-    for i in number_turbines:
-        for ix in range(i):
-            current_speed_1 = g.speeds_height_1[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_15 = g.speeds_height_15[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_2 = g.speeds_height_2[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_25 = g.speeds_height_25[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_3 = g.speeds_height_3[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_35 = g.speeds_height_35[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_4 = g.speeds_height_4[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_45 = g.speeds_height_45[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_5 = g.speeds_height_5[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_55 = g.speeds_height_55[x]*assumed_regeneration_speed**(ix+1-1)
-            current_speed_6 = g.speeds_height_6[x]*assumed_regeneration_speed**(ix+1-1)
-            total_energy += g.power_function(current_speed_1)*g.currentlayout2[0] + g.power_function(current_speed_15)*g.currentlayout2[1]+ g.power_function(current_speed_2)*g.currentlayout2[2]+ g.power_function(current_speed_25)*g.currentlayout2[3]+ g.power_function(current_speed_3)*g.currentlayout2[4]+ g.power_function(current_speed_35)*g.currentlayout2[5]+g.power_function(current_speed_4)*g.currentlayout2[6]+g.power_function(current_speed_45)*g.currentlayout2[7]+g.power_function(current_speed_5)*g.currentlayout2[8]+g.power_function(current_speed_55)*g.currentlayout2[9]+g.power_function(current_speed_6)*g.currentlayout2[10]
 
 
-print('capacity factor is: ', total_energy/(30e06*288*8760)*availability)
-print('AEP is:', total_energy/(30e06*288*8760)/unit_cf)
-"""
+# print(regeneration_factorss)
+# regeneration_factorss = np.array(regeneration_factorss)
+print(regeneration_factors)
+print(regeneration_factorss)
+
+# for x in range(len(average_speeds)):
+#     # Calculate the current speeds for all turbines
+#     current_speeds = speeds_heights[:, x].reshape(-1, 1) * regeneration_factors[:max(number_turbines)].reshape(1, -1)
+#     # print(regeneration_factors[:max(number_turbines)])
+
+#     # Calculate the power for each turbine speed
+#     power_matrix = g.power_function(current_speeds)
+
+#     # Multiply power by the corresponding layout factor for each speed height
+#     energy_contributions = power_matrix * g.currentlayout2[:len(speeds_heights)].reshape(-1, 1)
+
+#     # Sum the contributions to the total energy
+#     total_energy += np.sum(energy_contributions)
+
+# print(total_energy)
+# print('capacity factor is: ', total_energy/(30e06*288*8760)*availability)
+# print('AEP is:', total_energy/(30e06*288*8760)/unit_cf)
+
+# for x in range(len(average_speeds)):
+#     for i in number_turbines:
+#         for ix in range(i):
+#             current_speed = average_speeds[x]*assumed_regeneration_speed**(ix+1-1)
+#             total_energy += g.power_function(current_speed)*34 
+
+# print('capacity factor is: ', total_energy/(30e06*288*8760)*availability)
+# print('AEP is:', total_energy/(30e06*288*8760)/unit_cf)
+
+
+# for x in range(len(average_speeds)):
+#     for i in number_turbines:
+#         for ix in range(i):
+#             current_speed_1 = g.speeds_height_1[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_15 = g.speeds_height_15[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_2 = g.speeds_height_2[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_25 = g.speeds_height_25[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_3 = g.speeds_height_3[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_35 = g.speeds_height_35[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_4 = g.speeds_height_4[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_45 = g.speeds_height_45[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_5 = g.speeds_height_5[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_55 = g.speeds_height_55[x]*assumed_regeneration_speed**(ix+1-1)
+#             current_speed_6 = g.speeds_height_6[x]*assumed_regeneration_speed**(ix+1-1)
+#             total_energy += g.power_function(current_speed_1)*g.currentlayout2[0] + g.power_function(current_speed_15)*g.currentlayout2[1]+ g.power_function(current_speed_2)*g.currentlayout2[2]+ g.power_function(current_speed_25)*g.currentlayout2[3]+ g.power_function(current_speed_3)*g.currentlayout2[4]+ g.power_function(current_speed_35)*g.currentlayout2[5]+g.power_function(current_speed_4)*g.currentlayout2[6]+g.power_function(current_speed_45)*g.currentlayout2[7]+g.power_function(current_speed_5)*g.currentlayout2[8]+g.power_function(current_speed_55)*g.currentlayout2[9]+g.power_function(current_speed_6)*g.currentlayout2[10]
+
+# print('capacity factor is: ', total_energy/(30e06*288*8760)*availability)
+# print('AEP is:', total_energy/(30e06*288*8760)/unit_cf)
+energy = 0
+for y in range(len(number_turbines)):
+    for x in range(15):
+        energy+= np.sum(g.power_function(g.speeds_height_1*regeneration_factorss[x,y])*g.currentlayout2[0]) + np.sum(g.power_function(g.speeds_height_15*regeneration_factorss[x,y])*g.currentlayout2[1])+ np.sum(g.power_function(g.speeds_height_2*regeneration_factorss[x,y])*g.currentlayout2[2])+ np.sum(g.power_function(g.speeds_height_25*regeneration_factorss[x,y])*g.currentlayout2[3])+ np.sum(g.power_function(g.speeds_height_3*regeneration_factorss[x,y])*g.currentlayout2[4])+ np.sum(g.power_function(g.speeds_height_35*regeneration_factorss[x,y])*g.currentlayout2[5])+np.sum(g.power_function(g.speeds_height_4*regeneration_factorss[x,y])*g.currentlayout2[6])+np.sum(g.power_function(g.speeds_height_45*regeneration_factorss[x,y])*g.currentlayout2[7])+np.sum(g.power_function(g.speeds_height_5*regeneration_factorss[x,y])*g.currentlayout2[8])+np.sum(g.power_function(g.speeds_height_55*regeneration_factorss[x,y])*g.currentlayout2[9])+np.sum(g.power_function(g.speeds_height_6*regeneration_factorss[x,y])*g.currentlayout2[10]) # one size fits all config
+print('capacity factor is: ', energy/(30e06*288*8760)*availability)
+print('AEP efficiency is:', energy/(30e06*288*8760)/unit_cf)
