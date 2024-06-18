@@ -38,6 +38,6 @@ if __name__ == "__main__":
     Radiusito = np.sqrt(AREA/(np.pi*n_rotors))
     plt.plot(Radiusito)
     plt.xlabel("Number of rotors")
-    plt.ylabel("Radius of each rotor")
+    plt.ylabel("Radius of each rotor [m]")
     plt.grid()
     plt.show()
