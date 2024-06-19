@@ -88,10 +88,11 @@ CP_array[U_array > cut_off] = 0
 
 P_array /= 1e6
 Q_array /= 1e3
-fig, axs = plt.subplots(1, 2)
-fig.set_figheight(3)
-fig.set_figwidth(10)
 if __name__ == "__main__":
+    fig, axs = plt.subplots(1, 2)
+    fig.set_figheight(3)
+    fig.set_figwidth(10)
+
     axs[0].plot(U_array, P_array)
     axs[0].set_xlabel('Wind Speed [m/s]')
     axs[0].set_xlim(0, 27)
