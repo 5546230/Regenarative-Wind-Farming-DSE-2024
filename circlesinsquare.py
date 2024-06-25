@@ -102,9 +102,9 @@ with open(csv_file, mode='w', newline='') as file:
 
 #===================ESTIMATE I_zz===========================
 
-I_zz_truss = 2.71e+10
+I_zz_truss = 3.16e+10
 
-m_RNA_single = 37127.73826
+m_RNA_single = 16650
 
 coordinates = np.array([[ 30.38 ,       30.38      ],
  [ 30.38      ,  91.14      ],
@@ -126,14 +126,15 @@ coordinates = np.array([[ 30.38 ,       30.38      ],
 
 I_zz_RNA = np.sum(m_RNA_single*(coordinates[:, 0]**2))
 m_RNA_total = 34*m_RNA_single
+print(I_zz_RNA)
+I_zz_AFC = 205e3/12*(277.24**2+50**2)
+m_AFC = 205e3
+print(I_zz_AFC)
 
-I_zz_AFC = 202e3/12*(277.24**2+50**2)
-m_AFC = 202e3
-
-m_tower = 9.49e5
+m_tower = 3.033e6 
 I_zz_tower = 2.893e+07
-I_zz_tot = I_zz_tower+I_zz_truss+I_zz_AFC+I_zz_RNA
-m_tot = m_RNA_total+m_AFC+m_tower+4355.091e3
+I_zz_tot = I_zz_truss+I_zz_AFC+I_zz_RNA#+I_zz_tower
+m_tot = m_RNA_total+ m_AFC+m_tower+4315.091e3 +1.765e6
 
 print(f'Total mass moment of inertia: {I_zz_tot}')
 print(f'Total mass: {m_tot}')

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from wavemodel import Wave
 from drag_calc import Drag
 
+
 class Loads():
 
     def __init__(self, tower_mass, truss_mass, nacelle_mass, truss_h, truss_depth, w_clearance, D_grid):
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     int_loads = Internal_loads(F_wave=F_dist_max, D_truss = D_grid, F_comp = F_comp, M_truss = M_truss, M_thrust=M_thrust,M_afc=M_afc+50e6, thrust = 4.8e6, water_depth= 25, z = z)
     Vy = int_loads.int_shear()
     Mx = int_loads.int_moment()
-    
+    print(F_comp)
     
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ax1.plot(Vy, z)
@@ -156,12 +157,12 @@ if __name__ == "__main__":
     plt.show()  
 
     tower = Tower(t = 0.05, w_clearance=25, M_applied=1.4*Mx[0], F_applied=1.4*F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
-    D_dist  = np.ones(len(z))*8
+    D_dist  = np.ones(len(z))*5
     t_dist = np.zeros(len(z))
     print(Mx[0])
     D_t = 120
-    mass = np.sum(tower.calc_mass(D_dist))
-    print(f'Original mass: {mass}')
+    mass = tower.calc_mass(D_dist)
+    #print(f'Original mass: {mass}')
     sigma_crit = tower.comp_local_buckling_stress(D_dist)
 
     sigma_internal = np.zeros(len(z))
@@ -170,7 +171,7 @@ if __name__ == "__main__":
         tower_it = Tower(t = D_it1/D_t, w_clearance=25, M_applied=1.35*Mx[i], F_applied=1.35* F_comp, w_depth=wave.water_depth, mat_E=190e9, mat_yield = 340e6)
         tower_stress = tower_it.calc_comp_stress(D=D_dist[i])
         sigma_crit = tower_it.comp_local_buckling_stress(D_it1)
-        mass = np.sum(tower_it.calc_mass(D_dist[i]))
+        
         
 
         
@@ -181,6 +182,7 @@ if __name__ == "__main__":
             tower_stress = tower_it2.calc_comp_stress(D_it1)
             
             sigma_crit = tower_it2.comp_local_buckling_stress(D_it1)
+            mass[i] = tower_it2.calc_mass(D_it1)
             
             '''wave1 = Wave(lifetime=25, period = 5.2615, wavelength=121.1630, water_depth=20, density=1029, D = D_it1, CM = 1.7, CD= 0.6, mu = 1.3e-3)
 
@@ -213,9 +215,9 @@ if __name__ == "__main__":
         D_dist[i] = D_it1
         sigma_internal[i] = tower_stress
         t_dist[i] = D_it1/D_t
-    print(f'local buckling: {np.min(tower.comp_local_buckling_stress(D_dist))*1e-6}')
-    print(f'global buckling: {tower.comp_global_buckling_stress(np.min(D_dist))*1e-6}')
-    print(f'max applied load: {np.max(sigma_internal)*1e-6}')
+   # print(f'local buckling: {np.min(tower.comp_local_buckling_stress(D_dist))*1e-6}')
+    #print(f'global buckling: {tower.comp_global_buckling_stress(np.min(D_dist))*1e-6}')
+    #print(f'max applied load: {np.max(sigma_internal)*1e-6}')
     coef = np.polyfit(D_dist/2, z, deg = 3)
     z_fit1 = np.poly1d(coef)
     z_fitted1 = z_fit1(D_dist/2)
@@ -248,18 +250,20 @@ if __name__ == "__main__":
 
     
 
-    mass = np.sum(tower.calc_mass(D_dist))
-    mass_inop = tower.calc_mass(D_dist[0])*len(D_dist)
-    print(f'Optimised mass: {mass+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi}')
-    print(f'Unoptimised mass: {mass_inop+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi}')
-    print(f'Mass savings: {mass_inop-mass}')
-    print(25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi)
+    #mass = np.sum(tower.calc_mass(D_dist))
+    #mass_inop = tower.calc_mass(D_dist[0])*len(D_dist)
+    print(f'Optimised mass: {np.sum(mass)}')#+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi
+    #print(f'Unoptimised mass: {mass_inop}')#+25*tower.rho*D_dist[-1]*t_dist[-1]*np.pi
+    print(f'Mass savings: {np.sum(mass)}')
+    print((25+60.68)*tower.rho*D_dist[-1]*t_dist[-1]*np.pi+np.sum(mass)+(70.32)*tower.rho*D_dist[0]*t_dist[0]*np.pi)
     print(D_dist[0])
     print(D_dist[-1])
     print(t_dist[0])
     print(t_dist[-1])
-
-    print(f'First eigenfrequency: {tower.comp_eig_freq(np.average(D_dist), m_truss=6019e3, m_RNA=2602578.544, m_tower= mass)}')
+    J = np.pi/32*(((D_dist[-1]+t_dist[-1])**4)-((D_dist[-1]-t_dist[-1])**4))
+    print(f'J: {J}')
+    print(f'max shear stress: {5e6*D_dist[-1]/2/J}')
+    print(f'First eigenfrequency: {tower.comp_eig_freq(np.average(D_dist), m_truss=6019e3, m_RNA=2602578.544, m_tower= np.sum(mass))}')
 
             
 
